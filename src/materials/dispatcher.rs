@@ -26,7 +26,7 @@ pub struct Position {
     index_bound: Range<usize>,
 }
 
-pub fn dispatch(current: &mut CurrentPosition, material: &Material, shape: &Shape) -> Position {
+pub fn dispatch(current: &mut CurrentPosition, material: &Material, shape: &Shape) -> Option<Position> {
     let material_type = match material {
         Material::Uniform(_) => MaterialType::Uniform,
     };
@@ -35,6 +35,7 @@ pub fn dispatch(current: &mut CurrentPosition, material: &Material, shape: &Shap
     };
     let (pipe, vertex_size, index_size): (PipelineLabel, usize, usize) = match (material_type, shape_type) {
         (MaterialType::Uniform, ShapeType::Triangle) => (PipelineLabel::UniformTriangle, 0, 0),
+        _ => { return None; }
     };
     let (start_vertex, start_index) = &mut current.vertex_index[pipe as usize];
     let pos = Position {
@@ -44,5 +45,5 @@ pub fn dispatch(current: &mut CurrentPosition, material: &Material, shape: &Shap
     };
     *start_vertex = pos.vertex_bound.end;
     *start_index = pos.index_bound.end;
-    pos
+    Some(pos)
 }

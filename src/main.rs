@@ -10,5 +10,4 @@ fn main() {
     logger::init_logger();
     let mut app = App::new();
     app.run();
-    //hey
 }
