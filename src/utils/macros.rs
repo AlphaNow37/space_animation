@@ -15,8 +15,12 @@ macro_rules! array_key {
             $($variant),*
         }
         impl $name {
+            #[allow(dead_code)]
             $vis const COUNT: usize = $({Self::$variant; 1} + )* 0;
+            #[allow(dead_code)]
             $vis const ARRAY: [Self; Self::COUNT] = [$(Self::$variant),*];
+
+            #[allow(dead_code)]
             pub fn name(&self) -> &'static str {
                 match self {
                     $(

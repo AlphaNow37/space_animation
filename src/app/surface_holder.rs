@@ -4,6 +4,7 @@ use winit::dpi::{LogicalSize, Size};
 use winit::event_loop::ActiveEventLoop;
 use winit::window::Window;
 use crate::app::App;
+use crate::app::scene::recreate_scene;
 use crate::materials::registry::PipelinesRegistry;
 
 pub struct SurfaceHolder {
@@ -43,8 +44,9 @@ impl SurfaceHolder {
             present_mode: caps.present_modes[0],
         };
 
-        let registry = PipelinesRegistry::new(&app.device, &surface_config);
+        let mut registry = PipelinesRegistry::new(&app.device, &surface_config);
         app.queue.write_buffer(&registry.pipes[0].vertex_buffer, 0, bytemuck::cast_slice(&[1.0f32; 20]));
+        recreate_scene(&mut registry);
 
         Self {
             window: window.clone(),

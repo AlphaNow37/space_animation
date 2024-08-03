@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use tracing::{info, info_span};
 use crate::materials::shaders::{ShaderFile, Shaders};
 use crate::utils::macros::array_key;

@@ -1,9 +1,6 @@
-use std::time::Instant;
 use tracing::{error, info, info_span};
-use wgpu::{Device, include_wgsl, SurfaceConfiguration};
 use winit::event::WindowEvent;
 use crate::app::App;
-use crate::app::shaders::load;
 
 pub fn check_render(app: &mut App, event: &WindowEvent) {
     if !matches!(event, WindowEvent::RedrawRequested) {

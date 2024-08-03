@@ -6,7 +6,7 @@ use crate::materials::shaders::Shaders;
 
 pub struct PipelinesRegistry {
     bindings: Bindings,
-    shaders: Shaders,
+    // shaders: Shaders,
     pub pipes: [Pipeline; PipelineLabel::COUNT],
 }
 impl PipelinesRegistry {
@@ -19,7 +19,7 @@ impl PipelinesRegistry {
         info!("Succesfully created {} pipelines", pipes.len());
         Self {
             bindings,
-            shaders,
+            // shaders,
             pipes,
         }
     }

@@ -2,15 +2,15 @@
 // use wgpu::include_wgsl;
 // use crate::app::App;
 
-macro_rules! load {
-    ($device: expr, $name: literal) => {
-        {
-            use wgpu::include_wgsl;
-            $device.create_shader_module(include_wgsl!(concat!("../shaders/", $name)))
-        }
-    };
-}
-pub(crate) use load;
+// macro_rules! load {
+//     ($device: expr, $name: literal) => {
+//         {
+//             use wgpu::include_wgsl;
+//             $device.create_shader_module(include_wgsl!(concat!("../shaders/", $name)))
+//         }
+//     };
+// }
+// pub(crate) use load;
 // pub struct Shaders {
 //     simple: wgpu::ShaderModule,
 // }

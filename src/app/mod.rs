@@ -5,13 +5,13 @@ mod resize;
 mod render;
 mod shaders;
 mod update;
+mod scene;
 
-use std::time::{Duration, Instant};
 use tracing::{info, info_span};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
-use winit::window::{Window, WindowId};
+use winit::window::{WindowId};
 use winit::application::ApplicationHandler;
-use winit::event::{DeviceEvent, DeviceId, WindowEvent};
+use winit::event::{WindowEvent};
 use crate::app::exit::check_exit;
 use crate::app::render::check_render;
 use crate::app::resize::check_resize;
@@ -44,6 +44,7 @@ pub struct App {
 }
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        let _span = info_span!("restart").entered();
         let holder = SurfaceHolder::new(self, event_loop);
         if !self.adapter.is_surface_supported(&holder.surface) {
             self.adapter = get_adapter(Some(&holder.surface), &self.instance);
