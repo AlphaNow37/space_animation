@@ -4,18 +4,27 @@ use crate::materials::bind_groups::{Bindings, EntryType};
 use crate::materials::pipelines::{Pipeline, PipelineLabel};
 use crate::materials::shaders::Shaders;
 
+use super::dispatcher::BuffersAllocPosition;
+
 pub struct PipelinesRegistry {
     bindings: Bindings,
     // shaders: Shaders,
     pub pipes: [Pipeline; PipelineLabel::COUNT],
 }
 impl PipelinesRegistry {
-    pub fn new(device: &wgpu::Device, surf_config: &wgpu::SurfaceConfiguration) -> Self {
+    pub fn new(device: &wgpu::Device, surf_config: &wgpu::SurfaceConfiguration, pos: &BuffersAllocPosition) -> Self {
         let _span = info_span!("registry").entered();
         let bindings = Bindings::new(device);
         let shaders = Shaders::new(device);
         let pipes = PipelineLabel::ARRAY
-            .map(|label| Pipeline::new(label, device, surf_config, &bindings.layout, &shaders));
+            .map(|label| Pipeline::new(
+                label, 
+                device, 
+                surf_config,
+                 &bindings.layout,
+                  &shaders,
+                  pos.get(label)
+                ));
         info!("Succesfully created {} pipelines", pipes.len());
         Self {
             bindings,

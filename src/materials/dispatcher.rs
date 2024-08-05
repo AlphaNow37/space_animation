@@ -16,8 +16,23 @@ array_key!(
 );
 
 #[derive(Default)]
-pub struct CurrentPosition {
+pub struct BuffersAllocPosition {
     vertex_index: [(usize, usize); PipelineLabel::COUNT],
+}
+impl BuffersAllocPosition {
+    pub fn new() -> Self {Self::default()}
+    pub fn get(&self, pipe: PipelineLabel) -> (usize, usize) {self.vertex_index[pipe as usize]}
+    pub fn alloc(&mut self, pipe: PipelineLabel, vertex_size: usize, index_size: usize) -> Position {
+        let (start_vertex, start_index) = &mut self.vertex_index[pipe as usize];
+        let pos = Position {
+            pipe_label: pipe,
+            index_bound: *start_index..*start_index+index_size,
+            vertex_bound: *start_vertex..*start_vertex+vertex_size,
+        };
+        *start_vertex = pos.vertex_bound.end;
+        *start_index = pos.index_bound.end;
+        pos
+    }
 }
 
 pub struct Position {
@@ -26,7 +41,7 @@ pub struct Position {
     index_bound: Range<usize>,
 }
 
-pub fn dispatch(current: &mut CurrentPosition, material: &Material, shape: &Shape) -> Option<Position> {
+pub fn dispatch(current: &mut BuffersAllocPosition, material: &Material, shape: &Shape) -> Option<Position> {
     let material_type = match material {
         Material::Uniform(_) => MaterialType::Uniform,
     };
@@ -37,13 +52,5 @@ pub fn dispatch(current: &mut CurrentPosition, material: &Material, shape: &Shap
         (MaterialType::Uniform, ShapeType::Triangle) => (PipelineLabel::UniformTriangle, 0, 0),
         _ => { return None; }
     };
-    let (start_vertex, start_index) = &mut current.vertex_index[pipe as usize];
-    let pos = Position {
-        pipe_label: pipe,
-        index_bound: *start_index..*start_index+index_size,
-        vertex_bound: *start_vertex..*start_vertex+vertex_size,
-    };
-    *start_vertex = pos.vertex_bound.end;
-    *start_index = pos.index_bound.end;
-    Some(pos)
+    Some(current.alloc(pipe, vertex_size, index_size))
 }

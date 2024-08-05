@@ -72,7 +72,8 @@ impl Pipeline {
         device: &wgpu::Device,
         surface_config: &wgpu::SurfaceConfiguration,
         bindings_layout: &wgpu::BindGroupLayout,
-        shaders: &Shaders
+        shaders: &Shaders,
+        buffer_size: (usize, usize),
     ) -> Self {
         let _span = info_span!("pipeline").entered();
         let names = label.names();
@@ -124,7 +125,7 @@ impl Pipeline {
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("vertex buffer"),
-            size: 1000,
+            size: buffer_size.0 as u64,
             mapped_at_creation: false,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });

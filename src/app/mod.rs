@@ -7,6 +7,7 @@ mod shaders;
 mod update;
 mod scene;
 
+use scene::Scene;
 use tracing::{info, info_span};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{WindowId};
@@ -40,6 +41,7 @@ pub struct App {
     pub adapter: wgpu::Adapter,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
+    pub scene: Scene,
     // pub shaders: Shaders,
 }
 impl ApplicationHandler for App {
@@ -86,6 +88,7 @@ impl App {
             // shaders: Shaders::load(&device),
             device,
             queue,
+            scene: Scene::new(),
         }
     }
     pub fn run(&mut self) {
