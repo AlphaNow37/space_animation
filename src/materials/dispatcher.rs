@@ -1,56 +1,54 @@
-use std::ops::Range;
-use crate::materials::materials::Material;
-use crate::materials::pipelines::PipelineLabel;
-use crate::materials::shape::Shape;
-use crate::utils::macros::array_key;
+// use std::ops::Range;
+// use crate::materials::materials::Material;
+// use crate::materials::pipelines::PipelineLabel;
+// use crate::materials::shape::Shape;
+// use crate::utils::macros::array_key;
 
-array_key!(
-    enum MaterialType {
-        Uniform,
-    }
-);
-array_key!(
-    enum ShapeType {
-        Triangle,
-    }
-);
+// struct ShapeInfo {
+//     vertex_count: usize,
+//     include_uv: bool,
+//     vertex_size: usize,
+//     index_size: usize,
+//     ty: ShapeType,
+// }
+// struct MaterialInfo {
+//     color_channel_count: usize,
+//     require_uv: bool,
+//     ty: MaterialType,
+// }
+// array_key!(
+//     enum MaterialType {
+//         Uniform,
+//     }
+// );
+// array_key!(
+//     enum ShapeType {
+//         Triangle,
+//     }
+// );
 
-#[derive(Default)]
-pub struct BuffersAllocPosition {
-    vertex_index: [(usize, usize); PipelineLabel::COUNT],
-}
-impl BuffersAllocPosition {
-    pub fn new() -> Self {Self::default()}
-    pub fn get(&self, pipe: PipelineLabel) -> (usize, usize) {self.vertex_index[pipe as usize]}
-    pub fn alloc(&mut self, pipe: PipelineLabel, vertex_size: usize, index_size: usize) -> Position {
-        let (start_vertex, start_index) = &mut self.vertex_index[pipe as usize];
-        let pos = Position {
-            pipe_label: pipe,
-            index_bound: *start_index..*start_index+index_size,
-            vertex_bound: *start_vertex..*start_vertex+vertex_size,
-        };
-        *start_vertex = pos.vertex_bound.end;
-        *start_index = pos.index_bound.end;
-        pos
-    }
-}
 
-pub struct Position {
-    pipe_label: PipelineLabel,
-    vertex_bound: Range<usize>,
-    index_bound: Range<usize>,
-}
-
-pub fn dispatch(current: &mut BuffersAllocPosition, material: &Material, shape: &Shape) -> Option<Position> {
-    let material_type = match material {
-        Material::Uniform(_) => MaterialType::Uniform,
-    };
-    let shape_type = match shape {
-        Shape::Shape2d() => ShapeType::Triangle,
-    };
-    let (pipe, vertex_size, index_size): (PipelineLabel, usize, usize) = match (material_type, shape_type) {
-        (MaterialType::Uniform, ShapeType::Triangle) => (PipelineLabel::UniformTriangle, 0, 0),
-        _ => { return None; }
-    };
-    Some(current.alloc(pipe, vertex_size, index_size))
-}
+// pub fn dispatch(current: &mut BuffersAllocPosition, material: &Material, shape: &Shape) -> Option<Position> {
+//     let material_info = match material {
+//         Material::Uniform(_) => MaterialInfo {
+//             color_channel_count: 1,
+//             require_uv: false,
+//             ty: MaterialType::OneCol,
+//         },
+//     };
+//     let shape_info = match shape {
+//         Shape::Shape2d() => ShapeInfo { 
+//             vertex_count: 3, // TODO
+//             include_uv: false, 
+//             vertex_size: 12,
+//             index_size: 3,
+//             ty: ShapeType::Triangle,
+//         },
+//     };
+//     let pipe: PipelineLabel = match (material_info.ty, shape_info.ty) {
+//         (MaterialType::Uniform, ShapeType::Triangle) => PipelineLabel::UniformTriangle,
+//         _ => { return None; }
+//     };
+//     let vertex_size = shape_info.vertex_size;
+//     Some(current.alloc(pipe, vertex_size, index_size))
+// }

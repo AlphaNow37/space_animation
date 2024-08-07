@@ -35,6 +35,7 @@ pub fn check_update(app: &mut App, event: &WindowEvent) {
     app.clock.last_render = now;
 
     if let Some(holder) = &mut app.window {
-        holder.registry.set_time(&app.queue, time, app.clock.loop_time)
+        holder.registry.set_time(&app.queue, time, app.clock.loop_time);
+        app.scene.update(&mut holder.registry, &app.queue, time);
     }
 }

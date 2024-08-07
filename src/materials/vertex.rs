@@ -1,43 +1,29 @@
-// use crate::materials::shaders::ShaderFile;
-// use crate::utils::macros::array_key;
+use bytemuck::{Pod, Zeroable};
+use glam::Vec3;
 
+macro_rules! impl_vertex {
+    (
+        $ty: ident:
+        $size: literal,
+        $(
+            $n: literal => $val: ident
+        ),*
+        $(,)?
+    ) => {
+        impl $ty {
+            pub const ATTRS: &'static [wgpu::VertexAttribute] = &wgpu::vertex_attr_array![
+                $(
+                    $n => $val,
+                )*
+            ];
+            pub const SIZE: usize = $size;
+            #[allow(dead_code)]
+            const CHECK: () = const { assert!(std::mem::size_of::<Self>() == Self::SIZE) };
+        }
+    };
+}
 
-
-// impl VertexKind {
-//     pub fn size(&self) -> usize {
-//         match self {
-//             Self::PosColor => 8,
-//         }
-//     }
-//     pub fn vertex_attributes(&self) -> &'static [wgpu::VertexAttribute] {
-//         match self {
-//             Self::PosColor => &const {wgpu::vertex_attr_array![
-//                 0 => Float32x4,
-//                 1 => Float32x4,
-//             ]}
-//         }
-//     }
-//     pub fn shader_file(&self) -> ShaderFile {
-//         match self {
-//             Self::PosColor => ShaderFile::Simple,
-//         }
-//     }
-//     pub fn entry_point(&self) -> &'static str {
-//         match self {
-//             Self::PosColor => "vs_main",
-//         }
-//     }
-// }
-
-// pub enum Shape2d {
-//     Circle(f32),
-//     Triangle([Vec2; 3]),
-//     Square(Vec2, Vec2),
-//     Polyline(Vec<Vec2>),
-//     Polygon(Vec<Vec2>),
-//     Line(Vec2, Vec2),
-// }
-// pub struct Shape3d {
-//     origin: Affine3A,
-//     shape: Shape2d
-// }
+#[derive(Pod, Clone, Copy, Zeroable)]
+#[repr(C)]
+pub struct UniformTriangleVertex(pub Vec3, pub u32);
+impl_vertex!(UniformTriangleVertex: 16, 0 => Float32x3, 1 => Unorm8x4);

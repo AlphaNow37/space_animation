@@ -1,4 +1,6 @@
 use std::sync::Arc;
+use bytemuck::{Pod, Zeroable};
+use glam::Vec3;
 use tracing::{info_span, warn};
 use winit::dpi::{LogicalSize, Size};
 use winit::event_loop::ActiveEventLoop;
@@ -44,7 +46,6 @@ impl SurfaceHolder {
         };
 
         let registry = PipelinesRegistry::new(&app.device, &surface_config, &app.scene.final_position);
-        app.queue.write_buffer(&registry.pipes[0].vertex_buffer, 0, bytemuck::cast_slice(&[1.0f32]));
 
         Self {
             window: window.clone(),

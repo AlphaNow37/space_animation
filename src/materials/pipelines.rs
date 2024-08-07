@@ -1,5 +1,6 @@
 use tracing::{info, info_span};
 use crate::materials::shaders::{ShaderFile, Shaders};
+use crate::materials::vertex::UniformTriangleVertex;
 use crate::utils::macros::array_key;
 
 pub struct PipeNames {
@@ -49,13 +50,14 @@ impl PipelineLabel {
             Self::UniformTriangle => "fs_main",
         }
     }
-    pub const fn vertex_attributes(&self) -> &'static [wgpu::VertexAttribute] {
-        const UNI_TRIANGLE: &'static [wgpu::VertexAttribute] = &wgpu::vertex_attr_array![
-            0 => Float32,
-        ];
-
+    pub fn vertex_attributes(&self) -> &'static [wgpu::VertexAttribute] {
         match self {
-            Self::UniformTriangle => UNI_TRIANGLE,
+            Self::UniformTriangle => UniformTriangleVertex::ATTRS,
+        }
+    }
+    pub fn vertex_size(&self) -> usize {
+        match self {
+            Self::UniformTriangle => 16,
         }
     }
 }
@@ -64,7 +66,7 @@ pub struct Pipeline {
     render_pipeline: wgpu::RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
     // index_buffer: Option<wgpu::Buffer>,
-    count: usize,
+    buffer_size: (usize, usize),
 }
 impl Pipeline {
     pub fn new(
@@ -89,8 +91,8 @@ impl Pipeline {
             vertex: wgpu::VertexState {
                 buffers: &[
                     wgpu::VertexBufferLayout {
-                        step_mode: wgpu::VertexStepMode::Instance,
-                        array_stride: 0,
+                        step_mode: wgpu::VertexStepMode::Vertex,
+                        array_stride: label.vertex_size() as wgpu::BufferAddress,
                         attributes: label.vertex_attributes()
                     }
                 ],
@@ -103,7 +105,7 @@ impl Pipeline {
                 entry_point: label.fragment_entry_point(),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: surface_config.format,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
@@ -125,7 +127,7 @@ impl Pipeline {
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("vertex buffer"),
-            size: buffer_size.0 as u64,
+            size: buffer_size.0 as wgpu::BufferAddress,
             mapped_at_creation: false,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
@@ -134,7 +136,7 @@ impl Pipeline {
             render_pipeline,
             // index_buffer: None,
             vertex_buffer,
-            count: 0,
+            buffer_size,
         }
     }
     pub fn render(&self, render_pass: &mut wgpu::RenderPass) {
@@ -146,5 +148,12 @@ impl Pipeline {
         // } else {
         //
         // }
+    }
+    pub fn view<'a>(&'a self, queue: &'a wgpu::Queue) -> wgpu::QueueWriteBufferView<'a> {
+        queue.write_buffer_with(
+            &self.vertex_buffer,
+            0,
+            (self.buffer_size.0 as u64).try_into().unwrap(),
+        ).unwrap()
     }
 }

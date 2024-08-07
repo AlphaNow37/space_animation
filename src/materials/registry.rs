@@ -4,7 +4,7 @@ use crate::materials::bind_groups::{Bindings, EntryType};
 use crate::materials::pipelines::{Pipeline, PipelineLabel};
 use crate::materials::shaders::Shaders;
 
-use super::dispatcher::BuffersAllocPosition;
+use super::alloc::BuffersAllocPosition;
 
 pub struct PipelinesRegistry {
     bindings: Bindings,
@@ -52,5 +52,9 @@ impl PipelinesRegistry {
     }
     pub fn set_time(&self, queue: &wgpu::Queue, time: f32, loop_time: f32) {
         self.bindings.write(queue, EntryType::Time, &[time, loop_time])
+    }
+    pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [wgpu::QueueWriteBufferView<'a>; PipelineLabel::COUNT] {
+        PipelineLabel::ARRAY
+            .map(|label| self.pipes[label as usize].view(&queue))
     }
 }

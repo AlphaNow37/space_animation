@@ -1,13 +1,23 @@
-use crate::world::entity::{Entity};
+use crate::{materials::alloc::BuffersAllocPosition, world::entity::Entity};
 
 
 #[derive(Clone, Copy, PartialOrd, PartialEq, Ord, Eq)]
 pub struct EntityRef(usize);
+impl EntityRef {
+    pub const ROOT: Self = Self(0);
+}
 
 pub struct World {
-    entities: Vec<Entity>,
+    pub entities: Vec<Entity>,
+    pub alloc: BuffersAllocPosition,
 }
 impl World {
+    pub fn new() -> Self {
+        Self {
+            alloc: BuffersAllocPosition::new(),
+            entities: Vec::new(),
+        }
+    }
     pub fn get(&self, eref: EntityRef) -> &Entity {
         &self.entities[eref.0]
     }
