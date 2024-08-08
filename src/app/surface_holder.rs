@@ -17,6 +17,7 @@ pub struct SurfaceHolder {
 
 fn cfg_window(win: &Window) {
     win.set_min_inner_size(Some(Size::Logical(LogicalSize::new(700., 500.))));
+    win.set_title("Space animation | By AlphaNow");
 }
 
 impl SurfaceHolder {
