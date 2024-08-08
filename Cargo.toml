@@ -1,5 +1,5 @@
 [package]
-name = "wgpu_scenes"
+name = "space_animation"
 version = "0.1.0"
 edition = "2021"
 
