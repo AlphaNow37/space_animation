@@ -5,6 +5,7 @@ mod logger;
 mod world;
 mod materials;
 mod utils;
+mod content;
 
 fn main() {
     logger::init_logger();
