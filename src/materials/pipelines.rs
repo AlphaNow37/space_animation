@@ -1,5 +1,6 @@
 use tracing::{info, info_span};
 use wgpu::hal::auxil::db;
+use crate::materials::depth::DepthBuffer;
 use crate::materials::shaders::{ShaderFile, Shaders};
 use crate::materials::vertex::UniformTriangleVertex;
 use crate::utils::macros::array_key;
@@ -121,7 +122,13 @@ impl Pipeline {
                 unclipped_depth: false,
                 conservative: false,
             },
-            depth_stencil: None,
+            depth_stencil: Some(wgpu::DepthStencilState {
+                bias: wgpu::DepthBiasState::default(),
+                depth_compare: wgpu::CompareFunction::LessEqual,
+                depth_write_enabled: true,
+                format: DepthBuffer::FORMAT,
+                stencil: wgpu::StencilState::default(),
+            }),
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
             cache: None,

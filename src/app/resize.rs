@@ -11,6 +11,7 @@ pub fn check_resize(app: &mut App, event: &WindowEvent) {
             win.surface_config.width = new_size.width;
             win.surface_config.height = new_size.height;
             win.surface.configure(&app.device, &win.surface_config);
+            win.registry.on_resize(&app.device, &win.surface_config);
         } else {
             error!("No window while resizing");
         }

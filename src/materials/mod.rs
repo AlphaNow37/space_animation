@@ -8,3 +8,4 @@ pub mod dispatcher;
 pub mod shape;
 pub mod color;
 pub mod alloc;
+pub mod depth;

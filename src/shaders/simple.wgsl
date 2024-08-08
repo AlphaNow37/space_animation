@@ -18,7 +18,7 @@ fn vs_main(
     in: VertexInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-    out.clip_position = vec4<f32>(in.pos.xy, 0.0, 1.0);
+    out.clip_position = vec4<f32>(in.pos.xyz, 1.0);
     out.col = in.col;
     return out;
 }

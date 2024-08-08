@@ -5,9 +5,11 @@ use crate::materials::pipelines::{Pipeline, PipelineLabel};
 use crate::materials::shaders::Shaders;
 
 use super::alloc::BuffersAllocPosition;
+use super::depth::DepthBuffer;
 
 pub struct PipelinesRegistry {
     bindings: Bindings,
+    depth_buffer: DepthBuffer,
     // shaders: Shaders,
     pub pipes: [Pipeline; PipelineLabel::COUNT],
 }
@@ -16,6 +18,7 @@ impl PipelinesRegistry {
         let _span = info_span!("registry").entered();
         let bindings = Bindings::new(device);
         let shaders = Shaders::new(device);
+        let depth_buffer = DepthBuffer::new(device, surf_config);
         let pipes = PipelineLabel::ARRAY
             .map(|label| Pipeline::new(
                 label, 
@@ -30,7 +33,11 @@ impl PipelinesRegistry {
             bindings,
             // shaders,
             pipes,
+            depth_buffer,
         }
+    }
+    pub fn on_resize(&mut self, device: &wgpu::Device, surf_config: &wgpu::SurfaceConfiguration) {
+        self.depth_buffer = DepthBuffer::new(device, surf_config);
     }
     pub fn render(&self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -43,6 +50,14 @@ impl PipelinesRegistry {
                     store: wgpu::StoreOp::Store,
                 }
             })],
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: &self.depth_buffer.view,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.),
+                    store: wgpu::StoreOp::Store,
+                }),
+                stencil_ops: None,
+            }),
             ..Default::default()
         });
         self.bindings.put(&mut render_pass);
