@@ -23,7 +23,7 @@ impl PipelinesRegistry {
                 surf_config,
                  &bindings.layout,
                   &shaders,
-                  pos.get(label)
+                  pos.get_bytes(label)
                 ));
         info!("Succesfully created {} pipelines", pipes.len());
         Self {

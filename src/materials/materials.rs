@@ -5,10 +5,20 @@
 //     Uniform(Vec4),
 // }
 
+use std::default;
+
 use glam::Vec3;
 
-use super::{color::Color, pipelines::PipelineLabel, vertex::UniformTriangleVertex};
+use super::{alloc::{BuffersAllocPosition, Position}, color::Color, pipelines::PipelineLabel, vertex::UniformTriangleVertex};
 
+fn placer_func<'a, T, U: bytemuck::NoUninit+bytemuck::AnyBitPattern>(array: &'a mut [u32], mut f: impl FnMut(T)->U+'a) -> impl FnMut(T)+'a {
+    let mut it = bytemuck::cast_slice_mut(array).iter_mut();
+    move |v| {
+        *it.next().unwrap() = f(v)
+    }
+}
+
+#[derive(Clone, Debug)]
 pub enum FlatShape {
     Triangle([Vec3; 3]),
 }
@@ -28,7 +38,10 @@ impl FlatShape {
     }
 }
 
+#[derive(Clone, Debug, Default)]
 pub enum Material {
+    #[default]
+    None,
     UniformFlat {
         col: Color,
         shape: FlatShape,
@@ -37,29 +50,30 @@ pub enum Material {
 impl Material {
     pub fn pipeline(&self) -> PipelineLabel {
         match self {
+            Self::None => PipelineLabel::UniformTriangle, // do not matter
             Self::UniformFlat { .. } => PipelineLabel::UniformTriangle,
         }
     }
-    pub fn byte_size(&self) -> (usize, usize) {
+    fn size_u32(&self) -> (usize, usize) {
         match self {
+            Self::None => (0, 0),
             Self::UniformFlat { col, shape } => {
                 let (vertex_count, index_count) = shape.size();
-                (vertex_count * UniformTriangleVertex::SIZE, index_count)
+                (vertex_count * UniformTriangleVertex::SIZE_U32, index_count)
             }
         }
     }
-    pub fn put(&self, time: f32, mut vertex: &mut [u8], index_offset: u32, index: &mut [u32]) {
+    pub fn alloc(&self, alloc: &mut BuffersAllocPosition) -> Position {
+        let pipe = self.pipeline();
+        let (vertex_size, index_size) = self.size_u32();
+        alloc.alloc(pipe, vertex_size, index_size)
+    }
+    pub fn put(&self, time: f32, mut vertex: &mut [u32], index_offset: u32, index: &mut [u32]) {
         match self {
+            Self::None => (),
             Self::UniformFlat { col, shape } => {
-                let vert_array: &mut [UniformTriangleVertex] = bytemuck::cast_slice_mut(vertex);
-                let mut v_it = vert_array.iter_mut();
-                let add_vertex = move |pos: Vec3| {
-                    *v_it.next().unwrap() = UniformTriangleVertex(pos, col.as_u32());
-                };
-                let mut i_it = index.iter_mut();
-                let add_index = |idx: u32| {
-                    *i_it.next().unwrap() = idx + index_offset;
-                };
+                let add_vertex = placer_func(vertex, |pos| UniformTriangleVertex(pos, col.as_u32()));
+                let add_index = placer_func(index, |idx| idx+index_offset);
                 shape.put(add_vertex, add_index);
             }
         }

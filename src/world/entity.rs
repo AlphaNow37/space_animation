@@ -1,9 +1,14 @@
 use std::borrow::Cow;
 
+use crate::materials::materials::Material;
 
-#[derive(Clone)]
+use super::world::EntityRef;
+
+#[derive(Clone, Default)]
 pub struct Entity {
-    name: Cow<'static, str>,
+    pub name: Cow<'static, str>,
+    pub childs: Vec<EntityRef>,
+    pub material: Material,
 }
 impl Entity {
 

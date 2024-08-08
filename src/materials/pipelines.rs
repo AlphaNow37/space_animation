@@ -1,4 +1,5 @@
 use tracing::{info, info_span};
+use wgpu::hal::auxil::db;
 use crate::materials::shaders::{ShaderFile, Shaders};
 use crate::materials::vertex::UniformTriangleVertex;
 use crate::utils::macros::array_key;
@@ -67,6 +68,7 @@ pub struct Pipeline {
     pub vertex_buffer: wgpu::Buffer,
     // index_buffer: Option<wgpu::Buffer>,
     buffer_size: (usize, usize),
+    label: PipelineLabel,
 }
 impl Pipeline {
     pub fn new(
@@ -137,12 +139,13 @@ impl Pipeline {
             // index_buffer: None,
             vertex_buffer,
             buffer_size,
+            label,
         }
     }
     pub fn render(&self, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.draw(0..3, 0..1);
+        render_pass.draw(0..(self.buffer_size.0/self.label.vertex_size()) as u32, 0..1);
         // if let Some(index) = &self.index_buffer {
         //
         // } else {

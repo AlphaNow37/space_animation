@@ -15,7 +15,7 @@ macro_rules! consts {
         }
     };
 }
-
+#[derive(Clone, Debug, Copy, Default, PartialEq)]
 pub struct Color(pub Vec3);
 impl Color {
     pub fn as_u32(&self) -> u32 {
@@ -23,6 +23,7 @@ impl Color {
     }
 }
 consts!(
-    WHITE = 0., 0., 0.;
+    WHITE = 1., 1., 1.;
+    BLACK = 0., 0., 0.;
     DEBUG = 0.8, 0., 0.4;
 );
