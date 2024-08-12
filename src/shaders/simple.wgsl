@@ -1,6 +1,6 @@
 
 @group(0) @binding(0)
-var<uniform> time: vec2<f32>;
+var<uniform> time: f32;
 
 struct VertexInput {
     @location(0) pos: vec3<f32>,

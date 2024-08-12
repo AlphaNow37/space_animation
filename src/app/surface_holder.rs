@@ -1,12 +1,10 @@
 use std::sync::Arc;
-use bytemuck::{Pod, Zeroable};
-use glam::Vec3;
 use tracing::{info_span, warn};
 use winit::dpi::{LogicalSize, Size};
 use winit::event_loop::ActiveEventLoop;
 use winit::window::Window;
 use crate::app::App;
-use crate::materials::registry::PipelinesRegistry;
+use crate::render_registry::registry::PipelinesRegistry;
 
 pub struct SurfaceHolder {
     pub window: Arc<Window>,

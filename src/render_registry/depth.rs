@@ -1,6 +1,6 @@
 
 pub struct DepthBuffer {
-    pub texture: wgpu::Texture,
+    // pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
 }
 impl DepthBuffer {
@@ -32,9 +32,8 @@ impl DepthBuffer {
         //     ..Default::default()
         // });
         Self {
-            texture,
+            // texture,
             view,
         }
     }
 }
-

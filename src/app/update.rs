@@ -1,4 +1,3 @@
-use std::ops::Rem;
 use std::time::Instant;
 use log::info;
 use tracing::info_span;
@@ -9,7 +8,7 @@ pub struct Clock {
     startup: Instant,
     last_render: Instant,
     min_delta: f32,
-    loop_time: f32,
+    // loop_time: f32,
 }
 impl Clock {
     pub fn new() -> Self {
@@ -17,7 +16,7 @@ impl Clock {
             startup: Instant::now(),
             last_render: Instant::now(),
             min_delta: 1./60.,
-            loop_time: 5.,
+            // loop_time: 5.,
         }
     }
     pub fn should_update(&self) -> bool {
@@ -30,12 +29,12 @@ pub fn check_update(app: &mut App, event: &WindowEvent) {
     let _span = info_span!("update").entered();
     let now = Instant::now();
     let delta = now - app.clock.last_render;
-    let time = (now - app.clock.startup).as_secs_f32().rem(app.clock.loop_time);
-    info!("delta={}ms, fps={}, time={}/{}", delta.as_millis(), 1./delta.as_secs_f32(), time, app.clock.loop_time);
+    let time = (now - app.clock.startup).as_secs_f32(); //.rem(app.clock.loop_time);
+    info!("delta={}ms, fps={}, time={}", delta.as_millis(), 1./delta.as_secs_f32(), time); //, app.clock.loop_time);
     app.clock.last_render = now;
 
     if let Some(holder) = &mut app.window {
-        holder.registry.set_time(&app.queue, time, app.clock.loop_time);
+        holder.registry.set_time(&app.queue, time); //, app.clock.loop_time);
         app.scene.update(&mut holder.registry, &app.queue, time);
     }
 }

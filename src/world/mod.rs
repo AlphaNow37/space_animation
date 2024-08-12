@@ -1,4 +1,8 @@
 pub mod world;
-pub mod entity;
-pub mod view;
+pub mod variator;
+pub mod material;
+pub mod color;
+pub mod shape;
 pub mod surface;
+pub mod combinators;
+pub mod pack;
