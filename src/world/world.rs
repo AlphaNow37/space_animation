@@ -39,12 +39,6 @@ macro_rules! make_system {
                     }
                 }
             )*
-            impl Extract for $prim_pty {
-                type T = $prim_ty;
-                fn extract(id: Ref<Self>, world: &World) -> Self::T {
-                    world.$attr.get(id.index)
-                }
-            }
             impl PrimPush for $prim_ty {
                 type Label = $prim_pty;
                 fn push(world: &mut World, var: impl Variator<Item=Self>+'static) -> Ref<Self::Label> {
@@ -140,9 +134,6 @@ macro_rules! make_system {
                     )
                 }
             }
-            pub fn get<T: Extract>(&self, id: Ref<T>) -> T::T {
-                T::extract(id, &self)
-            }
             pub fn push<T: Push+'static>(&mut self, var: T) -> Ref<T::Label> {
                 let id = var.push(self);
                 self.insert_order.push(id.as_ref());
@@ -231,16 +222,12 @@ pub struct WorldUpdateCtx<'a> {
     pub allocs: &'a [Position],
 }
 
-trait Extract: Sized {
-    type T;
-    fn extract(id: Ref<Self>, world: &World) -> Self::T;
-}
-impl Extract for Point {
-    type T = Vec3A;
-    fn extract(id: Ref<Self>, world: &World) -> Self::T {
-        match id.label {
-            Point::Vec3A => world.vec3a.get(id.index),
-            Point::Affine3A => world.vec3a.get(id.index),
+impl Variator for Ref<Point> {
+    type Item = Vec3A;
+    fn update(&self, _ctx: UpdateCtx, world: &World) -> Self::Item {
+        match self.label {
+            Point::Vec3A => world.vec3a.get(self.index),
+            Point::Affine3A => world.vec3a.get(self.index),
         }
     }
 }
