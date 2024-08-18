@@ -11,3 +11,4 @@ pub mod register;
 pub mod rotation;
 pub mod curve;
 pub mod point;
+pub mod mesh_builder;

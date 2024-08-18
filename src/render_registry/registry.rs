@@ -27,7 +27,7 @@ impl PipelinesRegistry {
                 surf_config,
                  &bindings.layout,
                   &shaders,
-                  pos.get_size(label)
+                  pos.get_count(label)
                 ));
         info!("Succesfully created {} pipelines", pipes.len());
         Self {

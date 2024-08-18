@@ -8,11 +8,18 @@ var<uniform> camera: mat4x4<f32>;
 @group(0) @binding(2)
 var<uniform> eye_dir: vec3<f32>;
 
-struct VertexInput {
+struct TriVertex {
     @location(0) pos: vec3<f32>,
-    @location(1) col: vec4<f32>,
+    @location(1) normal: vec4<f32>,
     @location(2) uv: vec3<f32>,
-    @location(3) normal: vec4<f32>,
+}
+
+struct VertexInput {
+    // vertex: TriVertex,
+        @location(0) pos: vec3<f32>,
+    @location(1) normal: vec4<f32>,
+    @location(2) uv: vec3<f32>,
+    @location(3) col: vec4<f32>,
 };
 
 struct VertexOutput {

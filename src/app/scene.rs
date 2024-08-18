@@ -3,7 +3,16 @@ use std::ops::DerefMut;
 use log::info;
 use tracing::info_span;
 // use crate::app::App;
-use crate::{render_registry::{alloc::{BuffersAllocPosition, Position}, registry::PipelinesRegistry}, world::{variator::UpdateCtx, world::{World, WorldUpdateCtx}}};
+use crate::{
+    render_registry::{
+        alloc::{BuffersAllocPosition, Position},
+        registry::PipelinesRegistry,
+    },
+    world::{
+        variator::UpdateCtx,
+        world::{World, WorldUpdateCtx},
+    },
+};
 
 use super::camera::ManualCamera;
 
@@ -33,18 +42,25 @@ impl Scene {
             allocs,
         }
     }
-    pub fn update(&mut self, registry: &mut PipelinesRegistry, queue: &wgpu::Queue, time: f32, cam: &ManualCamera) {
+    pub fn update(
+        &mut self,
+        registry: &mut PipelinesRegistry,
+        queue: &wgpu::Queue,
+        time: f32,
+        cam: &ManualCamera,
+    ) {
         // let _span = info_span!("update_scene").entered();
         // info!("Updating scene");
         let mut views = registry.views(queue);
         let ctx = WorldUpdateCtx {
-            var_update: UpdateCtx {
-                time,
-            },
+            var_update: UpdateCtx { time },
             allocs: &self.allocs,
-            views: views.each_mut().map(
-                |(v, i)| (v.deref_mut(), i.as_deref_mut().unwrap_or(&mut []))
-            ),
+            views: views.each_mut().map(|(v, i)| {
+                (
+                    bytemuck::cast_slice_mut(v.deref_mut()),
+                    bytemuck::cast_slice_mut(i.as_deref_mut().unwrap_or(&mut [])),
+                )
+            }),
             cam: cam.cam,
         };
         self.world.update(ctx);

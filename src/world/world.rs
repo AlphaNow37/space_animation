@@ -1,15 +1,17 @@
-use glam::{Affine3A, Vec3A, Vec2, Mat3A};
+use glam::{Affine3A, Mat3A, Vec2, Vec3A};
 
+use crate::render_registry::alloc::{BuffersAllocPosition, Position};
 use crate::render_registry::pipelines::PipelineLabel;
-use crate::render_registry::alloc::{Position,  BuffersAllocPosition};
 
-use super::{color::Color, material::Material, camera::Camera, register::Register, rotation::Angle};
 use super::variator::{UpdateCtx, Variator};
+use super::{
+    camera::Camera, color::Color, material::Material, register::Register, rotation::Angle,
+};
 
 macro_rules! make_system {
     (
         primitive: $(
-            - 
+            -
             $attr: ident : $prim_ty: ident : $prim_pty: ident
             into $($prim_into: ident),*
         );*
@@ -131,7 +133,7 @@ macro_rules! make_system {
 }
 type F32 = f32;
 make_system!(
-    primitive: 
+    primitive:
     - vec3a: Vec3A: PVec3A into Point;
     - affine3a: Affine3A: PAffine3A into Point;
     - color: Color: PColor into ;
@@ -145,17 +147,15 @@ make_system!(
 );
 
 impl World {
-    pub fn push<T: Push+'static>(&mut self, var: T) -> Ref<T::Label> {
+    pub fn push<T: Push + 'static>(&mut self, var: T) -> Ref<T::Label> {
         let id = var.push(self);
         self.insert_order.push(id.as_ref());
         id
     }
     pub fn allocs(&self, alloc: &mut BuffersAllocPosition) -> Vec<Position> {
-        self.materials.iter()
-            .map(|m| m.alloc(alloc))
-            .collect()
+        self.materials.iter().map(|m| m.alloc(alloc)).collect()
     }
-    pub fn push_mat(&mut self, mat: impl Material+'static) {
+    pub fn push_mat(&mut self, mat: impl Material + 'static) {
         self.materials.push(Box::new(mat));
     }
     fn redraw(&self, ctx: &mut WorldUpdateCtx) {
@@ -165,9 +165,9 @@ impl World {
             mat.put(
                 ctx.var_update,
                 self,
-                &mut glob_vertex[pos.vertex_bound.clone()],
-                pos.vertex_bound.start as u32,
-                &mut &mut glob_index[pos.index_bound.clone()]
+                glob_vertex,
+                pos.vertex_bound.clone(),
+                &mut &mut glob_index[pos.index_bound.clone()],
             )
         }
     }
@@ -184,7 +184,6 @@ impl World {
     pub fn get_cam(&self, idx: isize) -> Camera {
         self.camera.get_mod(idx)
     }
-
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -193,17 +192,20 @@ pub struct Ref<T> {
     index: usize,
 }
 impl<T> Ref<T> {
-    pub fn as_ref<U>(self) -> Ref<U> where T: Into<U> {
+    pub fn as_ref<U>(self) -> Ref<U>
+    where
+        T: Into<U>,
+    {
         Ref {
             index: self.index,
-            label: self.label.into()
+            label: self.label.into(),
         }
     }
 }
 
 pub struct WorldUpdateCtx<'a> {
     pub var_update: UpdateCtx,
-    pub views: [(&'a mut [u8], &'a mut [u8]); PipelineLabel::COUNT],
+    pub views: [(&'a mut [u32], &'a mut [u32]); PipelineLabel::COUNT],
     pub allocs: &'a [Position],
     pub cam: Camera,
 }
@@ -225,15 +227,18 @@ impl Variator for Ref<Point> {
 }
 
 pub trait Push {
-    type Label: Into<Global>+Copy;
+    type Label: Into<Global> + Copy;
     fn push(self, world: &mut World) -> Ref<Self::Label>;
 }
 pub trait PrimPush {
-    type Label: Into<Global>+Copy;
-    fn push(world: &mut World, var: impl Variator<Item=Self>+'static) -> Ref<Self::Label>;
+    type Label: Into<Global> + Copy;
+    fn push(world: &mut World, var: impl Variator<Item = Self> + 'static) -> Ref<Self::Label>;
 }
-impl<T: Variator+'static> Push for T where T::Item: PrimPush {
-    type Label=<T::Item as PrimPush>::Label;
+impl<T: Variator + 'static> Push for T
+where
+    T::Item: PrimPush,
+{
+    type Label = <T::Item as PrimPush>::Label;
     fn push(self, world: &mut World) -> Ref<Self::Label> {
         <T::Item as PrimPush>::push(world, self)
     }

@@ -1,5 +1,5 @@
 use glam::{Affine3A, Mat3, Mat3A, Vec3, Vec3A};
-use crate::{models::put_axis, world::{camera::TrackCamera, color::Color, combinators::Interpolate, material::UniformTri, point::WithRotation, rotation::Angle, shape::{Cube, CubeSphere, Triangle}, variator::Variator, world::World}};
+use crate::{models::put_axis, world::{camera::TrackCamera, color::Color, combinators::Interpolate, material::UniformTri, point::WithRotation, rotation::Angle, shape::{Cube, CubeSphere, Pyramid, Triangle}, variator::Variator, world::World}};
 
 pub fn build(world: &mut World) {
     // let a = world.push(Interpolate(0., 1.).time_mod(1.).time_mul(0.2));
@@ -28,6 +28,16 @@ pub fn build(world: &mut World) {
     world.push_mat(UniformTri {
         shape: Cube(Affine3A::from_translation(Vec3::new(2., -2., 2.))*Affine3A::from_rotation_x(180.0f32.to_radians())),
         color: Color::RED,
-    })
+    });
+
+    world.push_mat(
+        UniformTri {
+            shape: Pyramid(
+                Triangle(Vec3A::new(-5., 5., -5.), Vec3A::new(-4., 5., -5.), Vec3A::new(-5., 4., -6.)),    
+                Vec3A::new(-5., 6., -5.)
+            ),
+            color: Color::DEBUG,
+        }
+    );
 }
 // from_rotation_y(180.0f32.to_radians())
