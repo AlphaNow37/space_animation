@@ -5,6 +5,7 @@ mod resize;
 mod render;
 mod update;
 mod scene;
+mod keybinds;
 
 use camera::ManualCamera;
 use scene::Scene;
@@ -14,6 +15,7 @@ use winit::window::WindowId;
 use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use crate::app::exit::check_exit;
+use crate::app::keybinds::KeyBinds;
 use crate::app::render::check_render;
 use crate::app::resize::check_resize;
 use crate::app::surface_holder::SurfaceHolder;
@@ -34,6 +36,7 @@ fn get_device_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
 }
 
 pub struct App {
+    pub key_binds: KeyBinds,
     pub clock: Clock,
     pub window: Option<SurfaceHolder>,
     pub instance: wgpu::Instance,
@@ -67,6 +70,7 @@ impl ApplicationHandler for App {
         if let Some(holder) = &self.window {
             self.camera.on_event(&event, &holder.window);
         }
+        self.key_binds.process(&event);
     }
     fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
         if let Some(win) = &self.window {
@@ -83,6 +87,7 @@ impl App {
         let adapter = get_adapter(None, &instance);
         let (device, queue) = get_device_queue(&adapter);
         Self {
+            key_binds: KeyBinds::base_binds(),
             clock: Clock::new(),
             window: None,
             adapter,

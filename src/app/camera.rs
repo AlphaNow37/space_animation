@@ -1,34 +1,11 @@
 use glam::{Mat3A, Quat, Vec2, Vec3A};
 use log::info;
+use rand::Rng;
 use tracing::info_span;
 use winit::{dpi::PhysicalPosition, event::{ElementState, KeyEvent, WindowEvent}, keyboard::{KeyCode, PhysicalKey}, window::Window};
 
 use crate::{utils::{macros::array_key, CastInto}, world::camera::Camera};
-
-array_key!(
-    enum MoveKey {
-        Left,
-        Right,
-        Up,
-        Down,
-        Forward,
-        Backward,
-    }
-);
-
-fn key_code_to_key(code: KeyCode) -> Option<MoveKey> {
-    use KeyCode::*;
-    use MoveKey::*;
-    Some(match code {
-        KeyA => Left,
-        KeyD => Right,
-        KeyS => Backward,
-        KeyW => Forward,
-        KeyQ => Down,
-        KeyE => Up,
-        _ => {return None;},
-    })
-}
+use crate::app::keybinds::{KeyBinds, MoveKey};
 
 fn move_key_to_dir(key: MoveKey) -> Vec3A {
     use MoveKey::*;
@@ -44,7 +21,6 @@ fn move_key_to_dir(key: MoveKey) -> Vec3A {
 
 pub struct ManualCamera {
     pub cam: Camera,
-    key_pressed: [bool; MoveKey::COUNT],
     pub current_cam_idx: isize,
     win_size: Vec2,
     cursor_locked: bool,
@@ -53,7 +29,6 @@ impl ManualCamera {
     pub fn new() -> Self {
         Self {
             cam: Camera::default(),
-            key_pressed: [false; MoveKey::COUNT],
             current_cam_idx: 0,
             win_size: Vec2::ONE,
             cursor_locked: false,
@@ -62,8 +37,15 @@ impl ManualCamera {
     fn reset(&mut self) {
         info!("Reseting camera");
         self.cam = Camera::default();
-        self.cam.pos.matrix3 *= 2.;
         self.current_cam_idx = 0;
+    }
+    fn reset_current(&mut self) {
+        self.current_cam_idx = 0;
+        info!("Reseted current camera to 0");
+    }
+    fn rng_current(&mut self) {
+        self.current_cam_idx = rand::thread_rng().gen_range(0..100_000_000_000);
+        info!("Randomed current camera to {}", self.current_cam_idx);
     }
     fn next_current(&mut self, off: isize) {
         self.current_cam_idx += off;
@@ -97,44 +79,39 @@ impl ManualCamera {
                 win.set_cursor_position(PhysicalPosition::new(self.win_size.x/2., self.win_size.y/2.)).unwrap();
             }
         }
-        if let WindowEvent::KeyboardInput {
-            event: KeyEvent {
-                physical_key: PhysicalKey::Code(code),
-                repeat: false,
-                state,
-                ..
-            },
-            ..
-        } = event {
-            if let Some(mk) = key_code_to_key(*code) {
-                self.key_pressed[mk as usize] = state.is_pressed();
-            }
-        }
-        if let WindowEvent::KeyboardInput { event: KeyEvent { physical_key: PhysicalKey::Code(code), state: ElementState::Pressed, .. }, .. } = event {
-            let _span = info_span!("camera").entered();
-            match code {
-                KeyCode::KeyR => self.reset(),
-                KeyCode::KeyL => self.next_current(-1),
-                KeyCode::Semicolon => self.next_current(1), // english keyboard is disgusting, why the fuck is semicolon here ?
-                KeyCode::KeyU => self.toggle_lock(win),
-                _ => {},
-            }
-        }
     }
-    pub fn update(&mut self, dt: f32) {
+    pub fn update(&mut self, dt: f32, win: &Window, binds: &KeyBinds) {
+        let _span = info_span!("camera").entered();
         for mk in MoveKey::ARRAY {
             let mut off = Vec3A::ZERO;
-            if self.key_pressed[mk as usize] {
+            if binds.camera_moves[mk as usize].is_active() {
                 off += move_key_to_dir(mk) * dt
             }
             self.cam.pos.translation += self.cam.pos.transform_vector3a(off);
             if off != Vec3A::ZERO {
-                let _span = info_span!("camera").entered();
                 info!("Moved camera to {} ({:+})", self.cam.pos.translation, off);
                 // let mat = self.cam.matrix(self.aspect_ratio);
                 // info!("(0., 0., 0.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 0.)), mat.project_point3(Vec3::new(0., 0., 0.)));
                 // info!("(0., 0., 1.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 1.)), mat.project_point3(Vec3::new(0., 0., 1.)));
             }
+        }
+        if binds.camera_change.prev_cam.is_active() {
+            self.next_current(-1);
+        }
+        if binds.camera_change.next_cam.is_active() {
+            self.next_current(1);
+        }
+        if binds.camera_change.reset_cam.is_active() {
+            self.reset_current();
+        }
+        if binds.camera_change.rng_cam.is_active() {
+            self.rng_current();
+        }
+        if binds.camera_change.toggle_lock.is_active() {
+            self.toggle_lock(win);
+        }
+        if binds.camera_change.reset_pos.is_active() {
+            self.reset();
         }
     }
 }

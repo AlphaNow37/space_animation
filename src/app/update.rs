@@ -32,8 +32,8 @@ pub fn check_update(app: &mut App, event: &WindowEvent) {
     // info!("delta={}ms, fps={}, time={}", delta.as_millis(), 1./delta.as_secs_f32(), time); //, app.clock.loop_time);
     app.clock.last_render = now;
 
-    app.camera.update(delta.as_secs_f32());
     if let Some(holder) = &mut app.window {
+        app.camera.update(delta.as_secs_f32(), &holder.window, &app.key_binds);
         holder.registry.set_time(&app.queue, time); //, app.clock.loop_time);
         app.scene.update(&mut holder.registry, &app.queue, time, &app.camera);
     }
