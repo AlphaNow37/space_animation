@@ -40,7 +40,7 @@ macro_rules! tri_builder {
             struct $name<'a> {
                 next_index: u32,
                 vertex: std::slice::ChunksExactMut<'a, u8>,
-                index: std::slice::ChunksExactMut<'a, u8>,
+                index: &'a mut [u8],
                 $(
                     $attr: $ty,
                 )*
@@ -50,7 +50,7 @@ macro_rules! tri_builder {
                     Self {
                         next_index: first_index,
                         vertex: vertex.chunks_exact_mut(std::mem::size_of::<$out>()),
-                        index: index.chunks_exact_mut(4),
+                        index, //: index.chunks_exact_mut(4),
                         $($attr,)*
                     }
                 }
@@ -68,7 +68,14 @@ macro_rules! tri_builder {
                     idx
                 }
                 fn push_index(&mut self, idx: u32) {
-                    self.index.next().unwrap().copy_from_slice(bytemuck::cast_slice(&[idx]));
+                    let a;
+                    (a, self.index) = std::mem::take(&mut self.index).split_at_mut(4);
+                    a.copy_from_slice(&idx.to_be_bytes());
+                }
+                fn push_indexes(&mut self, idxs: &[u32]) {
+                    let a;
+                    (a, self.index) = std::mem::take(&mut self.index).split_at_mut(idxs.len()*4);
+                    a.copy_from_slice(bytemuck::cast_slice(idxs));
                 }
                 fn next_index(&self) -> u32 {
                     self.next_index
