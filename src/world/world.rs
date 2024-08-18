@@ -199,9 +199,6 @@ impl<T> Ref<T> {
             label: self.label.into()
         }
     }
-    // pub unsafe fn new(label: T, index: usize) -> Self {
-    //     Self {label, index}
-    // }
 }
 
 pub struct WorldUpdateCtx<'a> {

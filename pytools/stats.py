@@ -4,6 +4,12 @@ import re
 import itertools
 
 MACRO_USE_RE = re.compile("[a-zA-Z]!")
+def keyworld_pattern(kw):
+    return f"\W{kw}\W"
+UNSAFE_RE = re.compile(keyworld_pattern("unsafe"))
+STRUCT_RE = re.compile(keyworld_pattern("struct"))
+ENUM_RE = re.compile(keyworld_pattern("enum"))
+MACRO_RULE = re.compile(keyworld_pattern("macro_rules!"))
 
 class Stats:
     def __init__(self) -> None:
@@ -16,6 +22,7 @@ class Stats:
         self.mod = 0
         self.struct = 0
         self.enum = 0
+        self.unsafe = 0
         self.file_by_ext = {}
     
     def search(self, path: pathlib.Path):
@@ -28,10 +35,11 @@ class Stats:
             content = path.read_text()
             self.line += content.count("\n")
             self.char += len(content)
-            self.macro_rule += content.count("macro_rules!")
+            self.macro_rule += len(re.findall(MACRO_USE_RE, content))
             self.macro_use += len(re.findall(MACRO_USE_RE, content))
-            self.struct += content.count("struct")
-            self.enum += content.count("enum")
+            self.struct += len(re.findall(STRUCT_RE, content))
+            self.enum += len(re.findall(ENUM_RE, content))
+            self.unsafe += len(re.findall(UNSAFE_RE, content))
         else:
             self.folder += 1
             for sub in path.iterdir():
@@ -48,6 +56,7 @@ class Stats:
         {self.char} chars
         {self.macro_use} macro used, {self.macro_rule} declared
         {self.struct} structs, {self.enum} enums
+        {self.unsafe} unsafe usages
         """).strip())
 
 stats = Stats()
