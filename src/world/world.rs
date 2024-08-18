@@ -161,13 +161,13 @@ impl World {
     fn redraw(&self, ctx: &mut WorldUpdateCtx) {
         for (i, mat) in self.materials.iter().enumerate() {
             let pos = &ctx.allocs[i];
-            let vertex = &mut ctx.views[pos.pipe_label as usize][pos.vertex_bound.start*4..pos.vertex_bound.end*4];
+            let (glob_vertex, glob_index) = &mut ctx.views[pos.pipe_label as usize];
             mat.put(
                 ctx.var_update,
                 self,
-                vertex,
-                pos.index_bound.start as u32,
-                &mut [0; 100],
+                &mut glob_vertex[pos.vertex_bound.clone()],
+                pos.vertex_bound.start as u32,
+                &mut &mut glob_index[pos.index_bound.clone()]
             )
         }
     }
@@ -206,7 +206,7 @@ impl<T> Ref<T> {
 
 pub struct WorldUpdateCtx<'a> {
     pub var_update: UpdateCtx,
-    pub views: [&'a mut [u8]; PipelineLabel::COUNT],
+    pub views: [(&'a mut [u8], &'a mut [u8]); PipelineLabel::COUNT],
     pub allocs: &'a [Position],
     pub cam: Camera,
 }

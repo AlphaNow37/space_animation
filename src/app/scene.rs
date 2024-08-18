@@ -42,7 +42,9 @@ impl Scene {
                 time,
             },
             allocs: &self.allocs,
-            views: views.each_mut().map(|v| v.deref_mut()),
+            views: views.each_mut().map(
+                |(v, i)| (v.deref_mut(), i.as_deref_mut().unwrap_or(&mut []))
+            ),
             cam: cam.cam,
         };
         self.world.update(ctx);

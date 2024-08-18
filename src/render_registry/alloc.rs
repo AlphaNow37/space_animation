@@ -8,8 +8,7 @@ pub struct BuffersAllocPosition {
 }
 impl BuffersAllocPosition {
     pub fn new() -> Self {Self::default()}
-    pub fn get_bytes(&self, pipe: PipelineLabel) -> (usize, usize) {let (v, i) = self.vertex_index[pipe as usize]; (4*v, 4*i)}
-    // size is *4 bytes (u32)
+    pub fn get_size(&self, pipe: PipelineLabel) -> (usize, usize) {self.vertex_index[pipe as usize]}
     pub fn alloc(&mut self, pipe: PipelineLabel, vertex_size: usize, index_size: usize) -> Position {
         let (start_vertex, start_index) = &mut self.vertex_index[pipe as usize];
         let pos = Position {

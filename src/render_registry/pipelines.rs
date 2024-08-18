@@ -8,6 +8,8 @@ pub struct PipeNames {
     pub base_name: &'static str,
     pub render_pipe_layout: &'static str,
     pub render_pipe: &'static str,
+    pub index_buffer: &'static str,
+    pub vertex_buffer: &'static str,
 }
 macro_rules! pipe_names {
     ($name: literal) => {
@@ -15,6 +17,8 @@ macro_rules! pipe_names {
             base_name: $name,
             render_pipe_layout: concat!("Render pipe layout: ", $name),
             render_pipe: concat!("Render pipe: ", $name),
+            index_buffer: concat!("Index buffer: ", $name),
+            vertex_buffer: concat!("Vertex buffer: ", $name),
         }
     };
 }
@@ -61,12 +65,17 @@ impl PipelineLabel {
             Self::UniformTriangle => 16,
         }
     }
+    pub fn require_index(&self) -> bool {
+        match self {
+            Self::UniformTriangle => true,
+        }
+    }
 }
 
 pub struct Pipeline {
     render_pipeline: wgpu::RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
-    // index_buffer: Option<wgpu::Buffer>,
+    index_buffer: Option<wgpu::Buffer>,
     buffer_size: (usize, usize),
     label: PipelineLabel,
 }
@@ -134,15 +143,23 @@ impl Pipeline {
         });
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("vertex buffer"),
+            label: Some(names.vertex_buffer),
             size: buffer_size.0 as wgpu::BufferAddress,
             mapped_at_creation: false,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
+        let index_buffer = label.require_index().then(|| {
+            device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some(names.index_buffer),
+                size: buffer_size.0 as wgpu::BufferAddress,
+                mapped_at_creation: false,
+                usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+            })
+        });
 
         Self {
             render_pipeline,
-            // index_buffer: None,
+            index_buffer,
             vertex_buffer,
             buffer_size,
             label,
@@ -151,18 +168,25 @@ impl Pipeline {
     pub fn render(&self, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.draw(0..(self.buffer_size.0/self.label.vertex_size()) as u32, 0..1);
-        // if let Some(index) = &self.index_buffer {
-        //
-        // } else {
-        //
-        // }
+        if let Some(index_buffer) = &self.index_buffer {
+            render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+            render_pass.draw_indexed(0..(self.buffer_size.1/4) as u32, 0, 0..1);
+        } else {
+            render_pass.draw(0..(self.buffer_size.0/self.label.vertex_size()) as u32, 0..1);
+        }
     }
-    pub fn view<'a>(&'a self, queue: &'a wgpu::Queue) -> wgpu::QueueWriteBufferView<'a> {
-        queue.write_buffer_with(
-            &self.vertex_buffer,
-            0,
-            (self.buffer_size.0 as u64).try_into().unwrap(),
-        ).unwrap()
+    pub fn view<'a>(&'a self, queue: &'a wgpu::Queue) -> (wgpu::QueueWriteBufferView<'a>, Option<wgpu::QueueWriteBufferView<'a>>) {
+        (
+            queue.write_buffer_with(
+                &self.vertex_buffer,
+                0,
+                (self.buffer_size.0 as u64).try_into().unwrap(),
+            ).unwrap(),
+            self.index_buffer.as_ref().map(|index_buffer| queue.write_buffer_with(
+                &index_buffer,
+                0,
+                (self.buffer_size.0 as u64).try_into().unwrap(),
+            ).unwrap())
+        )
     }
 }

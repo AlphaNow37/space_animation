@@ -16,7 +16,8 @@ const CUBE_INDEX: [u32; 36] = [
 ];
 
 pub trait TriShape {
-    fn size(&self) -> (usize, usize);
+    fn nb_index(&self) -> usize;
+    fn nb_vertex(&self) -> usize;
     fn put(&self, builder: &mut impl TriMeshBuilder, ctx: UpdateCtx, world: &World);
 }
 
@@ -26,8 +27,11 @@ pub trait BorderShape {
 }
 pub struct Triangle<P1, P2, P3>(pub P1, pub P2, pub P3);
 impl<P1: Variator<Item=Vec3A>, P2: Variator<Item=Vec3A>, P3: Variator<Item=Vec3A>> TriShape for Triangle<P1, P2, P3> {
-    fn size(&self) -> (usize, usize) {
-        (3, 3)
+    fn nb_index(&self) -> usize {
+        3
+    }
+    fn nb_vertex(&self) -> usize {
+        3
     }
     fn put(&self, builder: &mut impl TriMeshBuilder, ctx: UpdateCtx, world: &World) {
         builder.push_indexes_offset(&mut [0, 1, 2]);
@@ -49,8 +53,11 @@ impl<P1, P2, P3> BorderShape for Triangle<P1, P2, P3> {
 
 pub struct Cube<C>(pub C);
 impl<C: Variator<Item=Affine3A>> TriShape for Cube<C> {
-    fn size(&self) -> (usize, usize) {
-        (8, 36)
+    fn nb_index(&self) -> usize {
+        36
+    }
+    fn nb_vertex(&self) -> usize {
+        8
     }
     fn put(&self, builder: &mut impl TriMeshBuilder, ctx: UpdateCtx, world: &World) {
         let tr = self.0.update(ctx, world);
@@ -66,17 +73,19 @@ impl<C: Variator<Item=Affine3A>> TriShape for Cube<C> {
 
 pub struct Pyramid<A, S>(pub A, pub S);
 impl<A: TriShape+BorderShape, S: Variator<Item=Vec3A>> TriShape for Pyramid<A, S> {
-    fn size(&self) -> (usize, usize) {
-        let (vs, is) = self.0.size();
-        let add_index = self.0.border_sizes()
+    fn nb_vertex(&self) -> usize {
+        self.0.nb_vertex() + 1
+    }
+    fn nb_index(&self) -> usize {
+        self.0.nb_index() 
+        + self.0.border_sizes()
             .as_ref()
             .into_iter()
             .map(|n| match n {
                 0 | 1 => 0,
                 n => 3*n,
             })
-            .sum::<usize>();
-        (vs + 1, is + add_index)
+            .sum::<usize>()
     }
     fn put(&self, builder: &mut impl TriMeshBuilder, ctx: UpdateCtx, world: &World) {
         let top = builder.push_vertex(self.1.update(ctx, world));

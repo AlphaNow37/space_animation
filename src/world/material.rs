@@ -5,13 +5,6 @@ use crate::render_registry::{alloc::{BuffersAllocPosition, Position}, pipelines:
 
 use super::{color::Color, shape::TriShape, variator::{UpdateCtx, Variator}, world::World};
 
-// fn placer_func<'a, T, U: bytemuck::NoUninit+bytemuck::AnyBitPattern>(array: &'a mut [u32], mut f: impl FnMut(T)->U+'a) -> impl FnMut(T)+'a {
-//     let mut it = bytemuck::cast_slice_mut(array).iter_mut();
-//     move |v| {
-//         *it.next().unwrap() = f(v)
-//     }
-// }
-
 #[allow(dead_code)]
 pub trait TriMeshBuilder {
     /// Push multiple vertex
@@ -90,11 +83,14 @@ tri_builder!(
 
 pub trait Material {
     fn pipeline(&self) -> PipelineLabel;
-    fn size_u32(&self) -> (usize, usize);
+    fn nb_index(&self) -> usize;
+    fn vertex_bytes(&self) -> usize;
     fn alloc(&self, alloc: &mut BuffersAllocPosition) -> Position {
-        let pipe = self.pipeline();
-        let (vertex_size, index_size) = self.size_u32();
-        alloc.alloc(pipe, vertex_size, index_size)
+        alloc.alloc(
+            self.pipeline(),
+            self.vertex_bytes(),
+            self.nb_index()*4,
+        )
     }
     fn put(&self, ctx: UpdateCtx, world: &World, vertex: &mut [u8], index_offset: u32, index: &mut [u8]);
 }
@@ -107,12 +103,15 @@ impl<S: TriShape, C: Variator<Item=Color>> Material for UniformTri<S, C> {
     fn pipeline(&self) -> PipelineLabel {
         PipelineLabel::UniformTriangle
     }
-    fn size_u32(&self) -> (usize, usize) {
-        let (vertex_count, index_count) = self.shape.size();
-        (vertex_count * UniformTriangleVertex::SIZE_U32, index_count)
+    fn nb_index(&self) -> usize {
+        self.shape.nb_index()
+    }
+    fn vertex_bytes(&self) -> usize {
+        self.shape.nb_vertex() * UniformTriangleVertex::SIZE
     }
     fn put(&self, ctx: UpdateCtx, world: &World, vertex: &mut [u8], index_offset: u32, index: &mut [u8]) {
         let col = self.color.update(ctx, world).as_u32();
-        self.shape.put(&mut UniformTriBuilder::new(vertex, index, index_offset, col), ctx, world);
+        let mut builder = UniformTriBuilder::new(vertex, index, index_offset/UniformTriangleVertex::SIZE as u32, col);
+        self.shape.put(&mut builder, ctx, world);
     }
 }
