@@ -21,11 +21,11 @@ fn vs_main(
     in: VertexInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-    out.clip_position = camera * vec4<f32>(in.pos.xyz, 1.0);
+    out.clip_position = camera * vec4<f32>(in.pos, 1.0);
     out.col = in.col;
     return out;
 }
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(in.col.xyz, 1.);
+    return in.col;
 }

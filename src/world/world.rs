@@ -1,9 +1,9 @@
-use glam::{Affine3A, Vec3A, Vec2};
+use glam::{Affine3A, Vec3A, Vec2, Mat3A};
 
 use crate::render_registry::pipelines::PipelineLabel;
 use crate::render_registry::alloc::{Position,  BuffersAllocPosition};
 
-use super::{color::Color, material::Material, camera::Camera, register::Register};
+use super::{color::Color, material::Material, camera::Camera, register::Register, rotation::Angle};
 use super::variator::{UpdateCtx, Variator};
 
 macro_rules! make_system {
@@ -138,6 +138,8 @@ make_system!(
     - f32: F32: PF32 into ;
     - vec2: Vec2: PVec2 into ;
     - camera: Camera: PCamera into Point;
+    - angle: Angle: PAngle into ;
+    - mat3a: Mat3A: PMat3a into ;
     composite:
     - Point = Vec3A, Affine3A, Camera into ;
 );

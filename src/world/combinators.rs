@@ -1,47 +1,53 @@
-use std::ops::{Mul, Add};
+use core::f32;
+use std::ops::Mul;
 
-use super::variator::{UpdateCtx, Variator};
+use crate::utils::VectorSpace;
+
+use super::variator::{new_typed_variator, UpdateCtx, Variator};
 
 
-pub struct Interpolate<A, B>(pub A, pub B);
-impl<A: Variator, B: Variator<Item=A::Item>> Variator for Interpolate<A, B>
-    where A::Item: Add<Output=A::Item> + Mul<f32, Output=A::Item>
-{
-    type Item = A::Item;
-    fn update(&self, ctx: super::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
-        self.0.update(ctx, world) * ctx.time + self.1.update(ctx, world) * (1.-ctx.time)
-    }
+new_typed_variator!(
+    [ctx, world],
+    Interpolate(A, B: A::Item) [A::Item: VectorSpace] => A::Item {A.mul(1.-ctx.time).add(B.mul(ctx.time))}
+);
+// pub struct Interpolate<A, B>(pub A, pub B);
+// impl<A: Variator, B: Variator<Item=A::Item>> Variator for Interpolate<A, B>
+//     where A::Item: VectorSpace
+// {
+//     type Item = A::Item;
+//     fn update(&self, ctx: super::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
+//         self.0.update(ctx, world).mul(1.-ctx.time).add(self.1.update(ctx, world).mul(ctx.time))
+//     }
+// }
+
+macro_rules! time_modifier {
+    ($name: ident ($($ty: ty),* $(,)?): $time: ident, $arg: ident => $expr: expr) => {
+        #[derive(Clone, Copy, Debug, PartialEq)]
+        pub struct $name<V>(pub V, pub ($($ty,)*));
+        impl<V: Variator> Variator for $name<V> {
+            type Item = V::Item;
+            fn update(&self, ctx: super::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
+                let $time = ctx.time;
+                let $arg = self.1;
+                self.0.update(UpdateCtx {
+                    time: $expr,
+                    ..ctx
+                }, world)
+            }
+        }
+    };
 }
+time_modifier!(TimeOffset(f32): t,o => t+o.0);
+time_modifier!(TimeMul(f32): t,m => t*m.0);
+time_modifier!(TimeMod(f32): t,m => t%m.0);
+time_modifier!(TimeSin(f32): t,p => (t*p.0*f32::consts::TAU).sin());
+time_modifier!(TimeLea(f32, f32): t,a => t.mul_add(a.0, a.1));
 
-pub struct TimeOffset<V>(pub V, pub f32);
-impl<V: Variator> Variator for TimeOffset<V> {
-    type Item = V::Item;
-    fn update(&self, ctx: super::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
-        self.0.update(UpdateCtx {
-            time: ctx.time + self.1,
-            ..ctx
-        }, world)
-    }
-}
 
-pub struct TimeMul<V>(pub V, pub f32);
-impl<V: Variator> Variator for TimeMul<V> {
-    type Item = V::Item;
-    fn update(&self, ctx: super::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
-        self.0.update(UpdateCtx {
-            time: ctx.time * self.1,
-            ..ctx
-        }, world)
-    }
-}
-
-pub struct TimeMod<V>(pub V, pub f32);
-impl<V: Variator> Variator for TimeMod<V> {
-    type Item = V::Item;
-    fn update(&self, ctx: super::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
-        self.0.update(UpdateCtx {
-            time: ctx.time % self.1,
-            ..ctx
-        }, world)
+pub struct MulV<A, B>(pub A, pub B);
+impl<A: Variator, B: Variator> Variator for MulV<A, B> where A::Item: Mul<B::Item> {
+    type Item = <A::Item as Mul<B::Item>>::Output;
+    fn update(&self, ctx: UpdateCtx, world: &super::world::World) -> Self::Item {
+        self.0.update(ctx, world) * self.1.update(ctx, world)
     }
 }

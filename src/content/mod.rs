@@ -1,24 +1,23 @@
-use glam::Vec3A;
-use crate::world::{color::Color, combinators::Interpolate, material::UniformTri, pack::Pack3, shape::Triangle, variator::Variator, world::World};
+use glam::{Affine3A, Mat3, Mat3A, Vec3, Vec3A};
+use crate::{models::put_axis, world::{camera::TrackCamera, combinators::Interpolate, point::WithRotation, rotation::Angle, variator::Variator, world::World}};
 
 pub fn build(world: &mut World) {
-    let a = world.push(Interpolate(0., 1.).time_mod(1.).time_mul(0.2));
-    world.push_mat(
-        UniformTri {
-            shape: Triangle(Vec3A::new(0., 0., 0.), Vec3A::new(0., 1., 0.), Vec3A::new(1., 0., 0.)),
-            color: Color::RED,
-        }
+    // let a = world.push(Interpolate(0., 1.).time_mod(1.).time_mul(0.2));
+
+    // put_axis(world, Affine3A::IDENTITY);
+
+    put_axis(world, Interpolate(
+        Affine3A::IDENTITY,
+        Affine3A::from_mat3_translation(Mat3::from_cols(Vec3::X, Vec3::Z, -Vec3::Y), Vec3::Y),
+    ).time_lea(0.5, 0.5).time_sin(0.05));
+
+    put_axis(world, Affine3A::from_translation(Vec3::new(5., 5., 5.)));
+
+    let pos = Interpolate(
+        Vec3A::new(0.5, 0.5, 0.),
+        Vec3A::new(0.5, 0.5, 10.),
     );
-    world.push_mat(
-        UniformTri {
-            shape: Triangle(Vec3A::new(0., 0., 0.), Vec3A::new(0., 0., 1.), Vec3A::new(1., 0., 0.)),
-            color: Color::GREEN,
-        }
-    );
-    world.push_mat(
-        UniformTri {
-            shape: Triangle(Vec3A::new(0., 0., 0.), Vec3A::new(0., 0., 1.), Vec3A::new(0., 1., 0.)),
-            color: Color::BLUE,
-        }
-    );
+    let pos = WithRotation(pos, Mat3A::from_cols(-Vec3A::X, -Vec3A::Y, -Vec3A::Z)).time_mod(1.).time_mul(0.1);
+    world.push(TrackCamera(pos, Angle::from_deg(90.)));
 }
+// from_rotation_y(180.0f32.to_radians())

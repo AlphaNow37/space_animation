@@ -5,7 +5,7 @@ use super::{variator::{UpdateCtx, Variator}, world::World};
 pub struct Register<T> {
     vars: Vec<(Cell<T>, Box<dyn Variator<Item=T>>)>,
 }
-impl<T: Copy + Default> Register<T> {
+impl<T: Copy + Default + 'static> Register<T> {
     pub fn new() -> Self {
         Self {
             vars: Vec::new()

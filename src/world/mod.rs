@@ -8,3 +8,6 @@ pub mod combinators;
 pub mod pack;
 pub mod camera;
 pub mod register;
+pub mod rotation;
+pub mod curve;
+pub mod point;

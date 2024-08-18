@@ -6,6 +6,7 @@ mod world;
 mod render_registry;
 mod utils;
 mod content;
+mod models;
 
 fn main() {
     logger::init_logger();

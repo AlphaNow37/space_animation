@@ -64,7 +64,9 @@ impl ApplicationHandler for App {
         check_resize(self, &event);
         check_update(self, &event);
         check_render(self, &event);
-        self.camera.on_event(&event);
+        if let Some(holder) = &self.window {
+            self.camera.on_event(&event, &holder.window);
+        }
     }
     fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
         if let Some(win) = &self.window {

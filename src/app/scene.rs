@@ -46,6 +46,6 @@ impl Scene {
             cam: cam.cam,
         };
         self.world.update(ctx);
-        registry.set_camera(queue, &self.world.get_cam(cam.current_cam_idx))
+        registry.set_camera(queue, self.world.get_cam(cam.current_cam_idx).matrix(cam.aspect_ratio()))
     }
 }

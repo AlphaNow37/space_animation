@@ -9,6 +9,7 @@ macro_rules! consts_rgb {
     ) => {
         impl Color {
             $(
+                #[allow(dead_code)]
                 pub const $name: Self = Self::from_rgb($r, $g, $b);
             )*
         }
