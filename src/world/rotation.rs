@@ -4,6 +4,7 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 /// A radian angle
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Default)]
 pub struct Angle(f32);
+#[allow(dead_code)]
 impl Angle {
     pub fn from_rad(rad: f32) -> Self {Self(rad)}
     pub fn from_deg(deg: f32) -> Self {Self(deg.to_radians())}

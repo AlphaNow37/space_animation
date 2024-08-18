@@ -42,7 +42,7 @@ impl Scene {
                 time,
             },
             allocs: &self.allocs,
-            views: views.each_mut().map(|v| bytemuck::cast_slice_mut(v.deref_mut())),
+            views: views.each_mut().map(|v| v.deref_mut()),
             cam: cam.cam,
         };
         self.world.update(ctx);
