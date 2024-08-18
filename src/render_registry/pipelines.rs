@@ -24,6 +24,8 @@ macro_rules! pipe_names {
 }
 pub(crate) use pipe_names;
 
+use super::vertex::VertexLike;
+
 array_key!(
     pub enum PipelineLabel {
         UniformTriangle,
@@ -62,7 +64,7 @@ impl PipelineLabel {
     }
     pub fn vertex_size(&self) -> usize {
         match self {
-            Self::UniformTriangle => 16,
+            Self::UniformTriangle => UniformTriangleVertex::SIZE,
         }
     }
     pub fn require_index(&self) -> bool {

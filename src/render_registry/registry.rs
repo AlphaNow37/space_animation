@@ -1,3 +1,4 @@
+use glam::Vec3A;
 use tracing::info_span;
 use log::info;
 use crate::render_registry::bind_groups::{Bindings, EntryType};
@@ -70,6 +71,9 @@ impl PipelinesRegistry {
     }
     pub fn set_camera(&self, queue: &wgpu::Queue, matrix: glam::Mat4) {
         self.bindings.write(queue, EntryType::Camera, &matrix.to_cols_array());
+    }
+    pub fn set_eye_dir(&self, queue: &wgpu::Queue, dir: Vec3A) {
+        self.bindings.write(queue, EntryType::EyeDir, &dir.to_array());
     }
     pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [(wgpu::QueueWriteBufferView<'a>, Option<wgpu::QueueWriteBufferView<'a>>); PipelineLabel::COUNT] {
         PipelineLabel::ARRAY

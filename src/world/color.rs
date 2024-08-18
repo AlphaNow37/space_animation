@@ -2,6 +2,8 @@ use std::ops::{Add, Mul};
 
 use glam::Vec3A;
 
+use crate::utils::{compress_vec4_u, CompressedVec};
+
 macro_rules! consts_rgb {
     (
         $($name: ident = $r: expr, $g: expr, $b: expr);*
@@ -20,8 +22,8 @@ macro_rules! consts_rgb {
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct Color(Vec3A);
 impl Color {
-    pub fn as_u32(self) -> u32 {
-        u32::from_le_bytes(self.0.extend(1.).to_array().map(|c| c.clamp(0., 1.).mul(255.) as u8))
+    pub fn as_array(self) -> CompressedVec {
+        compress_vec4_u(self.0.extend(1.0))
     }
     pub const fn from_rgb(r: f32, g: f32, b: f32) -> Self {
         // let vec = Vec3A::new(r, g, b);

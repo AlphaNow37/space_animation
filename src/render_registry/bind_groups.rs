@@ -6,6 +6,7 @@ array_key!(
     pub enum EntryType {
         Time,
         Camera,
+        EyeDir,
     }
 );
 
@@ -15,12 +16,14 @@ impl EntryType {
         match self {
             Self::Time => ShaderStages::FRAGMENT,
             Self::Camera => ShaderStages::VERTEX,
+            Self::EyeDir => ShaderStages::FRAGMENT,
         }
     }
     fn min_size(&self) -> u64 {
         4*match self {
             Self::Time => 1,
             Self::Camera => 16,
+            Self::EyeDir => 3,
         }
     }
 }

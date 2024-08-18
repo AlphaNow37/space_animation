@@ -62,6 +62,7 @@ impl ManualCamera {
     fn reset(&mut self) {
         info!("Reseting camera");
         self.cam = Camera::default();
+        self.cam.pos.matrix3 *= 2.;
         self.current_cam_idx = 0;
     }
     fn next_current(&mut self, off: isize) {
