@@ -1,7 +1,6 @@
 use glam::{Mat3A, Quat, Vec2, Vec3A};
-use log::info;
 use rand::Rng;
-use tracing::info_span;
+use tracing::{info_span, info};
 use winit::{dpi::PhysicalPosition, event::{ElementState, KeyEvent, WindowEvent}, keyboard::{KeyCode, PhysicalKey}, window::Window};
 
 use crate::{utils::{macros::array_key, CastInto}, world::camera::Camera};

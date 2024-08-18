@@ -42,6 +42,10 @@ make_folder!(CameraChanges:
     toggle_lock = KeyBind::new(PressState::Pressed, vec![KeyCode::KeyU]);
 );
 
+make_folder!(WindowDebug:
+    show_fps = KeyBind::new(PressState::Active, vec![KeyCode::F3, KeyCode::KeyF])
+);
+
 array_key!(
     pub enum MoveKey {
         Left,
@@ -159,13 +163,15 @@ impl KeyBind {
 pub struct KeyBinds {
     pub camera_moves: [KeyBind; MoveKey::COUNT],
     pub camera_change: CameraChanges,
+    pub window_debug: WindowDebug,
 }
 impl KeyBinds {
     fn bind_map(&mut self, f: &impl Fn(&mut KeyBind)) {
         for b in &mut self.camera_moves {
             f(b)
         }
-        self.camera_change.bind_map(f)
+        self.camera_change.bind_map(f);
+        self.window_debug.bind_map(f);
     }
     pub fn process(&mut self, event: &WindowEvent) {
         if let WindowEvent::KeyboardInput {
@@ -197,6 +203,7 @@ impl KeyBinds {
                 MoveKey::Up => KeyCode::KeyE,
             }])),
             camera_change: CameraChanges::new(),
+            window_debug: WindowDebug::new(),
         }
     }
 }

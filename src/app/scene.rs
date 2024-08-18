@@ -1,7 +1,6 @@
 use std::ops::DerefMut;
 
-use log::info;
-use tracing::info_span;
+use tracing::{info_span, info};
 // use crate::app::App;
 use crate::{
     render_registry::{

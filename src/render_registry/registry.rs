@@ -1,6 +1,5 @@
 use glam::Vec3A;
-use tracing::info_span;
-use log::info;
+use tracing::{info_span, info};
 use crate::render_registry::bind_groups::{Bindings, EntryType};
 use crate::render_registry::pipelines::{Pipeline, PipelineLabel};
 use crate::render_registry::shaders::Shaders;

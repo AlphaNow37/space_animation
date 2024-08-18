@@ -1,5 +1,5 @@
 use std::time::Instant;
-use tracing::info_span;
+use tracing::{info, info_span};
 use winit::event::WindowEvent;
 use crate::app::App;
 
@@ -29,7 +29,9 @@ pub fn check_update(app: &mut App, event: &WindowEvent) {
     let now = Instant::now();
     let delta = now - app.clock.last_render;
     let time = (now - app.clock.startup).as_secs_f32(); //.rem(app.clock.loop_time);
-    // info!("delta={}ms, fps={}, time={}", delta.as_millis(), 1./delta.as_secs_f32(), time); //, app.clock.loop_time);
+    if app.key_binds.window_debug.show_fps.is_active() {
+        info!("delta={}ms, fps={}, time={}", delta.as_millis(), 1./delta.as_secs_f32(), time); //, app.clock.loop_time);
+    }
     app.clock.last_render = now;
 
     if let Some(holder) = &mut app.window {
