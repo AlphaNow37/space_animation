@@ -61,13 +61,14 @@ impl<C: Variator<Item=Affine3A>> TriShape for Cube<C> {
     }
     fn put(&self, builder: &mut impl TriMeshBuilder, ctx: UpdateCtx, world: &World) {
         let tr = self.0.update(ctx, world);
-        for i in 0..8 {
-            let x = [0., 1.][i & 1];
-            let y = [0., 1.][i & 2];
-            let z = [0., 1.][i & 4];
-            builder.push_vertex(tr.transform_point3a(Vec3A::new(x, y, z)));
-        }
         builder.push_indexes_offset(&mut CUBE_INDEX);
+        for x in [0., 1.] {
+            for y in [0., 1.] {
+                for z in [0., 1.] {
+                    builder.push_vertex(tr.transform_point3a(Vec3A::new(x, y, z)));
+                }
+            }
+        }
     }
 }
 
