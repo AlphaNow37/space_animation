@@ -12,7 +12,7 @@ winit = "0.30.4"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 pollster = "0.3.0"
-log = "0.4.22"
+#log = "0.4.22"
 #strum = { version = "0.26" }
 #strum_macros = "0.26"
 #test
