@@ -1,6 +1,9 @@
 use glam::{Affine3A, Mat4};
 
-use super::{rotation::Angle, variator::Variator};
+use crate::world::variators::variator::Variator;
+use crate::world::primitives::angle::Angle;
+use crate::world::variators::variator::UpdateCtx;
+use crate::world::world::World;
 
 
 #[derive(Clone, Copy, Debug)]
@@ -26,14 +29,14 @@ impl Camera {
 pub struct GetManualCamera;
 impl Variator for GetManualCamera {
     type Item = Camera;
-    fn update(&self, _ctx: super::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
+    fn update(&self, _ctx: UpdateCtx, world: &World) -> Self::Item {
         world.settings.cam_settings
     }
 }
 pub struct TrackCamera<P, F>(pub P, pub F);
 impl<P: Variator<Item=Affine3A>, F: Variator<Item=Angle>> Variator for TrackCamera<P, F> {
     type Item = Camera;
-    fn update(&self, ctx: super::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
+    fn update(&self, ctx: UpdateCtx, world: &World) -> Self::Item {
         Camera {
             pos: self.0.update(ctx, world),
             fov: self.1.update(ctx, world),

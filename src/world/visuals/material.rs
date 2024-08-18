@@ -6,13 +6,13 @@ use crate::render_registry::{
     vertex::UniformTriangleVertex,
 };
 
-use super::{
-    color::Color,
-    mesh_builder::BaseTriMeshBuilder,
-    shape::TriShape,
-    variator::{UpdateCtx, Variator},
+use crate::world::{
+    primitives::color::Color,
+    visuals::mesh_builder::BaseTriMeshBuilder,
+    variators::variator::{UpdateCtx, Variator},
     world::World,
 };
+use crate::world::visuals::shape::TriShape;
 
 pub trait Material {
     fn pipeline(&self) -> PipelineLabel;

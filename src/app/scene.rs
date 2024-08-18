@@ -8,7 +8,7 @@ use crate::{
         registry::PipelinesRegistry,
     },
     world::{
-        variator::UpdateCtx,
+        variators::variator::UpdateCtx,
         world::{World, WorldUpdateCtx},
     },
 };
@@ -16,7 +16,7 @@ use crate::{
 use super::camera::ManualCamera;
 
 fn init_world(world: &mut World) {
-    world.push(crate::world::camera::GetManualCamera);
+    world.push(crate::world::primitives::camera::GetManualCamera);
 }
 
 pub struct Scene {

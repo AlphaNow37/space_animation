@@ -2,7 +2,7 @@ use glam::{Affine3A, Vec3A};
 
 use crate::render_registry::vertex::{Normal, TriVertex};
 
-use super::{mesh_builder::TriMeshBuilder, variator::{UpdateCtx, Variator}, world::World};
+use crate::world::{visuals::mesh_builder::TriMeshBuilder, variators::variator::{UpdateCtx, Variator}, world::World};
 
 pub trait TriShape {
     const NB_INDEX: usize;

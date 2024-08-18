@@ -1,7 +1,9 @@
 
 use glam::{Affine3A, Vec3A};
 
-use crate::world::{color::Color, material::UniformTri, point::{ProjectPoint, Translation}, shape::Triangle, variator::Variator, world::World};
+use crate::world::{primitives::color::Color, point::{ProjectPoint, Translation}, variators::variator::Variator, world::World};
+use crate::world::visuals::material::UniformTri;
+use crate::world::visuals::shape::Triangle;
 
 pub fn put_axis(world: &mut World, pos: impl Variator<Item=Affine3A>+Copy) {
     let or = Translation(pos);

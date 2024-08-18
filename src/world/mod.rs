@@ -1,14 +1,8 @@
 pub mod world;
-pub mod variator;
-pub mod material;
-pub mod color;
-pub mod shape;
 pub mod surface;
-pub mod combinators;
 pub mod pack;
-pub mod camera;
 pub mod register;
-pub mod rotation;
-pub mod curve;
 pub mod point;
-pub mod mesh_builder;
+pub mod primitives;
+pub mod variators;
+pub mod visuals;

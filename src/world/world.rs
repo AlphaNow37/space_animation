@@ -2,10 +2,13 @@ use glam::{Affine3A, Mat3A, Vec2, Vec3A};
 
 use crate::render_registry::alloc::{BuffersAllocPosition, Position};
 use crate::render_registry::pipelines::PipelineLabel;
+use crate::world::primitives::camera::Camera;
+use crate::world::primitives::angle::Angle;
+use crate::world::visuals::material::Material;
 
-use super::variator::{UpdateCtx, Variator};
+use super::variators::variator::{UpdateCtx, Variator};
 use super::{
-    camera::Camera, color::Color, material::Material, register::Register, rotation::Angle,
+    primitives::color::Color, register::Register,
 };
 
 macro_rules! make_system {
@@ -134,16 +137,17 @@ macro_rules! make_system {
 type F32 = f32;
 make_system!(
     primitive:
-    - vec3a: Vec3A: PVec3A into Point;
-    - affine3a: Affine3A: PAffine3A into Point;
+    - vec3a: Vec3A: PVec3A into ;
+    - affine3a: Affine3A: PAffine3A into ;
     - color: Color: PColor into ;
     - f32: F32: PF32 into ;
     - vec2: Vec2: PVec2 into ;
-    - camera: Camera: PCamera into Point;
+    - camera: Camera: PCamera into ;
     - angle: Angle: PAngle into ;
     - mat3a: Mat3A: PMat3a into ;
     composite:
-    - Point = Vec3A, Affine3A, Camera into ;
+    // composite:
+    // - Point = Vec3A, Affine3A, Camera into ;
 );
 
 impl World {
@@ -191,8 +195,8 @@ pub struct Ref<T> {
     label: T,
     index: usize,
 }
-impl<T> Ref<T> {
-    pub fn as_ref<U>(self) -> Ref<U>
+impl<T: Copy> Ref<T> {
+    pub fn as_ref<U>(&self) -> Ref<U>
     where
         T: Into<U>,
     {
@@ -215,16 +219,16 @@ pub struct WorldSettings {
     pub cam_settings: Camera,
 }
 
-impl Variator for Ref<Point> {
-    type Item = Vec3A;
-    fn update(&self, _ctx: UpdateCtx, world: &World) -> Self::Item {
-        match self.label {
-            Point::Vec3A => world.vec3a.get(self.index),
-            Point::Affine3A => world.affine3a.get(self.index).translation,
-            Point::Camera => world.camera.get(self.index).pos.translation,
-        }
-    }
-}
+// impl Variator for Ref<Point> {
+//     type Item = Vec3A;
+//     fn update(&self, _ctx: UpdateCtx, world: &World) -> Self::Item {
+//         match self.label {
+//             Point::Vec3A => world.vec3a.get(self.index),
+//             Point::Affine3A => world.affine3a.get(self.index).translation,
+//             Point::Camera => world.camera.get(self.index).pos.translation,
+//         }
+//     }
+// }
 
 pub trait Push {
     type Label: Into<Global> + Copy;

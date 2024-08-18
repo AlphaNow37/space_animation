@@ -2,7 +2,7 @@
 
 use glam::{Affine3A, Mat3A, Mat4, Quat, Vec2, Vec3A, Vec4};
 
-use crate::world::color::Color;
+use crate::world::primitives::color::Color;
 
 
 // Can't use generic because of other impls...

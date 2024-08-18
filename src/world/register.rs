@@ -1,6 +1,6 @@
 use std::cell::Cell;
 
-use super::{variator::{UpdateCtx, Variator}, world::World};
+use super::{variators::variator::{UpdateCtx, Variator}, world::World};
 
 pub struct Register<T> {
     vars: Vec<(Cell<T>, Box<dyn Variator<Item=T>>)>,

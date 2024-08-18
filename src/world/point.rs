@@ -1,6 +1,6 @@
 use glam::{Affine3A, Mat3A, Vec3A};
 
-use super::variator::{new_typed_variator, Variator};
+use super::variators::variator::{new_typed_variator, Variator};
 
 new_typed_variator!(
     WithRotation(P: Vec3A, R: Mat3A) => Affine3A {Affine3A {translation: P, matrix3: R}}
