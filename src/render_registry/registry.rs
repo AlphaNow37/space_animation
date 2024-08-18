@@ -3,6 +3,7 @@ use log::info;
 use crate::render_registry::bind_groups::{Bindings, EntryType};
 use crate::render_registry::pipelines::{Pipeline, PipelineLabel};
 use crate::render_registry::shaders::Shaders;
+use crate::world::camera::Camera;
 
 use super::alloc::BuffersAllocPosition;
 use super::depth::DepthBuffer;
@@ -67,6 +68,9 @@ impl PipelinesRegistry {
     }
     pub fn set_time(&self, queue: &wgpu::Queue, time: f32){//, loop_time: f32) {
         self.bindings.write(queue, EntryType::Time, &[time])
+    }
+    pub fn set_camera(&self, queue: &wgpu::Queue, cam: &Camera) {
+        self.bindings.write(queue, EntryType::Camera, &cam.as_array());
     }
     pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [wgpu::QueueWriteBufferView<'a>; PipelineLabel::COUNT] {
         PipelineLabel::ARRAY

@@ -7,7 +7,7 @@ pub fn check_render(app: &mut App, event: &WindowEvent) {
         return;
     }
     let _span = info_span!("render").entered();
-    info!("Rendering");
+    // info!("Rendering");
 
     let Some(holder) = &app.window else {
         error!("No window while rendering");

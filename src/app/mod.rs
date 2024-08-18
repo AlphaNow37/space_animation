@@ -3,20 +3,19 @@ mod surface_holder;
 mod camera;
 mod resize;
 mod render;
-mod shaders;
 mod update;
 mod scene;
 
+use camera::ManualCamera;
 use scene::Scene;
 use tracing::{info, info_span};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
-use winit::window::{WindowId};
+use winit::window::WindowId;
 use winit::application::ApplicationHandler;
-use winit::event::{WindowEvent};
+use winit::event::WindowEvent;
 use crate::app::exit::check_exit;
 use crate::app::render::check_render;
 use crate::app::resize::check_resize;
-// use crate::app::shaders::Shaders;
 use crate::app::surface_holder::SurfaceHolder;
 use crate::app::update::{check_update, Clock};
 
@@ -42,7 +41,7 @@ pub struct App {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub scene: Scene,
-    // pub shaders: Shaders,
+    pub camera: ManualCamera,
 }
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
@@ -65,6 +64,7 @@ impl ApplicationHandler for App {
         check_resize(self, &event);
         check_update(self, &event);
         check_render(self, &event);
+        self.camera.on_event(&event);
     }
     fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
         if let Some(win) = &self.window {
@@ -89,6 +89,7 @@ impl App {
             device,
             queue,
             scene: Scene::new(),
+            camera: ManualCamera::new(),
         }
     }
     pub fn run(&mut self) {

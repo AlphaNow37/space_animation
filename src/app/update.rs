@@ -30,11 +30,12 @@ pub fn check_update(app: &mut App, event: &WindowEvent) {
     let now = Instant::now();
     let delta = now - app.clock.last_render;
     let time = (now - app.clock.startup).as_secs_f32(); //.rem(app.clock.loop_time);
-    info!("delta={}ms, fps={}, time={}", delta.as_millis(), 1./delta.as_secs_f32(), time); //, app.clock.loop_time);
+    // info!("delta={}ms, fps={}, time={}", delta.as_millis(), 1./delta.as_secs_f32(), time); //, app.clock.loop_time);
     app.clock.last_render = now;
 
+    app.camera.update(delta.as_secs_f32());
     if let Some(holder) = &mut app.window {
         holder.registry.set_time(&app.queue, time); //, app.clock.loop_time);
-        app.scene.update(&mut holder.registry, &app.queue, time);
+        app.scene.update(&mut holder.registry, &app.queue, time, &app.camera);
     }
 }

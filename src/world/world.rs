@@ -1,9 +1,9 @@
-use std::cell::Cell;
 use glam::{Affine3A, Vec3A, Vec2};
 
 use crate::render_registry::pipelines::PipelineLabel;
-use super::{color::Color, material::Material};
 use crate::render_registry::alloc::{Position,  BuffersAllocPosition};
+
+use super::{color::Color, material::Material, camera::Camera, register::Register};
 use super::variator::{UpdateCtx, Variator};
 
 macro_rules! make_system {
@@ -99,53 +99,32 @@ macro_rules! make_system {
         )*
         pub struct World {
             $(
-                $attr: Registry<$prim_ty>,
+                $attr: Register<$prim_ty>,
             )*
             insert_order: Vec<Ref<Global>>,
             materials: Vec<Box<dyn Material>>,
+            pub settings: WorldSettings,
         }
         impl World {
             pub fn new() -> Self {
+                $(
+                    let $attr = Register::new();
+                )*
                 Self {
-                    $(
-                        $attr: Registry::new(),
-                    )*
+                    $($attr,)*
                     insert_order: Vec::new(),
                     materials: Vec::new(),
+                    settings: WorldSettings::default(),
                 }
             }
-            pub fn update(&self, ctx: WorldUpdateCtx) {
+            fn update_registers(&self, ctx: UpdateCtx) {
                 for &Ref {index, label} in &self.insert_order {
                     match label {
                         $(
-                            Global::$prim_ty => unsafe {self.$attr.update(index, ctx.var_update, self)},
+                            Global::$prim_ty => self.$attr.update(index, ctx, self),
                         )*
                     }
                 }
-                for (i, mat) in self.materials.iter().enumerate() {
-                    let pos = &ctx.allocs[i];
-                    let vertex = &mut ctx.views[pos.pipe_label as usize][pos.vertex_bound.clone()];
-                    mat.put(
-                        ctx.var_update,
-                        self,
-                        vertex,
-                        pos.index_bound.start as u32,
-                        &mut [0; 100],
-                    )
-                }
-            }
-            pub fn push<T: Push+'static>(&mut self, var: T) -> Ref<T::Label> {
-                let id = var.push(self);
-                self.insert_order.push(id.as_ref());
-                id
-            }
-            pub fn allocs(&self, alloc: &mut BuffersAllocPosition) -> Vec<Position> {
-                self.materials.iter()
-                    .map(|m| m.alloc(alloc))
-                    .collect()
-            }
-            pub fn push_mat(&mut self, mat: impl Material+'static) {
-                self.materials.push(Box::new(mat));
             }
         }
     };
@@ -158,9 +137,53 @@ make_system!(
     - color: Color: PColor into ;
     - f32: F32: PF32 into ;
     - vec2: Vec2: PVec2 into ;
+    - camera: Camera: PCamera into Point;
     composite:
-    - Point = Vec3A, Affine3A into ;
+    - Point = Vec3A, Affine3A, Camera into ;
 );
+
+impl World {
+    pub fn push<T: Push+'static>(&mut self, var: T) -> Ref<T::Label> {
+        let id = var.push(self);
+        self.insert_order.push(id.as_ref());
+        id
+    }
+    pub fn allocs(&self, alloc: &mut BuffersAllocPosition) -> Vec<Position> {
+        self.materials.iter()
+            .map(|m| m.alloc(alloc))
+            .collect()
+    }
+    pub fn push_mat(&mut self, mat: impl Material+'static) {
+        self.materials.push(Box::new(mat));
+    }
+    fn redraw(&self, ctx: &mut WorldUpdateCtx) {
+        for (i, mat) in self.materials.iter().enumerate() {
+            let pos = &ctx.allocs[i];
+            let vertex = &mut ctx.views[pos.pipe_label as usize][pos.vertex_bound.clone()];
+            mat.put(
+                ctx.var_update,
+                self,
+                vertex,
+                pos.index_bound.start as u32,
+                &mut [0; 100],
+            )
+        }
+    }
+    fn update_settings(&mut self, ctx: &WorldUpdateCtx) {
+        self.settings = WorldSettings {
+            cam_settings: ctx.cam,
+        }
+    }
+    pub fn update(&mut self, mut ctx: WorldUpdateCtx) {
+        self.update_settings(&ctx);
+        self.update_registers(ctx.var_update);
+        self.redraw(&mut ctx);
+    }
+    pub fn get_cam(&self, idx: isize) -> Camera {
+        self.camera.get_mod(idx)
+    }
+
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ref<T> {
@@ -174,52 +197,21 @@ impl<T> Ref<T> {
             label: self.label.into()
         }
     }
-}
-
-pub struct Registry<T> {
-    // TODO: replace unaf
-    vars: Vec<(Cell<T>, Box<dyn Variator<Item=T>>)>,
-}
-impl<T: Copy + Default> Registry<T> {
-    pub fn new() -> Self {
-        Self {
-            vars: Vec::new()
-        }
-    }
-    // safety: this ref should be the only one at that time
-    unsafe fn update(&self, idx: usize, ctx: UpdateCtx, world: &World) {
-        let (cell, var) = &self.vars[idx];
-        // if is_borrow.get() { panic!("Unexpected update of a variator while updating it"); }
-        // is_borrow.set(true);
-        // // SAFETY:
-        // // - There should be no other read ref at this time
-        // // - UnsafeCell ensure that the ref is valid
-        // let prev = unsafe { &mut *prev.get() };
-        cell.set(var.update(ctx, world));
-        // is_borrow.set(false);
-    }
-    fn get(&self, idx: usize) -> T {
-        // let (ptr, is_borrow, _) = &self.vars[idx];
-        // if is_borrow.get() {
-        //     panic!("Unexpected access of a variator cache while updating it");
-        // }
-        // // SAFETY:
-        // // - no mutable ref exists, as is_borrow is false
-        // // - UnsafeCell ensure that the ref is valid
-        // unsafe { (&*ptr.get()).clone() }
-        self.vars[idx].0.get()
-    }
-    fn push(&mut self, var: impl Variator<Item=T>+'static) -> usize {
-        let idx = self.vars.len();
-        self.vars.push((Cell::new(T::default()), Box::new(var)));
-        idx
-    }
+    // pub unsafe fn new(label: T, index: usize) -> Self {
+    //     Self {label, index}
+    // }
 }
 
 pub struct WorldUpdateCtx<'a> {
     pub var_update: UpdateCtx,
     pub views: [&'a mut [u32]; PipelineLabel::COUNT],
     pub allocs: &'a [Position],
+    pub cam: Camera,
+}
+
+#[derive(Default)]
+pub struct WorldSettings {
+    pub cam_settings: Camera,
 }
 
 impl Variator for Ref<Point> {
@@ -227,7 +219,8 @@ impl Variator for Ref<Point> {
     fn update(&self, _ctx: UpdateCtx, world: &World) -> Self::Item {
         match self.label {
             Point::Vec3A => world.vec3a.get(self.index),
-            Point::Affine3A => world.vec3a.get(self.index),
+            Point::Affine3A => world.affine3a.get(self.index).translation,
+            Point::Camera => world.camera.get(self.index).pos.translation,
         }
     }
 }

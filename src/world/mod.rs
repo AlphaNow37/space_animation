@@ -6,3 +6,5 @@ pub mod shape;
 pub mod surface;
 pub mod combinators;
 pub mod pack;
+pub mod camera;
+pub mod register;

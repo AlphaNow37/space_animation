@@ -18,9 +18,9 @@ impl EntryType {
         }
     }
     fn min_size(&self) -> u64 {
-        match self {
-            Self::Time => 4,
-            Self::Camera => 8, // TODO
+        4*match self {
+            Self::Time => 1,
+            Self::Camera => 16,
         }
     }
 }
