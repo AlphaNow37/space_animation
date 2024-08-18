@@ -1,4 +1,4 @@
-use tracing::{error, info, info_span};
+use tracing::{error, info_span};
 use winit::event::WindowEvent;
 use crate::app::App;
 

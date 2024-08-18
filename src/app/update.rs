@@ -1,5 +1,4 @@
 use std::time::Instant;
-use log::info;
 use tracing::info_span;
 use winit::event::WindowEvent;
 use crate::app::App;

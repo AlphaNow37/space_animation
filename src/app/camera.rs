@@ -1,4 +1,4 @@
-use glam::Vec3A;
+use glam::{Vec3, Vec3A};
 use log::info;
 use tracing::info_span;
 use winit::{event::{ElementState, KeyEvent, WindowEvent}, keyboard::{KeyCode, PhysicalKey}};
@@ -33,12 +33,12 @@ fn key_code_to_key(code: KeyCode) -> Option<MoveKey> {
 fn move_key_to_dir(key: MoveKey) -> Vec3A {
     use MoveKey::*;
     match key {
-        Left => Vec3A::NEG_X,
-        Right => Vec3A::X,
-        Backward => Vec3A::NEG_Y,
-        Forward => Vec3A::Y,
-        Down => Vec3A::NEG_Z,
-        Up => Vec3A::Z,
+        Left => Vec3A::X,
+        Right => Vec3A::NEG_X,
+        Backward => Vec3A::Z,
+        Forward => Vec3A::NEG_Z,
+        Down => Vec3A::Y,
+        Up => Vec3A::NEG_Y,
     }
 }
 
@@ -75,7 +75,7 @@ impl ManualCamera {
             ..
         } = event {
             if let Some(mk) = key_code_to_key(*code) {
-                self.key_pressed[mk as usize] = state.is_pressed()
+                self.key_pressed[mk as usize] = state.is_pressed();
             }
         }
         if let WindowEvent::KeyboardInput { event: KeyEvent { physical_key: PhysicalKey::Code(code), state: ElementState::Pressed, .. }, .. } = event {
@@ -90,8 +90,17 @@ impl ManualCamera {
     }
     pub fn update(&mut self, dt: f32) {
         for mk in MoveKey::ARRAY {
+            let mut off = Vec3A::ZERO;
             if self.key_pressed[mk as usize] {
-                self.cam.pos.translation += move_key_to_dir(mk) * dt
+                off += move_key_to_dir(mk) * dt
+            }
+            self.cam.pos.translation += off;
+            if off != Vec3A::ZERO {
+                let _span = info_span!("camera").entered();
+                info!("Moved camera to {} ({:+})", self.cam.pos.translation, off);
+                let mat = self.cam.matrix();
+                info!("(0., 0., 0.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 0.)), mat.project_point3(Vec3::new(0., 0., 0.)));
+                info!("(0., 0., 1.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 1.)), mat.project_point3(Vec3::new(0., 0., 1.)));
             }
         }
     }
