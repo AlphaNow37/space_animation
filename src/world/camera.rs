@@ -12,7 +12,7 @@ impl Default for Camera {
     fn default() -> Self {
         Self {
             pos: Affine3A::IDENTITY,
-            fov: Angle::from_deg(120.),
+            fov: Angle::from_deg(90.),
         }
     }
 }
