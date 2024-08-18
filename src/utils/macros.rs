@@ -15,7 +15,7 @@ macro_rules! array_key {
             $($variant),*
         }
         impl $name {
-            #[allow(dead_code)]
+            #[allow(dead_code, path_statements)]
             $vis const COUNT: usize = $({Self::$variant; 1} + )* 0;
             #[allow(dead_code)]
             $vis const ARRAY: [Self; Self::COUNT] = [$(Self::$variant),*];

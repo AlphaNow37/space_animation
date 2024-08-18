@@ -3,9 +3,10 @@ use crate::app::App;
 mod app;
 mod logger;
 mod world;
-mod materials;
+mod render_registry;
 mod utils;
 mod content;
+mod models;
 
 fn main() {
     logger::init_logger();
