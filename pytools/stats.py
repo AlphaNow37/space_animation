@@ -35,7 +35,7 @@ class Stats:
             content = path.read_text()
             self.line += content.count("\n")
             self.char += len(content)
-            self.macro_rule += len(re.findall(MACRO_USE_RE, content))
+            self.macro_rule += len(re.findall(MACRO_RULE, content))
             self.macro_use += len(re.findall(MACRO_USE_RE, content))
             self.struct += len(re.findall(STRUCT_RE, content))
             self.enum += len(re.findall(ENUM_RE, content))
