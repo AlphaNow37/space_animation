@@ -2,13 +2,16 @@ use std::ops::Range;
 use crate::math::Transform;
 
 use crate::render_registry::vertex::{TriVertex, VertexLike};
+use crate::utils::make_trait_alias;
 
 #[allow(dead_code)]
-pub trait TriMeshBuilder {
+pub trait MeshBuilder {
+    type Vertex;
+
     /// Push multiple vertex (Pos, Normal, Uv)
-    fn push_vertexes<const N: usize>(&mut self, vertexes: [TriVertex; N]);
+    fn push_vertexes<const N: usize>(&mut self, vertexes: [Self::Vertex; N]);
     /// Push a single vertex, returns it index (Pos, Normal, Uv)
-    fn push_vertex(&mut self, vertex: TriVertex);
+    fn push_vertex(&mut self, vertex: Self::Vertex);
     /// Push multiple absolute index
     fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]);
     /// Push an absolute index
@@ -23,101 +26,22 @@ pub trait TriMeshBuilder {
     /// Push a relative index
     fn push_index_offset(&mut self, idx: u32) {self.push_index(idx+self.next_index())}
     /// retrieve info about another vertex
-    fn get_vertex(&self, idx: u32) -> TriVertex;
+    fn get_vertex(&self, idx: u32) -> Self::Vertex;
     /// The global transform, don't affect uvs
     fn global(&self) -> &Transform;
 }
 
-// #[allow(dead_code)]
-// pub trait TriMeshBuilder {
-//     /// Push a single vertex, returns it absolute index (Pos, Normal, Uv)
-//     fn push_vertex(&mut self, vertex: Vertex);
-//     fn transform_index(&self, idx: u32) -> u32;
-//     /// Push multiple absolute index
-//     fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]);
+make_trait_alias!(TriMeshBuilder = MeshBuilder<Vertex=TriVertex>);
 
-//     /// Push multiple vertex (Pos, Normal, Uv)
-//     fn push_vertexes(&mut self, vertexes: &[Vertex]) {
-//         for v in vertexes {self.push_vertex(*v);};
-//     }
-
-//     // /// The next absolute index
-//     // fn next_index(&self) -> u32;
-//     /// Push multiple relative index (0=>the next to be pushed)
-//     fn push_indexes_transform<const N: usize>(&mut self, idxs: [u32; N]) {
-//         self.push_indexes(idxs.map(|i| self.transform_index(i)));
-//     }
-
-//     fn offset(&mut self, offset: u32) -> OffsetTriMeshBuilder<Self> where Self: Sized {
-//         OffsetTriMeshBuilder(self, offset)
-//     }
-//     fn step(&mut self, step: u32) -> StepTriMeshBuilder<Self> where Self: Sized {
-//         StepTriMeshBuilder(self, step)
-//     }
-//     fn cache_pos<'a, 'b>(&'a mut self, cache: &'a mut [Vec3A]) -> CachedTriMeshBuilder<'a, Self> where Self: Sized {
-//         CachedTriMeshBuilder {
-//             cache,
-//             curr_cache_index: 0,
-//             builder: self,
-//         }
-//     }
-// }
-
-// pub struct OffsetTriMeshBuilder<'a, M>(pub &'a mut M, pub u32);
-// impl<'a, M: TriMeshBuilder> TriMeshBuilder for OffsetTriMeshBuilder<'a, M> {
-//     fn push_vertex(&mut self, vertex: Vertex) {
-//         self.0.push_vertex(vertex)
-//     }
-//     fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]) {
-//         self.0.push_indexes(idxs)
-//     }
-//     fn transform_index(&self, idx: u32) -> u32 {
-//         idx + self.1
-//     }
-// }
-
-// pub struct StepTriMeshBuilder<'a, M>(pub &'a mut M, pub u32);
-// impl<'a, M: TriMeshBuilder> TriMeshBuilder for StepTriMeshBuilder<'a, M> {
-//     fn push_vertex(&mut self, vertex: Vertex) {
-//         self.0.push_vertex(vertex)
-//     }
-//     fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]) {
-//         self.0.push_indexes(idxs)
-//     }
-//     fn transform_index(&self, idx: u32) -> u32 {
-//         idx * self.1
-//     }
-// }
-
-
-// pub struct CachedTriMeshBuilder<'a, M> {
-//     cache: &'a mut [Vec3A],
-//     curr_cache_index: usize,
-//     pub builder: &'a mut M,
-// }
-// impl<'a, M: TriMeshBuilder> TriMeshBuilder for CachedTriMeshBuilder<'a, M> {
-//     fn push_vertex(&mut self, vertex: Vertex) {
-//         self.cache[self.curr_cache_index] = vertex.0;
-//         self.curr_cache_index += 1;
-//         self.builder.push_vertex(vertex);
-//     }
-//     fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]) {
-//         self.builder.push_indexes(idxs);
-//     }
-//     fn transform_index(&self, idx: u32) -> u32 {
-//         self.builder.transform_index(idx)
-//     }
-// }
-
-pub struct BaseTriMeshBuilder<'a, D, T> {
+pub struct BaseTriMeshBuilder<'a, T: VertexLike> {
     bound: Range<usize>,
     vertex: &'a mut [T],
     index: &'a mut [u32],
-    data: D,
+    data: T::ShapeData,
     global: Transform,
 }
-impl<'a, D, T: VertexLike> BaseTriMeshBuilder<'a, D, T> {
-    pub fn new(vertex: &'a mut [u32], index: &'a mut [u32], data: D, vertex_offset_bounds: Range<usize>, global: Transform) -> Self {
+impl<'a, T: VertexLike> BaseTriMeshBuilder<'a, T> {
+    pub fn new(vertex: &'a mut [u32], index: &'a mut [u32], data: T::ShapeData, vertex_offset_bounds: Range<usize>, global: Transform) -> Self {
         Self {
             bound: vertex_offset_bounds.clone(),
             vertex: bytemuck::cast_slice_mut(vertex),
@@ -127,18 +51,19 @@ impl<'a, D, T: VertexLike> BaseTriMeshBuilder<'a, D, T> {
         }
     }
 }
-impl<'a, D: Copy, T: VertexLike+for<'b> From<(TriVertex, D)>+Into<TriVertex>> TriMeshBuilder for BaseTriMeshBuilder<'a, D, T> {
-    fn push_vertexes<const N: usize>(&mut self, vertexes: [TriVertex; N]) {
+impl<'a, T: VertexLike> MeshBuilder for BaseTriMeshBuilder<'a, T> {
+    type Vertex = T::PosData;
+    fn push_vertexes<const N: usize>(&mut self, vertexes: [Self::Vertex; N]) {
         if N==0 {return;}
         let start = self.bound.start;
         let end = self.bound.start + N;
         if end > self.bound.end {panic!("Took too much place !")}
         self.bound.start = end;
         (&mut self.vertex[start..end])
-            .copy_from_slice(&vertexes.map(|v| T::from((v, self.data))));
+            .copy_from_slice(&vertexes.map(|v| T::new(v, self.data)));
     }
-    fn push_vertex(&mut self, vertex: TriVertex) {
-        self.vertex[self.bound.next().unwrap()] = T::from((vertex, self.data));
+    fn push_vertex(&mut self, vertex: Self::Vertex) {
+        self.vertex[self.bound.next().unwrap()] = T::new(vertex, self.data);
     }
     fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]) {
         let a;
@@ -151,8 +76,8 @@ impl<'a, D: Copy, T: VertexLike+for<'b> From<(TriVertex, D)>+Into<TriVertex>> Tr
     fn next_index(&self) -> u32 {
         self.bound.start as u32
     }
-    fn get_vertex(&self, idx: u32) -> TriVertex {
-        self.vertex[idx as usize].into()
+    fn get_vertex(&self, idx: u32) -> Self::Vertex {
+        self.vertex[idx as usize].pos()
     }
     fn global(&self) -> &Transform {
         &self.global

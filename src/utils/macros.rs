@@ -106,3 +106,13 @@ macro_rules! impl_vector_space_simd {
     };
 }
 pub(crate) use impl_vector_space_simd;
+
+macro_rules! make_trait_alias {
+    (
+        $new: ident = $($old: tt)*
+    ) => {
+        pub trait $new: $($old)* {}
+        impl<T: $($old)*> $new for T {}
+    };
+}
+pub(crate) use make_trait_alias;

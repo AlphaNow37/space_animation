@@ -8,27 +8,51 @@ pub trait VertexLike: bytemuck::AnyBitPattern + bytemuck::NoUninit {
     const ATTRS: &'static [wgpu::VertexAttribute];
     #[allow(dead_code)]
     const _CHECK: ();
+
+    type PosData;
+    type ShapeData: Copy;
+    fn new(pos: Self::PosData, shape: Self::ShapeData) -> Self;
+    fn pos(&self) -> Self::PosData;
 }
 
-macro_rules! impl_vertex {
+macro_rules! new_vertex {
     (
-        $ty: ident:
-        $size: literal,
-        $(
-            $n: literal => $val: ident
-        ),*
-        $(,)?
+        $sname: ident {
+            $(
+                $attr: ident : $ty: ty : [$($idx: literal => $pack: ident),* $(,)?]
+            ),* $(,)?
+        } -> $ssize: expr;
+
+        new($pos: ident : $posty: ty , $shape: ident : $shapety: ty)
+        -> {$new: expr}
+
+        pos($self: ident) -> {$getpos: expr}
     ) => {
-        impl VertexLike for $ty {
+        #[derive(Pod, Clone, Copy, Zeroable)]
+        #[repr(C)]
+        pub struct $sname {
+            $(pub $attr: $ty),*
+        }
+        impl VertexLike for $sname {
             const ATTRS: &'static [wgpu::VertexAttribute] = &wgpu::vertex_attr_array![
-                $(
-                    $n => $val,
+                 $(
+                    $(
+                        $idx => $pack,
+                    )*
                 )*
             ];
-            const SIZE_U32: usize = $size;
-            const SIZE: usize = $size * 4;
+            const SIZE_U32: usize = $ssize;
+            const SIZE: usize = $ssize * 4;
             const _CHECK: () = const { assert!(std::mem::size_of::<Self>() == Self::SIZE) };
 
+            type PosData = $posty;
+            type ShapeData = $shapety;
+            fn new($pos: Self::PosData, $shape: Self::ShapeData) -> Self {
+                $new
+            }
+            fn pos(&$self) -> Self::PosData {
+                $getpos
+            }
         }
     };
 }
@@ -66,41 +90,30 @@ impl Normal {
     }
 }
 
-#[derive(Pod, Clone, Copy, Zeroable)]
-#[repr(C)]
-pub struct TriVertex {
-    pub pos: [f32; 3],
-    pub normal: Normal,
-    pub uv: [f32; 3],
-}
+new_vertex!(
+    TriVertex {
+        pos: [f32; 3] : [0 => Float32x3],
+        normal: Normal : [1 => Snorm8x4],
+        uv: [f32; 3] : [2 => Float32x3],
+    } -> 7;
+    new(pos: Self, _shape: ()) -> {pos}
+    pos(self) -> {*self}
+);
 impl TriVertex {
-    pub fn new(pos: Vec3, normal: Normal, uv: Vec3) -> Self {
+    pub fn create(pos: Vec3, normal: impl Into<Normal>, uv: Vec3) -> Self {
         Self {
             pos: pos.to_array(),
-            normal,
+            normal: normal.into(),
             uv: uv.to_array(),
         }
     }
 }
-impl_vertex!(TriVertex: 7, 0 => Float32x3, 1 => Snorm8x4, 2 => Float32x3);
 
-#[derive(Pod, Clone, Copy, Zeroable)]
-#[repr(C)]
-pub struct UniformTriangleVertex {
-    pub vertex: TriVertex,
-    pub color: CompressedVec,
-}
-impl_vertex!(UniformTriangleVertex: 8, 0 => Float32x3, 1 => Snorm8x4, 2 => Float32x3, 3 => Snorm8x4, );
-impl From<(TriVertex, CompressedVec)> for UniformTriangleVertex {
-    fn from((vertex, color): (TriVertex, CompressedVec)) -> Self {
-        Self {
-            vertex,
-            color,
-        }
-    }
-}
-impl Into<TriVertex> for UniformTriangleVertex {
-    fn into(self) -> TriVertex {
-        self.vertex
-    }
-}
+new_vertex!(
+    UniformTriangleVertex {
+        vertex: TriVertex : [0 => Float32x3, 1 => Snorm8x4, 2 => Float32x3],
+        color: CompressedVec : [3 => Snorm8x4],
+    } -> 8;
+    new(vertex: TriVertex, color: CompressedVec) -> {Self {vertex, color}}
+    pos(self) -> {self.vertex}
+);

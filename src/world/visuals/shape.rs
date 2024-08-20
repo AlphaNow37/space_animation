@@ -46,9 +46,9 @@ impl<P1: Variator<Item=Vec3>, P2: Variator<Item=Vec3>, P3: Variator<Item=Vec3>> 
         let g = builder.global();
         let (apos, bpos, cpos) = (g.tr_point(a), g.tr_point(b), g.tr_point(c));
         put_triangle(builder, [
-            TriVertex::new(apos,  Normal::ZERO, a),
-            TriVertex::new(bpos, Normal::ZERO, b),
-            TriVertex::new(cpos, Normal::ZERO, c),
+            TriVertex::create(apos,  Normal::ZERO, a),
+            TriVertex::create(bpos, Normal::ZERO, b),
+            TriVertex::create(cpos, Normal::ZERO, c),
         ])
     }
 }
@@ -90,7 +90,7 @@ impl<C: Variator<Item=Transform>> TriShape for CubeSphere<C> {
                     let normal = tr.tr_vec(Vec3::new(x, y, z));
                     let uv = normal + tr.trans();
                     let pos = builder.global().tr_point(uv);
-                    builder.push_vertex(TriVertex::new(pos, normal.into(), uv))
+                    builder.push_vertex(TriVertex::create(pos, normal, uv))
                 }
             }
         }
@@ -122,7 +122,7 @@ impl<C: Variator<Item=Transform>> TriShape for Cube<C> {
             for coord in [p, p+a, p+b, p+a+b] {
                 let uv = tr.tr_point(coord);
                 let pos = builder.global().tr_point(uv);
-                builder.push_vertex(TriVertex::new(pos, normal, uv));
+                builder.push_vertex(TriVertex::create(pos, normal, uv));
             }
         }
     }
@@ -147,7 +147,7 @@ impl<A: TriShape+BorderShape, S: Variator<Item=Vec3>> TriShape for Pyramid<A, S>
             put_triangle(builder, [
                  builder.get_vertex(start+i1),
                  builder.get_vertex(start+i2), 
-                 TriVertex::new(top_pos, Normal::ZERO, top)
+                 TriVertex::create(top_pos, Normal::ZERO, top)
             ])
         }
     }

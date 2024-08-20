@@ -56,7 +56,7 @@ impl<S: TriShape, C: Variator<Item = Color>, G: Variator<Item=Transform>> Materi
         vertex_offset_bounds: Range<usize>,
         index: &mut [u32],
     ) {
-        let mut builder: BaseTriMeshBuilder<_, UniformTriangleVertex> =
+        let mut builder: BaseTriMeshBuilder<UniformTriangleVertex> =
             BaseTriMeshBuilder::new(
                 vertex,
                 index,
