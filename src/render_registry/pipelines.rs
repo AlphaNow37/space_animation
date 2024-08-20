@@ -39,12 +39,12 @@ impl PipelineLabel {
     }
     pub fn vertex_entry_point(&self) -> &'static str {
         match self {
-            Self::UniformTriangle => "vs_main",
+            Self::UniformTriangle => "vs_tri_color1",
         }
     }
     pub fn fragment_entry_point(&self) -> &'static str {
         match self {
-            Self::UniformTriangle => "fs_main",
+            Self::UniformTriangle => "fs_uniform",
         }
     }
     pub fn vertex_attributes(&self) -> &'static [wgpu::VertexAttribute] {
