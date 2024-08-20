@@ -1,6 +1,5 @@
 use std::ops::{Add, Mul};
-
-use glam::Vec3A;
+use crate::math::{Vec3, vec3};
 
 use crate::utils::{compress_vec4_u, CompressedVec};
 
@@ -20,18 +19,18 @@ macro_rules! consts_rgb {
 
 /// OKLAB color
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
-pub struct Color(Vec3A);
+pub struct Color(Vec3);
 impl Color {
     pub fn as_array(self) -> CompressedVec {
-        compress_vec4_u(self.0.extend(1.0))
+        compress_vec4_u(self.0.to_vec4(1.0))
     }
     pub const fn from_rgb(r: f32, g: f32, b: f32) -> Self {
         // let vec = Vec3A::new(r, g, b);
         // glam::Mat3A::mul_vec3a(&self, rhs)
-        Self(Vec3A::new(r, g, b)) // TODO: oklab
+        Self(vec3(r, g, b)) // TODO: oklab
     }
     pub fn new(l: f32, a: f32, b: f32) -> Self {
-        Self(Vec3A::new(l, a, b))
+        Self(vec3(l, a, b))
     }
 }
 consts_rgb!(

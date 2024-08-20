@@ -1,32 +1,20 @@
-
-use glam::{Affine3A, Vec3A};
-
-use crate::world::{primitives::color::Color, point::{ProjectPoint, Translation}, variators::variator::Variator, world::World};
+use crate::math::{Vec3, Transform};
+use crate::world::{primitives::color::Color, variators::variator::Variator, world::World};
 use crate::world::visuals::material::UniformTri;
 use crate::world::visuals::shape::Triangle;
 
-pub fn put_axis(world: &mut World, pos: impl Variator<Item=Affine3A>+Copy) {
-    let or = Translation(pos);
-    let x = ProjectPoint(pos, Vec3A::X);
-    let y = ProjectPoint(pos, Vec3A::Y);
-    let z = ProjectPoint(pos, Vec3A::Z);
-    world.push_mat(
-        UniformTri {
-            shape: Triangle(or, x, y),
-            color: Color::GREEN,
-        }
-    );
-    world.push_mat(
-        UniformTri {
-            shape: Triangle(or, x, z),
-            color: Color::BLUE,
-        }
-    );
-    world.push_mat(
-        UniformTri {
-            shape: Triangle(or, y, z),
-            color: Color::RED,
-        }
-    );
+pub fn put_axis(world: &mut World, pos: impl Variator<Item=Transform>+Copy) {
+    for (a, b, col) in [
+        (Vec3::X, Vec3::Y, Color::GREEN),
+        (Vec3::X, Vec3::Z, Color::BLUE),
+        (Vec3::Y, Vec3::Z, Color::RED),
+    ] {
+        world.push_mat(
+            UniformTri {
+                shape: Triangle(Vec3::ZERO, a, b),
+                color: col,
+                global: pos,
+            }
+        );
+    }
 }
-

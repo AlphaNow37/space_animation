@@ -1,4 +1,5 @@
 use std::ops::Range;
+use crate::math::Transform;
 
 use crate::render_registry::vertex::{TriVertex, VertexLike};
 
@@ -23,6 +24,8 @@ pub trait TriMeshBuilder {
     fn push_index_offset(&mut self, idx: u32) {self.push_index(idx+self.next_index())}
     /// retrieve info about another vertex
     fn get_vertex(&self, idx: u32) -> TriVertex;
+    /// The global transform, don't affect uvs
+    fn global(&self) -> &Transform;
 }
 
 // #[allow(dead_code)]
@@ -106,27 +109,25 @@ pub trait TriMeshBuilder {
 //     }
 // }
 
-
 pub struct BaseTriMeshBuilder<'a, D, T> {
     bound: Range<usize>,
     vertex: &'a mut [T],
     index: &'a mut [u32],
     data: D,
+    global: Transform,
 }
 impl<'a, D, T: VertexLike> BaseTriMeshBuilder<'a, D, T> {
-    pub fn new(vertex: &'a mut [u32], index: &'a mut [u32], data: D, vertex_offset_bounds: Range<usize>,) -> Self {
+    pub fn new(vertex: &'a mut [u32], index: &'a mut [u32], data: D, vertex_offset_bounds: Range<usize>, global: Transform) -> Self {
         Self {
             bound: vertex_offset_bounds.clone(),
             vertex: bytemuck::cast_slice_mut(vertex),
             index, //: index.chunks_exact_mut(4),
             data,
+            global,
         }
     }
 }
 impl<'a, D: Copy, T: VertexLike+for<'b> From<(TriVertex, D)>+Into<TriVertex>> TriMeshBuilder for BaseTriMeshBuilder<'a, D, T> {
-    fn push_vertex(&mut self, vertex: TriVertex) {
-        self.vertex[self.bound.next().unwrap()] = T::from((vertex, self.data));
-    }
     fn push_vertexes<const N: usize>(&mut self, vertexes: [TriVertex; N]) {
         if N==0 {return;}
         let start = self.bound.start;
@@ -135,6 +136,9 @@ impl<'a, D: Copy, T: VertexLike+for<'b> From<(TriVertex, D)>+Into<TriVertex>> Tr
         self.bound.start = end;
         (&mut self.vertex[start..end])
             .copy_from_slice(&vertexes.map(|v| T::from((v, self.data))));
+    }
+    fn push_vertex(&mut self, vertex: TriVertex) {
+        self.vertex[self.bound.next().unwrap()] = T::from((vertex, self.data));
     }
     fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]) {
         let a;
@@ -149,5 +153,8 @@ impl<'a, D: Copy, T: VertexLike+for<'b> From<(TriVertex, D)>+Into<TriVertex>> Tr
     }
     fn get_vertex(&self, idx: u32) -> TriVertex {
         self.vertex[idx as usize].into()
+    }
+    fn global(&self) -> &Transform {
+        &self.global
     }
 }

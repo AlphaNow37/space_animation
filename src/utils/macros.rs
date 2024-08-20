@@ -32,3 +32,77 @@ macro_rules! array_key {
     };
 }
 pub(crate) use array_key;
+
+macro_rules! impl_vector_space_simd {
+    (
+        $t: ident ($n: literal)
+    ) => {
+        use std::ops::{Add, Sub, Mul, Div, Neg, AddAssign, SubAssign, MulAssign, DivAssign};
+        impl $t {
+            pub const ZERO: Self = Self::splat(0.);
+
+            pub const fn splat(val: f32) -> Self {
+                Self(Simd::from_array([val; $n]))
+            }
+            pub fn clamp(self, min: Self, max: Self) -> Self {
+                Self(self.0.simd_clamp(min.0, max.0))
+            }
+        }
+        impl Add for $t {
+            type Output = Self;
+            fn add(self, rhs: Self) -> Self::Output {
+                Self(self.0 + rhs.0)
+            }
+        }
+        impl AddAssign for $t {
+            fn add_assign(&mut self, rhs: Self) {
+                self.0 += rhs.0
+            }
+        }
+        impl Sub for $t {
+            type Output = Self;
+            fn sub(self, rhs: Self) -> Self::Output {
+                Self(self.0 - rhs.0)
+            }
+        }
+        impl SubAssign for $t {
+            fn sub_assign(&mut self, rhs: Self) {
+                self.0 -= rhs.0
+            }
+        }
+        impl Mul<f32> for $t {
+            type Output = Self;
+            fn mul(self, rhs: f32) -> Self::Output {
+                Self(self.0 * Simd::splat(rhs))
+            }
+        }
+        impl MulAssign<f32> for $t {
+            fn mul_assign(&mut self, rhs: f32) {
+                self.0 *= Simd::splat(rhs)
+            }
+        }
+        impl Div<f32> for $t {
+            type Output = Self;
+            fn div(self, rhs: f32) -> Self::Output {
+                Self(self.0 / Simd::splat(rhs))
+            }
+        }
+        impl DivAssign<f32> for $t {
+            fn div_assign(&mut self, rhs: f32) {
+                self.0 /= Simd::splat(rhs)
+            }
+        }
+        impl Neg for $t {
+            type Output = Self;
+            fn neg(self) -> Self::Output {
+                Self(-self.0)
+            }
+        }
+        impl Default for $t {
+            fn default() -> Self {
+                Self::ZERO
+            }
+        }
+    };
+}
+pub(crate) use impl_vector_space_simd;

@@ -1,5 +1,5 @@
-use glam::Vec3A;
 use tracing::{info_span, info};
+use crate::math::{Mat4, Vec3};
 use crate::render_registry::bind_groups::{Bindings, EntryType};
 use crate::render_registry::pipelines::{Pipeline, PipelineLabel};
 use crate::render_registry::shaders::Shaders;
@@ -68,10 +68,10 @@ impl PipelinesRegistry {
     pub fn set_time(&self, queue: &wgpu::Queue, time: f32){//, loop_time: f32) {
         self.bindings.write(queue, EntryType::Time, &[time])
     }
-    pub fn set_camera(&self, queue: &wgpu::Queue, matrix: glam::Mat4) {
-        self.bindings.write(queue, EntryType::Camera, &matrix.to_cols_array());
+    pub fn set_camera(&self, queue: &wgpu::Queue, matrix: Mat4) {
+        self.bindings.write(queue, EntryType::Camera, &matrix.to_array());
     }
-    pub fn set_eye_dir(&self, queue: &wgpu::Queue, dir: Vec3A) {
+    pub fn set_eye_dir(&self, queue: &wgpu::Queue, dir: Vec3) {
         self.bindings.write(queue, EntryType::EyeDir, &dir.to_array());
     }
     pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [(wgpu::QueueWriteBufferView<'a>, Option<wgpu::QueueWriteBufferView<'a>>); PipelineLabel::COUNT] {

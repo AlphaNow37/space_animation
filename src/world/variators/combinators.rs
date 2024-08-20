@@ -9,7 +9,7 @@ use crate::world::world::World;
 
 new_typed_variator!(
     [ctx, world],
-    Interpolate(A, B: A::Item) [A::Item: VectorSpace] => A::Item {A.mul(1.-ctx.time).add(B.mul(ctx.time))}
+    Interpolate(A, B: A::Item) [A::Item: VectorSpace] => A::Item {A * (1.-ctx.time) + B * ctx.time}
 );
 // pub struct Interpolate<A, B>(pub A, pub B);
 // impl<A: Variator, B: Variator<Item=A::Item>> Variator for Interpolate<A, B>

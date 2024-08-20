@@ -1,4 +1,5 @@
 use std::ops::Range;
+use crate::math::Transform;
 
 use crate::render_registry::{
     alloc::{BuffersAllocPosition, Position},
@@ -31,11 +32,12 @@ pub trait Material {
     );
 }
 
-pub struct UniformTri<S, C> {
+pub struct UniformTri<S, C, G> {
+    pub global: G,
     pub shape: S,
     pub color: C,
 }
-impl<S: TriShape, C: Variator<Item = Color>> Material for UniformTri<S, C> {
+impl<S: TriShape, C: Variator<Item = Color>, G: Variator<Item=Transform>> Material for UniformTri<S, C, G> {
     fn pipeline(&self) -> PipelineLabel {
         PipelineLabel::UniformTriangle
     }
@@ -54,12 +56,13 @@ impl<S: TriShape, C: Variator<Item = Color>> Material for UniformTri<S, C> {
         vertex_offset_bounds: Range<usize>,
         index: &mut [u32],
     ) {
-        let mut builder: BaseTriMeshBuilder<[u8; 4], UniformTriangleVertex> =
+        let mut builder: BaseTriMeshBuilder<_, UniformTriangleVertex> =
             BaseTriMeshBuilder::new(
                 vertex,
                 index,
                 self.color.update(ctx, world).as_array(),
                 vertex_offset_bounds,
+                self.global.update(ctx, world)
             );
         self.shape.put(&mut builder, ctx, world);
     }

@@ -1,9 +1,8 @@
-use glam::{Affine3A, Mat3A, Vec2, Vec3A};
-
+use crate::math::{Vec2, Vec3, Vec4, Transform, Dir};
 use crate::render_registry::alloc::{BuffersAllocPosition, Position};
 use crate::render_registry::pipelines::PipelineLabel;
 use crate::world::primitives::camera::Camera;
-use crate::world::primitives::angle::Angle;
+use crate::math::Angle;
 use crate::world::visuals::material::Material;
 
 use super::variators::variator::{UpdateCtx, Variator};
@@ -27,14 +26,14 @@ macro_rules! make_system {
     ) => {
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
         pub enum Global {
-            $($prim_ty,)*
+            $($prim_pty,)*
         }
         $(
             #[derive(Clone, Copy, Debug, Eq, PartialEq)]
             pub struct $prim_pty;
             impl Into<Global> for $prim_pty {
                 fn into(self) -> Global {
-                    Global::$prim_ty
+                    Global::$prim_pty
                 }
             }
             $(
@@ -126,7 +125,7 @@ macro_rules! make_system {
                 for &Ref {index, label} in &self.insert_order {
                     match label {
                         $(
-                            Global::$prim_ty => self.$attr.update(index, ctx, self),
+                            Global::$prim_pty => self.$attr.update(index, ctx, self),
                         )*
                     }
                 }
@@ -137,14 +136,15 @@ macro_rules! make_system {
 type F32 = f32;
 make_system!(
     primitive:
-    - vec3a: Vec3A: PVec3A into ;
-    - affine3a: Affine3A: PAffine3A into ;
+    - vec3: Vec3: PVec3 into ;
+    - transform: Transform: PTransform into ;
     - color: Color: PColor into ;
     - f32: F32: PF32 into ;
     - vec2: Vec2: PVec2 into ;
     - camera: Camera: PCamera into ;
     - angle: Angle: PAngle into ;
-    - mat3a: Mat3A: PMat3a into ;
+    - dir: Dir: PDir into ;
+    - vec4: Vec4: PVec4 into ;
     composite:
     // composite:
     // - Point = Vec3A, Affine3A, Camera into ;

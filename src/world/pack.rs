@@ -1,5 +1,4 @@
-use glam::{Vec2, Vec3A, Vec4};
-
+use crate::math::{Vec2, Vec3, Vec4};
 use super::{primitives::color::Color, variators::variator::Variator};
 
 macro_rules! make_pack {
@@ -29,7 +28,7 @@ macro_rules! make_pack {
 
 make_pack!(
     Pack2<A, B> => Vec2;
-    Pack3<A, B, C> => Vec3A;
+    Pack3<A, B, C> => Vec3;
     Pack4<A, B, C, D> => Vec4;
     PackCol<A, B, C> => Color;
 );

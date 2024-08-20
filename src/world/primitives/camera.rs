@@ -1,28 +1,27 @@
-use glam::{Affine3A, Mat4};
-
+use crate::math::{Transform, Mat4};
 use crate::world::variators::variator::Variator;
-use crate::world::primitives::angle::Angle;
+use crate::math::Angle;
 use crate::world::variators::variator::UpdateCtx;
 use crate::world::world::World;
 
 
 #[derive(Clone, Copy, Debug)]
 pub struct Camera {
-    pub pos: Affine3A,
+    pub pos: Transform,
     pub fov: Angle,
 }
 impl Default for Camera {
     fn default() -> Self {
         Self {
-            pos: Affine3A::IDENTITY,
+            pos: Transform::ID,
             fov: Angle::from_deg(90.),
         }
     }
 }
 impl Camera {
     pub fn matrix(&self, aspect_ratio: f32) -> Mat4 {
-        Mat4::perspective_infinite_lh(self.fov.rad(), aspect_ratio, 0.1)
-        * Mat4::from(self.pos.inverse())
+        Mat4::new_perspective_infinite_lh(self.fov, aspect_ratio, 0.1)
+        * self.pos.inverse().to_mat4()
     }
 }
 
@@ -34,7 +33,7 @@ impl Variator for GetManualCamera {
     }
 }
 pub struct TrackCamera<P, F>(pub P, pub F);
-impl<P: Variator<Item=Affine3A>, F: Variator<Item=Angle>> Variator for TrackCamera<P, F> {
+impl<P: Variator<Item=Transform>, F: Variator<Item=Angle>> Variator for TrackCamera<P, F> {
     type Item = Camera;
     fn update(&self, ctx: UpdateCtx, world: &World) -> Self::Item {
         Camera {

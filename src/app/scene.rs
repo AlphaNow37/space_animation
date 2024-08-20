@@ -65,6 +65,6 @@ impl Scene {
         self.world.update(ctx);
         let wcam = self.world.get_cam(cam.current_cam_idx);
         registry.set_camera(queue, wcam.matrix(cam.aspect_ratio()));
-        registry.set_eye_dir(queue, wcam.pos.z_axis.normalize_or_zero());
+        registry.set_eye_dir(queue, wcam.pos.z().normalize_or_zero());
     }
 }

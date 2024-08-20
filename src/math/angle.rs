@@ -6,10 +6,14 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 pub struct Angle(f32);
 #[allow(dead_code)]
 impl Angle {
-    pub fn from_rad(rad: f32) -> Self {Self(rad)}
+    pub const fn from_rad(rad: f32) -> Self {Self(rad)}
     pub fn from_deg(deg: f32) -> Self {Self(deg.to_radians())}
-    pub fn rad(self) -> f32 {self.0}
+    pub const fn rad(self) -> f32 {self.0}
     pub fn deg(self) -> f32 {self.0.to_degrees()}
+    pub fn cos(self) -> f32 {self.0.cos()}
+    pub fn sin(self) -> f32 {self.0.sin()}
+    pub fn tan(self) -> f32 {self.0.tan()}
+    pub fn cotan(self) -> f32 {1./self.0.tan()}
 }
 // TODO: replace with derive from (derive_more?)
 impl Add for Angle {
@@ -40,5 +44,18 @@ impl Neg for Angle {
     type Output = Self;
     fn neg(self) -> Self::Output {
         Self(-self.0)
+    }
+}
+
+pub trait ToAngle {
+    fn rad(self) -> Angle;
+    fn deg(self) -> Angle;
+}
+impl ToAngle for f32 {
+    fn rad(self) -> Angle {
+        Angle::from_rad(self)
+    }
+    fn deg(self) -> Angle {
+        Angle::from_deg(self)
     }
 }

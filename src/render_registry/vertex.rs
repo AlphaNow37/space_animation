@@ -1,6 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use glam::{Vec3, Vec3A};
-
+use crate::math::{Dir, Vec3};
 use crate::utils::{compress_vec4_i, CompressedVec};
 
 pub trait VertexLike: bytemuck::AnyBitPattern + bytemuck::NoUninit {
@@ -34,29 +33,35 @@ macro_rules! impl_vertex {
     };
 }
 
+
+/// A compressed normal, either a normalized Dir or Zero
 #[derive(Pod, Clone, Copy, Zeroable)]
 #[repr(C)]
 pub struct Normal(CompressedVec);
+impl From<Dir> for Normal {
+    fn from(dir: Dir) -> Self {
+        Self::from_normalized(*dir)
+    }
+}
 impl From<Vec3> for Normal {
-    fn from(value: Vec3) -> Self {
-        Self(compress_vec4_i(value.normalize_or_zero().extend(0.)))
+    fn from(vec: Vec3) -> Self {
+        Self::from_vec(vec)
     }
 }
-impl From<Vec3A> for Normal {
-    fn from(value: Vec3A) -> Self {
-        Self(compress_vec4_i(value.normalize_or_zero().extend(0.)))
-    }
-}
+
 impl Normal {
     pub const ZERO: Self = Self([0; 4]);
-    pub fn from_normalized(vec: Vec3A) -> Self {
-        debug_assert!(vec == Vec3A::ZERO || vec.is_normalized());
-        Self(compress_vec4_i(vec.extend(0.)))
+    pub fn from_normalized(vec: Vec3) -> Self {
+        debug_assert!(vec == Vec3::ZERO || vec.is_normalized());
+        Self(compress_vec4_i(vec.to_vec4(0.)))
     }
-    pub fn from_plane(a: impl Into<Vec3A>, b: impl Into<Vec3A>) -> Self {
-        a.into().cross(b.into()).into()
+    pub fn from_vec(vec: Vec3) -> Self {
+        Self::from_normalized(vec.normalize_or_zero())
     }
-    pub fn from_tri(a: impl Into<Vec3A>+Copy, b: impl Into<Vec3A>, c: impl Into<Vec3A>) -> Self {
+    pub fn from_plane(a: Vec3, b: Vec3) -> Self {
+        Self::from_normalized(a.cross(b).with_len(1.))
+    }
+    pub fn from_tri(a: impl Into<Vec3>+Copy, b: impl Into<Vec3>, c: impl Into<Vec3>) -> Self {
         Self::from_plane(a.into()-b.into(), a.into()-c.into())
     }
 }
@@ -64,16 +69,16 @@ impl Normal {
 #[derive(Pod, Clone, Copy, Zeroable)]
 #[repr(C)]
 pub struct TriVertex {
-    pub pos: Vec3,
+    pub pos: [f32; 3],
     pub normal: Normal,
-    pub uv: Vec3,
+    pub uv: [f32; 3],
 }
 impl TriVertex {
-    pub fn new(pos: Vec3A, normal: Normal, uv: Vec3A) -> Self {
+    pub fn new(pos: Vec3, normal: Normal, uv: Vec3) -> Self {
         Self {
-            pos: pos.into(),
+            pos: pos.to_array(),
             normal,
-            uv: uv.into(),
+            uv: uv.to_array(),
         }
     }
 }

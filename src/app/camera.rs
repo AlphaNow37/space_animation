@@ -1,21 +1,20 @@
-use glam::{Mat3A, Quat, Vec2, Vec3A};
 use rand::Rng;
 use tracing::{info, info_span};
 use winit::{dpi::PhysicalPosition, event::WindowEvent, window::Window};
 
-use crate::utils::{CastInto};
 use crate::app::keybinds::{KeyBinds, MoveKey};
+use crate::math::{Vec2, Vec3, rotate_x, ToAngle, rotate_y};
 use crate::world::primitives::camera::Camera;
 
-fn move_key_to_dir(key: MoveKey) -> Vec3A {
+fn move_key_to_dir(key: MoveKey) -> Vec3 {
     use MoveKey::*;
     match key {
-        Left => Vec3A::NEG_X,
-        Right => Vec3A::X,
-        Backward => Vec3A::NEG_Z,
-        Forward => Vec3A::Z,
-        Down => Vec3A::NEG_Y,
-        Up => Vec3A::Y,
+        Left => -Vec3::X,
+        Right => Vec3::X,
+        Backward => -Vec3::Z,
+        Forward => Vec3::Z,
+        Down => -Vec3::Y,
+        Up => Vec3::Y,
     }
 }
 
@@ -55,7 +54,7 @@ impl ManualCamera {
         self.cursor_locked ^= true;
         if self.cursor_locked {
             info!("Locking cursor");
-            win.set_cursor_position(winit::dpi::Position::Physical((self.win_size/2.0).cast_into())).unwrap();
+            win.set_cursor_position(winit::dpi::Position::Physical((self.win_size/2.0).into())).unwrap();
             win.set_cursor_visible(false);
         } else {
             info!("Unlocking cursor");
@@ -63,33 +62,32 @@ impl ManualCamera {
         }
     }
     pub fn aspect_ratio(&self) -> f32 {
-        self.win_size.x / self.win_size.y
+        self.win_size.x() / self.win_size.y()
     }
     pub fn on_resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        self.win_size = new_size.cast_into();
+        self.win_size = new_size.into();
     }
     pub fn on_event(&mut self, event: &WindowEvent, win: &Window) {
         if let WindowEvent::CursorMoved { position, .. } = event {
             if self.cursor_locked {
-                let pos: Vec2 = position.cast_into();
-                let angle = (pos - self.win_size/2.) / self.win_size.y * self.cam.fov.rad();
-                let quat = Quat::from_rotation_x(angle.y) * Quat::from_rotation_y(angle.x);
-                self.cam.pos.matrix3 *= Mat3A::from_quat(quat);
+                let pos: Vec2 = (*position).into();
+                let angle = (pos - self.win_size/2.) / self.win_size.y() * self.cam.fov.rad();
+                self.cam.pos *= rotate_x(angle.y().rad()) * rotate_y(angle.x().rad());
                 // win.set_cursor_grab(winit::window::CursorGrabMode::Locked).unwrap();
-                win.set_cursor_position(PhysicalPosition::new(self.win_size.x/2., self.win_size.y/2.)).unwrap();
+                win.set_cursor_position(PhysicalPosition::new(self.win_size.x()/2., self.win_size.y()/2.)).unwrap();
             }
         }
     }
     pub fn update(&mut self, dt: f32, win: &Window, binds: &KeyBinds) {
         let _span = info_span!("camera").entered();
         for mk in MoveKey::ARRAY {
-            let mut off = Vec3A::ZERO;
+            let mut off = Vec3::ZERO;
             if binds.camera_moves[mk as usize].is_active() {
                 off += move_key_to_dir(mk) * dt
             }
-            self.cam.pos.translation += self.cam.pos.transform_vector3a(off);
-            if off != Vec3A::ZERO {
-                info!("Moved camera to {} ({:+})", self.cam.pos.translation, off);
+            self.cam.pos += off;
+            if off != Vec3::ZERO {
+                info!("Moved camera to {} ({:+})", self.cam.pos.trans(), off);
                 // let mat = self.cam.matrix(self.aspect_ratio);
                 // info!("(0., 0., 0.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 0.)), mat.project_point3(Vec3::new(0., 0., 0.)));
                 // info!("(0., 0., 1.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 1.)), mat.project_point3(Vec3::new(0., 0., 1.)));

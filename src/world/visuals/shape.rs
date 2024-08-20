@@ -1,4 +1,4 @@
-use glam::{Affine3A, Vec3A};
+use crate::math::{Transform, Vec3};
 
 use crate::render_registry::vertex::{Normal, TriVertex};
 
@@ -32,7 +32,7 @@ fn put_triangle(builder: &mut impl TriMeshBuilder, mut ps: [TriVertex; 3]) {
 }
 
 pub struct Triangle<P1, P2, P3>(pub P1, pub P2, pub P3);
-impl<P1: Variator<Item=Vec3A>, P2: Variator<Item=Vec3A>, P3: Variator<Item=Vec3A>> TriShape for Triangle<P1, P2, P3> {
+impl<P1: Variator<Item=Vec3>, P2: Variator<Item=Vec3>, P3: Variator<Item=Vec3>> TriShape for Triangle<P1, P2, P3> {
     const NB_INDEX: usize = 3;
     const NB_VERTEX: usize = 3;
     // fn nb_index(&self) -> usize {
@@ -42,15 +42,17 @@ impl<P1: Variator<Item=Vec3A>, P2: Variator<Item=Vec3A>, P3: Variator<Item=Vec3A
     //     3
     // }
     fn put(&self, builder: &mut impl TriMeshBuilder, ctx: UpdateCtx, world: &World) {
+        let (a, b, c) = (self.0.update(ctx, world), self.1.update(ctx, world), self.2.update(ctx, world));
+        let g = builder.global();
+        let (apos, bpos, cpos) = (g.tr_point(a), g.tr_point(b), g.tr_point(c));
         put_triangle(builder, [
-            // (0; X; Y) if we truncate uvs
-            TriVertex::new(self.0.update(ctx, world),  Normal::ZERO, Vec3A::Z),
-            TriVertex::new(self.1.update(ctx, world), Normal::ZERO, Vec3A::X),
-            TriVertex::new(self.2.update(ctx, world), Normal::ZERO, Vec3A::Y),
+            TriVertex::new(apos,  Normal::ZERO, a),
+            TriVertex::new(bpos, Normal::ZERO, b),
+            TriVertex::new(cpos, Normal::ZERO, c),
         ])
     }
 }
-impl<P1: Variator<Item=Vec3A>, P2: Variator<Item=Vec3A>, P3: Variator<Item=Vec3A>> BorderShape for Triangle<P1, P2, P3> {
+impl<P1: Variator<Item=Vec3>, P2: Variator<Item=Vec3>, P3: Variator<Item=Vec3>> BorderShape for Triangle<P1, P2, P3> {
     const NB_BORDER_SEGMENT: usize = 3;
     // fn border_size(&self) -> usize {
     //     3
@@ -60,9 +62,10 @@ impl<P1: Variator<Item=Vec3A>, P2: Variator<Item=Vec3A>, P3: Variator<Item=Vec3A
     }
 }
 
-/// Cube, but with normals like a sphere. Have less verteces
+/// Cube, but with normals like a sphere. Have fewer vertexes
+/// Half extents
 pub struct CubeSphere<C>(pub C);
-impl<C: Variator<Item=Affine3A>> TriShape for CubeSphere<C> {
+impl<C: Variator<Item=Transform>> TriShape for CubeSphere<C> {
     const NB_INDEX: usize = 36;
     const NB_VERTEX: usize = 8;
     // fn nb_index(&self) -> usize {
@@ -84,9 +87,9 @@ impl<C: Variator<Item=Affine3A>> TriShape for CubeSphere<C> {
         for x in [-1., 1.] {
             for y in [-1., 1.] {
                 for z in [-1., 1.] {
-                    let uv = (Vec3A::new(x, y, z) + Vec3A::ONE) * 0.5;
-                    let normal = tr.transform_vector3a(Vec3A::new(x, y, z));
-                    let pos = normal + tr.translation;
+                    let normal = tr.tr_vec(Vec3::new(x, y, z));
+                    let uv = normal + tr.trans();
+                    let pos = builder.global().tr_point(uv);
                     builder.push_vertex(TriVertex::new(pos, normal.into(), uv))
                 }
             }
@@ -95,7 +98,7 @@ impl<C: Variator<Item=Affine3A>> TriShape for CubeSphere<C> {
 }
 
 pub struct Cube<C>(pub C);
-impl<C: Variator<Item=Affine3A>> TriShape for Cube<C> {
+impl<C: Variator<Item=Transform>> TriShape for Cube<C> {
     const NB_INDEX: usize = 36;
     const NB_VERTEX: usize = 24;
     // fn nb_index(&self) -> usize {
@@ -107,25 +110,26 @@ impl<C: Variator<Item=Affine3A>> TriShape for Cube<C> {
     fn put(&self, builder: &mut impl TriMeshBuilder, ctx: UpdateCtx, world: &World) {
         let tr = self.0.update(ctx, world);
         for (normal, p, a, b) in [
-            (tr.x_axis, Vec3A::ZERO, Vec3A::Y, Vec3A::Z),
-            (tr.x_axis, Vec3A::X, Vec3A::Y, Vec3A::Z),
-            (tr.y_axis, Vec3A::ZERO, Vec3A::X, Vec3A::Z),
-            (tr.y_axis, Vec3A::Y, Vec3A::X, Vec3A::Z),
-            (tr.z_axis, Vec3A::ZERO, Vec3A::X, Vec3A::Y),
-            (tr.z_axis, Vec3A::Z, Vec3A::X, Vec3A::Y),
+            (tr.x(), Vec3::ZERO, Vec3::Y, Vec3::Z),
+            (tr.x(), Vec3::X, Vec3::Y, Vec3::Z),
+            (tr.y(), Vec3::ZERO, Vec3::X, Vec3::Z),
+            (tr.y(), Vec3::Y, Vec3::X, Vec3::Z),
+            (tr.z(), Vec3::ZERO, Vec3::X, Vec3::Y),
+            (tr.z(), Vec3::Z, Vec3::X, Vec3::Y),
         ] {
-            let normal = normal.normalize_or_zero();
+            let normal: Normal = builder.global().tr_vec(normal).into();
             builder.push_indexes_offset([0, 1, 2, 1, 2, 3]);
-            for uv in [p, p+a, p+b, p+a+b] {
-                let pos = tr.transform_point3a(uv + uv - Vec3A::ONE);
-                builder.push_vertex(TriVertex::new(pos, Normal::from_normalized(normal), uv));
+            for coord in [p, p+a, p+b, p+a+b] {
+                let uv = tr.tr_point(coord);
+                let pos = builder.global().tr_point(uv);
+                builder.push_vertex(TriVertex::new(pos, normal, uv));
             }
         }
     }
 }
 
 pub struct Pyramid<A, S>(pub A, pub S);
-impl<A: TriShape+BorderShape, S: Variator<Item=Vec3A>> TriShape for Pyramid<A, S> {
+impl<A: TriShape+BorderShape, S: Variator<Item=Vec3>> TriShape for Pyramid<A, S> {
     const NB_INDEX: usize = A::NB_INDEX + 3*A::NB_BORDER_SEGMENT;
     const NB_VERTEX: usize = A::NB_VERTEX + 3*A::NB_BORDER_SEGMENT;
     // fn nb_vertex(&self) -> usize {
@@ -138,11 +142,12 @@ impl<A: TriShape+BorderShape, S: Variator<Item=Vec3A>> TriShape for Pyramid<A, S
         let start = builder.next_index();
         self.0.put(builder, ctx, world);
         let top = self.1.update(ctx, world);
+        let top_pos = builder.global().tr_point(top);
         for (i1, i2) in self.0.segment_border() {
             put_triangle(builder, [
-                builder.get_vertex(start+i1),
+                 builder.get_vertex(start+i1),
                  builder.get_vertex(start+i2), 
-                 TriVertex::new(top, Normal::ZERO, Vec3A::ONE)
+                 TriVertex::new(top_pos, Normal::ZERO, top)
             ])
         }
     }

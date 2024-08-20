@@ -1,3 +1,5 @@
+#![feature(portable_simd)]
+
 use crate::app::App;
 
 mod app;
@@ -7,6 +9,7 @@ mod render_registry;
 mod utils;
 mod content;
 mod models;
+mod math;
 
 fn main() {
     logger::init_logger();
