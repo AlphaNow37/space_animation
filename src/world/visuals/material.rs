@@ -1,34 +1,25 @@
-use std::ops::Range;
 use crate::math::Transform;
 
 use crate::render_registry::{
-    alloc::{BuffersAllocPosition, Position},
+    alloc::{BuffersAllocPosition},
     pipelines::PipelineLabel,
-    vertex::UniformTriangleVertex,
 };
+use crate::render_registry::mesh_builder::MeshBuilders;
 
 use crate::world::{
     primitives::color::Color,
-    visuals::mesh_builder::BaseTriMeshBuilder,
     variators::variator::{UpdateCtx, Variator},
     world::World,
 };
 use crate::world::visuals::shape::TriShape;
 
 pub trait Material {
-    fn pipeline(&self) -> PipelineLabel;
-    fn nb_index(&self) -> usize;
-    fn nb_vertex(&self) -> usize;
-    fn alloc(&self, alloc: &mut BuffersAllocPosition) -> Position {
-        alloc.alloc(self.pipeline(), self.nb_vertex(), self.nb_index())
-    }
+    fn alloc(&self, alloc: &mut BuffersAllocPosition);
     fn put(
         &self,
         ctx: UpdateCtx,
         world: &World,
-        vertex: &mut [u32],
-        vertex_offset_bounds: Range<usize>,
-        index: &mut [u32],
+        builders: &mut MeshBuilders,
     );
 }
 
@@ -38,32 +29,18 @@ pub struct UniformTri<S, C, G> {
     pub color: C,
 }
 impl<S: TriShape, C: Variator<Item = Color>, G: Variator<Item=Transform>> Material for UniformTri<S, C, G> {
-    fn pipeline(&self) -> PipelineLabel {
-        PipelineLabel::UniformTriangle
-    }
-    fn nb_index(&self) -> usize {
-        // self.shape.nb_index()
-        S::NB_INDEX
-    }
-    fn nb_vertex(&self) -> usize {
-        S::NB_VERTEX
+    fn alloc(&self, alloc: &mut BuffersAllocPosition) {
+        alloc.alloc(PipelineLabel::UniformTriangle, S::NB_VERTEX, S::NB_INDEX);
     }
     fn put(
         &self,
         ctx: UpdateCtx,
         world: &World,
-        vertex: &mut [u32],
-        vertex_offset_bounds: Range<usize>,
-        index: &mut [u32],
+        builders: &mut MeshBuilders,
     ) {
-        let mut builder: BaseTriMeshBuilder<UniformTriangleVertex> =
-            BaseTriMeshBuilder::new(
-                vertex,
-                index,
-                self.color.update(ctx, world).as_array(),
-                vertex_offset_bounds,
-                self.global.update(ctx, world)
-            );
-        self.shape.put(&mut builder, ctx, world);
+        let builder = &mut builders.uniform_triangle;
+        builder.data = self.color.update(ctx, world).as_array();
+        builder.global = self.global.update(ctx, world);
+        self.shape.put(builder, ctx, world);
     }
 }

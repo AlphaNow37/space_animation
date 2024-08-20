@@ -1,8 +1,8 @@
-use std::ops::Range;
 use crate::math::Transform;
+use crate::render_registry::pipelines::PipelineLabel;
 
-use crate::render_registry::vertex::{TriVertex, VertexLike};
-use crate::utils::make_trait_alias;
+use crate::render_registry::vertex::{TriVertex, UniformTriangleVertex, VertexLike};
+use crate::utils::{Count, make_trait_alias};
 
 #[allow(dead_code)]
 pub trait MeshBuilder {
@@ -33,37 +33,32 @@ pub trait MeshBuilder {
 
 make_trait_alias!(TriMeshBuilder = MeshBuilder<Vertex=TriVertex>);
 
-pub struct BaseTriMeshBuilder<'a, T: VertexLike> {
-    bound: Range<usize>,
+pub struct BaseMeshBuilder<'a, T: VertexLike> {
+    curr: Count,
     vertex: &'a mut [T],
     index: &'a mut [u32],
-    data: T::ShapeData,
-    global: Transform,
+    pub data: T::ShapeData,
+    pub global: Transform,
 }
-impl<'a, T: VertexLike> BaseTriMeshBuilder<'a, T> {
-    pub fn new(vertex: &'a mut [u32], index: &'a mut [u32], data: T::ShapeData, vertex_offset_bounds: Range<usize>, global: Transform) -> Self {
+impl<'a, T: VertexLike> BaseMeshBuilder<'a, T> {
+    pub fn new((vertex, index): (&'a mut [u32], &'a mut [u32])) -> Self {
         Self {
-            bound: vertex_offset_bounds.clone(),
+            curr: Count::new(),
             vertex: bytemuck::cast_slice_mut(vertex),
             index, //: index.chunks_exact_mut(4),
-            data,
-            global,
+            data: Default::default(),
+            global: Default::default(),
         }
     }
 }
-impl<'a, T: VertexLike> MeshBuilder for BaseTriMeshBuilder<'a, T> {
+impl<'a, T: VertexLike> MeshBuilder for BaseMeshBuilder<'a, T> {
     type Vertex = T::PosData;
     fn push_vertexes<const N: usize>(&mut self, vertexes: [Self::Vertex; N]) {
-        if N==0 {return;}
-        let start = self.bound.start;
-        let end = self.bound.start + N;
-        if end > self.bound.end {panic!("Took too much place !")}
-        self.bound.start = end;
-        (&mut self.vertex[start..end])
+        (&mut self.vertex[self.curr.range_of(N)])
             .copy_from_slice(&vertexes.map(|v| T::new(v, self.data)));
     }
     fn push_vertex(&mut self, vertex: Self::Vertex) {
-        self.vertex[self.bound.next().unwrap()] = T::new(vertex, self.data);
+        self.vertex[self.curr.next()] = T::new(vertex, self.data);
     }
     fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]) {
         let a;
@@ -74,7 +69,7 @@ impl<'a, T: VertexLike> MeshBuilder for BaseTriMeshBuilder<'a, T> {
         self.push_indexes([idx])
     }
     fn next_index(&self) -> u32 {
-        self.bound.start as u32
+        self.curr.curr() as u32
     }
     fn get_vertex(&self, idx: u32) -> Self::Vertex {
         self.vertex[idx as usize].pos()
@@ -83,3 +78,26 @@ impl<'a, T: VertexLike> MeshBuilder for BaseTriMeshBuilder<'a, T> {
         &self.global
     }
 }
+
+macro_rules! make_builders {
+    (
+        $($name: ident = $ty: ty = $label: ident),* $(,)?
+    ) => {
+        pub struct MeshBuilders<'a> {
+            $(pub $name: BaseMeshBuilder<'a, $ty>),*
+        }
+        impl<'a> MeshBuilders<'a> {
+            pub fn from_views(mut views: [(&'a mut [u32], &'a mut [u32]); PipelineLabel::COUNT]) -> Self {
+                Self {
+                    $(
+                        $name: BaseMeshBuilder::new(std::mem::take(&mut views[PipelineLabel::$label as usize]))
+                    ),*
+                }
+            }
+        }
+    };
+}
+
+make_builders!(
+    uniform_triangle = UniformTriangleVertex = UniformTriangle,
+);

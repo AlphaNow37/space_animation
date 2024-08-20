@@ -1,8 +1,8 @@
 use crate::math::{Vec2, Vec3, Vec4, Transform, Dir};
-use crate::render_registry::alloc::{BuffersAllocPosition, Position};
-use crate::render_registry::pipelines::PipelineLabel;
+use crate::render_registry::alloc::{BuffersAllocPosition};
 use crate::world::primitives::camera::Camera;
 use crate::math::Angle;
+use crate::render_registry::mesh_builder::MeshBuilders;
 use crate::world::visuals::material::Material;
 
 use super::variators::variator::{UpdateCtx, Variator};
@@ -156,23 +156,22 @@ impl World {
         self.insert_order.push(id.as_ref());
         id
     }
-    pub fn allocs(&self, alloc: &mut BuffersAllocPosition) -> Vec<Position> {
-        self.materials.iter().map(|m| m.alloc(alloc)).collect()
+    pub fn allocs(&self, alloc: &mut BuffersAllocPosition) {
+        for mat in &self.materials {
+            mat.alloc(alloc)
+        }
+        // self.materials.iter().map(|m| m.alloc(alloc)).collect()
     }
     pub fn push_mat(&mut self, mat: impl Material + 'static) {
         self.materials.push(Box::new(mat));
     }
     fn redraw(&self, ctx: &mut WorldUpdateCtx) {
-        for (i, mat) in self.materials.iter().enumerate() {
-            let pos = &ctx.allocs[i];
-            let (glob_vertex, glob_index) = &mut ctx.views[pos.pipe_label as usize];
+        for mat in &self.materials {
             mat.put(
                 ctx.var_update,
                 self,
-                glob_vertex,
-                pos.vertex_bound.clone(),
-                &mut &mut glob_index[pos.index_bound.clone()],
-            )
+                &mut ctx.builders,
+            );
         }
     }
     fn update_settings(&mut self, ctx: &WorldUpdateCtx) {
@@ -209,8 +208,7 @@ impl<T: Copy> Ref<T> {
 
 pub struct WorldUpdateCtx<'a> {
     pub var_update: UpdateCtx,
-    pub views: [(&'a mut [u32], &'a mut [u32]); PipelineLabel::COUNT],
-    pub allocs: &'a [Position],
+    pub builders: MeshBuilders<'a>,
     pub cam: Camera,
 }
 

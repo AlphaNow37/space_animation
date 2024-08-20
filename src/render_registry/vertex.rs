@@ -10,7 +10,7 @@ pub trait VertexLike: bytemuck::AnyBitPattern + bytemuck::NoUninit {
     const _CHECK: ();
 
     type PosData;
-    type ShapeData: Copy;
+    type ShapeData: Copy + Default;
     fn new(pos: Self::PosData, shape: Self::ShapeData) -> Self;
     fn pos(&self) -> Self::PosData;
 }
@@ -76,7 +76,7 @@ impl From<Vec3> for Normal {
 impl Normal {
     pub const ZERO: Self = Self([0; 4]);
     pub fn from_normalized(vec: Vec3) -> Self {
-        debug_assert!(vec == Vec3::ZERO || vec.is_normalized());
+        debug_assert!(vec == Vec3::ZERO || vec.is_normalized(), "{vec} is not a valid Normal");
         Self(compress_vec4_i(vec.to_vec4(0.)))
     }
     pub fn from_vec(vec: Vec3) -> Self {

@@ -5,3 +5,4 @@ pub mod vertex;
 pub mod shaders;
 pub mod alloc;
 pub mod depth;
+pub mod mesh_builder;

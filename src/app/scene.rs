@@ -1,10 +1,9 @@
 use std::ops::DerefMut;
 
 use tracing::{info_span, info};
-// use crate::app::App;
 use crate::{
     render_registry::{
-        alloc::{BuffersAllocPosition, Position},
+        alloc::BuffersAllocPosition,
         registry::PipelinesRegistry,
     },
     world::{
@@ -12,6 +11,7 @@ use crate::{
         world::{World, WorldUpdateCtx},
     },
 };
+use crate::render_registry::mesh_builder::MeshBuilders;
 
 use super::camera::ManualCamera;
 
@@ -21,7 +21,6 @@ fn init_world(world: &mut World) {
 
 pub struct Scene {
     pub final_position: BuffersAllocPosition,
-    allocs: Vec<Position>,
     world: World,
 }
 impl Scene {
@@ -33,12 +32,11 @@ impl Scene {
         crate::content::build(&mut world);
 
         let mut alloc = BuffersAllocPosition::new();
-        let allocs = world.allocs(&mut alloc);
+        world.allocs(&mut alloc);
 
         Scene {
             final_position: alloc,
             world,
-            allocs,
         }
     }
     pub fn update(
@@ -53,13 +51,12 @@ impl Scene {
         let mut views = registry.views(queue);
         let ctx = WorldUpdateCtx {
             var_update: UpdateCtx { time },
-            allocs: &self.allocs,
-            views: views.each_mut().map(|(v, i)| {
-                (
+            builders: MeshBuilders::from_views(
+                views.each_mut().map(|(v, i)| (
                     bytemuck::cast_slice_mut(v.deref_mut()),
                     bytemuck::cast_slice_mut(i.as_deref_mut().unwrap_or(&mut [])),
-                )
-            }),
+                ))
+            ),
             cam: cam.cam,
         };
         self.world.update(ctx);

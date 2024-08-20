@@ -1,8 +1,8 @@
 use crate::math::{Transform, Vec3};
 
-use crate::render_registry::vertex::{Normal, TriVertex};
+use crate::render_registry::{vertex::{Normal, TriVertex}, mesh_builder::TriMeshBuilder};
 
-use crate::world::{visuals::mesh_builder::TriMeshBuilder, variators::variator::{UpdateCtx, Variator}, world::World};
+use crate::world::{variators::variator::{UpdateCtx, Variator}, world::World};
 
 pub trait TriShape {
     const NB_INDEX: usize;
@@ -46,7 +46,7 @@ impl<P1: Variator<Item=Vec3>, P2: Variator<Item=Vec3>, P3: Variator<Item=Vec3>> 
         let g = builder.global();
         let (apos, bpos, cpos) = (g.tr_point(a), g.tr_point(b), g.tr_point(c));
         put_triangle(builder, [
-            TriVertex::create(apos,  Normal::ZERO, a),
+            TriVertex::create(apos, Normal::ZERO, a),
             TriVertex::create(bpos, Normal::ZERO, b),
             TriVertex::create(cpos, Normal::ZERO, c),
         ])

@@ -1,5 +1,5 @@
 use tracing::{info_span, info};
-use crate::math::{Mat4, Vec3};
+use crate::math::Mat4;
 use crate::render_registry::bind_groups::{Bindings, EntryType};
 use crate::render_registry::pipelines::{Pipeline, PipelineLabel};
 use crate::render_registry::shaders::Shaders;
