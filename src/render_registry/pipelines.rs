@@ -1,6 +1,6 @@
 use tracing::{info, info_span};
 use crate::render_registry::depth::DepthBuffer;
-use crate::render_registry::shaders::{ShaderFile, Shaders};
+use crate::render_registry::shaders::Shaders;
 use crate::render_registry::vertex::UniformTriangleVertex;
 use crate::utils::macros::array_key;
 
@@ -37,19 +37,9 @@ impl PipelineLabel {
             Self::UniformTriangle => pipe_names!("UniformTriangle"),
         }
     }
-    pub fn vertex_file(&self) -> ShaderFile {
-        match self {
-            Self::UniformTriangle => ShaderFile::Simple,
-        }
-    }
     pub fn vertex_entry_point(&self) -> &'static str {
         match self {
             Self::UniformTriangle => "vs_main",
-        }
-    }
-    pub fn fragment_file(&self) -> ShaderFile {
-        match self {
-            Self::UniformTriangle => ShaderFile::Simple,
         }
     }
     pub fn fragment_entry_point(&self) -> &'static str {
@@ -109,12 +99,12 @@ impl Pipeline {
                         attributes: label.vertex_attributes()
                     }
                 ],
-                module: shaders.get(label.vertex_file()),
+                module: shaders.get(),
                 entry_point: label.vertex_entry_point(),
                 compilation_options: wgpu::PipelineCompilationOptions::default()
             },
             fragment: Some(wgpu::FragmentState {
-                module: shaders.get(label.fragment_file()),
+                module: shaders.get(),
                 entry_point: label.fragment_entry_point(),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: surface_config.format,
@@ -172,9 +162,9 @@ impl Pipeline {
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         if let Some(index_buffer) = &self.index_buffer {
             render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-            render_pass.draw_indexed(0..(self.buffer_count.1) as u32, 0, 0..1);
+            render_pass.draw_indexed(0..self.buffer_count.1 as u32, 0, 0..1);
         } else {
-            render_pass.draw(0..(self.buffer_count.0) as u32, 0..1);
+            render_pass.draw(0..self.buffer_count.0 as u32, 0..1);
         }
     }
     pub fn view<'a>(&'a self, queue: &'a wgpu::Queue) -> (wgpu::QueueWriteBufferView<'a>, Option<wgpu::QueueWriteBufferView<'a>>) {

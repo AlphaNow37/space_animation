@@ -1,39 +1,37 @@
-use crate::utils::macros::array_key;
+use std::borrow::Cow;
 
-macro_rules! source {
+macro_rules! sources {
     (
-        $name: literal
+        $($filename: literal)*
     ) => {
-        {
-            wgpu::include_wgsl!(concat!("../shaders/", $name, ".wgsl"))
-        }
+        concat!($(
+            include_str!(concat!("../shaders/", $filename, ".wgsl")),
+        )*)
     };
 }
 
-array_key!(
-    pub enum ShaderFile {
-        Simple,
-    }
-);
-
-impl ShaderFile {
-    pub fn source(&self) -> wgpu::ShaderModuleDescriptor {
-        match self {
-            Self::Simple => source!("simple"),
-        }
-    }
+fn shader_sources() -> &'static str {
+    sources!(
+        "bindings"
+        "colors"
+        "shadows"
+        "simple"
+    )
 }
 
 pub struct Shaders {
-    shaders: [wgpu::ShaderModule; ShaderFile::COUNT]
+    shaders: wgpu::ShaderModule,
 }
 impl Shaders {
     pub fn new(device: &wgpu::Device) -> Self {
         Self {
-            shaders: ShaderFile::ARRAY.map(|v| device.create_shader_module(v.source())),
+            shaders: device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("Shaders"),
+                source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(shader_sources())),
+            }),
         }
     }
-    pub fn get(&self, file: ShaderFile) -> &wgpu::ShaderModule {
-        &self.shaders[file as usize]
+    pub fn get(&self) -> &wgpu::ShaderModule {
+        &self.shaders
     }
 }

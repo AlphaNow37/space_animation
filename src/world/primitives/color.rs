@@ -1,7 +1,7 @@
 use std::ops::{Add, Mul};
 use crate::math::{Vec3, vec3};
 
-use crate::utils::{compress_vec4_i, compress_vec4_u, CompressedVec};
+use crate::utils::{compress_vec4_i, CompressedVec};
 
 macro_rules! consts_lch {
     (

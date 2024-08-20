@@ -24,10 +24,10 @@ impl PipelinesRegistry {
                 label, 
                 device, 
                 surf_config,
-                 &bindings.layout,
-                  &shaders,
-                  pos.get_count(label)
-                ));
+                &bindings.layout,
+                &shaders,
+                pos.get_count(label)
+            ));
         info!("Succesfully created {} pipelines", pipes.len());
         Self {
             bindings,
@@ -71,8 +71,8 @@ impl PipelinesRegistry {
     pub fn set_camera(&self, queue: &wgpu::Queue, matrix: Mat4) {
         self.bindings.write(queue, EntryType::Camera, &matrix.to_array());
     }
-    pub fn set_eye_dir(&self, queue: &wgpu::Queue, dir: Vec3) {
-        self.bindings.write(queue, EntryType::EyeDir, &dir.to_array());
+    pub fn set_camera_transform(&self, queue: &wgpu::Queue, matrix: Mat4) {
+        self.bindings.write(queue, EntryType::CameraTransform, &matrix.to_array());
     }
     pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [(wgpu::QueueWriteBufferView<'a>, Option<wgpu::QueueWriteBufferView<'a>>); PipelineLabel::COUNT] {
         PipelineLabel::ARRAY
