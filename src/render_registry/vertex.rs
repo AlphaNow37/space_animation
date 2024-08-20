@@ -90,7 +90,7 @@ pub struct UniformTriangleVertex {
     pub vertex: TriVertex,
     pub color: CompressedVec,
 }
-impl_vertex!(UniformTriangleVertex: 8, 0 => Float32x3, 1 => Snorm8x4, 2 => Float32x3, 3 => Unorm8x4, );
+impl_vertex!(UniformTriangleVertex: 8, 0 => Float32x3, 1 => Snorm8x4, 2 => Float32x3, 3 => Snorm8x4, );
 impl From<(TriVertex, CompressedVec)> for UniformTriangleVertex {
     fn from((vertex, color): (TriVertex, CompressedVec)) -> Self {
         Self {

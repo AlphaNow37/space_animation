@@ -46,17 +46,24 @@ impl Vec3 {
             self.with_len(1.)
         }
     }
+    pub fn map_comp(self, mut f: impl FnMut(f32)->f32) -> Self {
+        Self::new(
+            f(self.x()),
+            f(self.y()),
+            f(self.z()),
+        )
+    }
     pub fn dir(self) -> Option<Dir> {
         Dir::try_from(self).ok()
     }
-    pub fn x(self) -> f32 {
-        self.0[0]
+    pub const fn x(self) -> f32 {
+        self.0.as_array()[0]
     }
-    pub fn y(self) -> f32 {
-        self.0[1]
+    pub const fn y(self) -> f32 {
+        self.0.as_array()[1]
     }
-    pub fn z(self) -> f32 {
-        self.0[2]
+    pub const fn z(self) -> f32 {
+        self.0.as_array()[2]
     }
     pub fn is_normalized(self) -> bool {
         let l = self.len_squared();
