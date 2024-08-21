@@ -1,5 +1,6 @@
 use core::f32;
 use std::ops::Mul;
+use crate::math::ToAngle;
 
 use crate::utils::VectorSpace;
 
@@ -32,7 +33,7 @@ macro_rules! time_modifier {
 time_modifier!(TimeOffset(f32): t,o => t+o.0);
 time_modifier!(TimeMul(f32): t,m => t*m.0);
 time_modifier!(TimeMod(f32): t,m => t%m.0);
-time_modifier!(TimeSin(f32): t,p => (t*p.0*f32::consts::TAU).sin());
+time_modifier!(TimeSin(f32): t,p => (t/p.0).turn().sin());
 time_modifier!(TimeLea(f32, f32): t,a => t.mul_add(a.0, a.1));
 
 

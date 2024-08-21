@@ -1,6 +1,6 @@
 use crate::{models::put_axis, world::{primitives::color::Color, world::World}};
-use crate::math::{rotate_x, scale, ToAngle, trans, Transform, vec3};
-use crate::world::variators::variator::UpdateCtx;
+use crate::math::{rotate_x, scale, ToAngle, trans, Transform, vec3, Vec3};
+use crate::world::variators::variator::{UpdateCtx, Variator};
 use crate::world::visuals::material::{SpongeTri, UniformSphere, UniformTri};
 use crate::world::visuals::shape::{Cube, Pyramid, Triangle};
 
@@ -27,7 +27,7 @@ pub fn build(world: &mut World) {
     // put_axis(world, Interpolate(
     //     Transform::ID,
     //     Transform::from_cols(Vec3::X, Vec3::Z, -Vec3::Y).with_trans(trans(0., 1., 0.)),
-    // ).time_lea(0.5, 0.5).time_sin(0.05));
+    // ).time_lea(0.5, 0.5).time_sin(20.));
 
     put_axis(world, trans(5., 5., 5.));
 
@@ -64,7 +64,7 @@ pub fn build(world: &mut World) {
 
     world.push_mat(
         UniformSphere {
-            local: scale(1., 2., 1.),
+            local: |ctx: UpdateCtx, _: &World| scale(1., 3., 1.).rotate_around(Vec3::ONE, ctx.time.turn()),
             color: Color::DEBUG,
             global: trans(3., 3., 3.),
         }

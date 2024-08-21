@@ -43,7 +43,7 @@ impl Vec3 {
         if self == Self::ZERO {
             Self::ZERO
         } else {
-            self.with_len(1.)
+            self / self.len()
         }
     }
     pub fn map_comp(self, mut f: impl FnMut(f32)->f32) -> Self {

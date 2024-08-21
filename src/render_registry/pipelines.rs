@@ -1,6 +1,7 @@
 use tracing::{info, info_span};
 use wgpu::util::DeviceExt;
 use crate::render_registry::depth::DepthBuffer;
+use crate::render_registry::prefabs::CIRCLE_POS;
 use crate::render_registry::shaders::Shaders;
 use crate::render_registry::vertex::{PosVertex, SphereVertexCol1, TriVertexCol1, TriVertexCol2};
 use crate::utils::macros::array_key;
@@ -94,34 +95,9 @@ impl PipelineLabel {
             _ => None,
         }
     }
-    fn vertex_aux_buffer_content(&self) -> Option<(Vec<u32>, u32)> {
+    fn vertex_aux_buffer_content(&self) -> Option<(u32, &'static [u32])> {
         match self {
-            Self::UniformSphere => Some((bytemuck::allocation::cast_vec(vec![
-                PosVertex::new(-1., 0., 0.),
-                PosVertex::new(0., 0., 1.),
-                PosVertex::new(0., -1., 0.),
-                PosVertex::new(0., -1., 0.),
-                PosVertex::new(0., 0., 1.),
-                PosVertex::new(1., 0., 0.),
-                PosVertex::new(1., 0., 0.),
-                PosVertex::new(0., 0., 1.),
-                PosVertex::new(0., 1., 0.),
-                PosVertex::new(0., 1., 0.),
-                PosVertex::new(0., 0., 1.),
-                PosVertex::new(-1., 0., 0.),
-                PosVertex::new(-1., 0., 0.),
-                PosVertex::new(0., 0., -1.),
-                PosVertex::new(0., -1., 0.),
-                PosVertex::new(0., -1., 0.),
-                PosVertex::new(0., 0., -1.),
-                PosVertex::new(1., 0., 0.),
-                PosVertex::new(1., 0., 0.),
-                PosVertex::new(0., 0., -1.),
-                PosVertex::new(0., 1., 0.),
-                PosVertex::new(0., 1., 0.),
-                PosVertex::new(0., 0., -1.),
-                PosVertex::new(-1., 0., 0.),
-            ]), 24)),
+            Self::UniformSphere => Some(*CIRCLE_POS),
             _ => None,
         }
     }
@@ -235,7 +211,7 @@ impl Pipeline {
             })),
             Some(_) => {
                 debug_assert_eq!(buffer_count.1, 0, "A non-indexed pipeline should not contain indices");
-                let (content, len) = label.vertex_aux_buffer_content().expect("There should be an initial content");
+                let (len, content) = label.vertex_aux_buffer_content().expect("There should be an initial content");
                 SecondaryBuffer::InstanceAux(device.create_buffer_init(
                     &wgpu::util::BufferInitDescriptor {
                         label: Some(names.instance_aux_buffer),

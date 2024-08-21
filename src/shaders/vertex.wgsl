@@ -64,16 +64,16 @@ fn vs_sphere_color1(
 ) -> FragInputCol1 {
     var out: FragInputCol1;
 
-    let pos = vec4(in_pos.pos, 1.);
     let local: mat4x4<f32> = mat4x4(in_vertex.local1, in_vertex.local2, in_vertex.local3, in_vertex.local4);
     let global: mat4x4<f32> = mat4x4(in_vertex.global1, in_vertex.global2, in_vertex.global3, in_vertex.global4);
-    let total: mat4x4<f32> = global * local;
 
-    let global_pos = total * pos;
-    out.uv = (local * pos).xyz;
+    let normal = global * local * vec4(in_pos.pos.xyz, 0.);
+    let local_pos = local * vec4(in_pos.pos.xyz, 1.);
+    let global_pos = global * local_pos;
+    out.uv = local_pos.xyz;
     out.clip_position = camera * global_pos;
     out.delta_pos = global_pos.xyz - camera_transform[3].xyz;
     out.col = in_col.col.xyz;
-    out.normal = out.uv / length(out.uv);
+    out.normal = normal.xyz / length(normal.xyz);
     return out;
 }
