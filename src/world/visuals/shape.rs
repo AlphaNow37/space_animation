@@ -1,4 +1,4 @@
-use crate::math::{Transform, Vec3};
+use crate::math::{Transform, Vec3, vec3};
 
 use crate::render_registry::{vertex::{Normal, TriVertex}, mesh_builder::TriMeshBuilder};
 
@@ -110,16 +110,16 @@ impl<C: Variator<Item=Transform>> TriShape for Cube<C> {
     fn put(&self, builder: &mut impl TriMeshBuilder, ctx: UpdateCtx, world: &World) {
         let tr = self.0.update(ctx, world);
         for (normal, p, a, b) in [
-            (tr.x(), Vec3::ZERO, Vec3::Y, Vec3::Z),
-            (tr.x(), Vec3::X, Vec3::Y, Vec3::Z),
-            (tr.y(), Vec3::ZERO, Vec3::X, Vec3::Z),
-            (tr.y(), Vec3::Y, Vec3::X, Vec3::Z),
-            (tr.z(), Vec3::ZERO, Vec3::X, Vec3::Y),
-            (tr.z(), Vec3::Z, Vec3::X, Vec3::Y),
+            (tr.x(), vec3(-1., -1., -1.), Vec3::Y, Vec3::Z),
+            (tr.x(), vec3(1., -1., -1.), Vec3::Y, Vec3::Z),
+            (tr.y(), vec3(-1., -1., -1.), Vec3::X, Vec3::Z),
+            (tr.y(), vec3(-1., 1., -1.), Vec3::X, Vec3::Z),
+            (tr.z(), vec3(-1., -1., -1.), Vec3::X, Vec3::Y),
+            (tr.z(), vec3(-1., -1., 1.), Vec3::X, Vec3::Y),
         ] {
             let normal: Normal = builder.global().tr_vec(normal).into();
             builder.push_indexes_offset([0, 1, 2, 1, 2, 3]);
-            for coord in [p, p+a, p+b, p+a+b] {
+            for coord in [p, p+a*2., p+b*2., p+a*2.+b*2.] {
                 let uv = tr.tr_point(coord);
                 let pos = builder.global().tr_point(uv);
                 builder.push_vertex(TriVertex::create(pos, normal, uv));

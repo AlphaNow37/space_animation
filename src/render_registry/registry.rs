@@ -74,8 +74,11 @@ impl PipelinesRegistry {
     pub fn set_camera_transform(&self, queue: &wgpu::Queue, matrix: Mat4) {
         self.bindings.write(queue, EntryType::CameraTransform, &matrix.to_array());
     }
-    pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [(wgpu::QueueWriteBufferView<'a>, Option<wgpu::QueueWriteBufferView<'a>>); PipelineLabel::COUNT] {
+    pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [[Option<wgpu::QueueWriteBufferView<'a>>; 2]; PipelineLabel::COUNT] {
         PipelineLabel::ARRAY
-            .map(|label| self.pipes[label as usize].view(&queue))
+            .map(|label| {
+                let pipe = &self.pipes[label as usize];
+                [pipe.view_vertex(queue), pipe.view_index(queue)]
+            })
     }
 }

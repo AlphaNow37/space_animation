@@ -1,7 +1,7 @@
 use tracing::{info, info_span};
 use crate::render_registry::depth::DepthBuffer;
 use crate::render_registry::shaders::Shaders;
-use crate::render_registry::vertex::UniformTriangleVertex;
+use crate::render_registry::vertex::{TriVertexCol1, TriVertexCol2};
 use crate::utils::macros::array_key;
 
 pub struct PipeNames {
@@ -29,37 +29,43 @@ use super::vertex::VertexLike;
 array_key!(
     pub enum PipelineLabel {
         UniformTriangle,
+        SpongeTriangle,
     }
 );
 impl PipelineLabel {
     pub fn names(&self) -> PipeNames {
         match self {
             Self::UniformTriangle => pipe_names!("UniformTriangle"),
+            Self::SpongeTriangle => pipe_names!("SpongeTriangle"),
         }
     }
     pub fn vertex_entry_point(&self) -> &'static str {
         match self {
             Self::UniformTriangle => "vs_tri_color1",
+            Self::SpongeTriangle => "vs_tri_color2",
         }
     }
     pub fn fragment_entry_point(&self) -> &'static str {
         match self {
             Self::UniformTriangle => "fs_uniform",
+            Self::SpongeTriangle => "fs_sponge",
         }
     }
     pub fn vertex_attributes(&self) -> &'static [wgpu::VertexAttribute] {
         match self {
-            Self::UniformTriangle => UniformTriangleVertex::ATTRS,
+            Self::UniformTriangle => TriVertexCol1::ATTRS,
+            Self::SpongeTriangle => TriVertexCol2::ATTRS,
         }
     }
     pub fn vertex_size(&self) -> usize {
         match self {
-            Self::UniformTriangle => UniformTriangleVertex::SIZE,
+            Self::UniformTriangle => TriVertexCol1::SIZE,
+            Self::SpongeTriangle => TriVertexCol2::SIZE,
         }
     }
     pub fn require_index(&self) -> bool {
         match self {
-            Self::UniformTriangle => true,
+            Self::UniformTriangle | Self::SpongeTriangle => true,
         }
     }
 }
@@ -167,18 +173,16 @@ impl Pipeline {
             render_pass.draw(0..self.buffer_count.0 as u32, 0..1);
         }
     }
-    pub fn view<'a>(&'a self, queue: &'a wgpu::Queue) -> (wgpu::QueueWriteBufferView<'a>, Option<wgpu::QueueWriteBufferView<'a>>) {
-        (
-            queue.write_buffer_with(
-                &self.vertex_buffer,
-                0,
-                ((self.label.vertex_size()*self.buffer_count.0) as u64).try_into().unwrap(),
-            ).unwrap(),
-            self.index_buffer.as_ref().map(|index_buffer| queue.write_buffer_with(
-                &index_buffer,
-                0,
-                (4*self.buffer_count.1 as u64).try_into().unwrap(),
-            ).unwrap())
-        )
+
+    pub fn view_vertex<'a>(&'a self, queue: &'a wgpu::Queue) -> Option<wgpu::QueueWriteBufferView<'a>> {
+        let size = (self.label.vertex_size()*self.buffer_count.0) as u64;
+        let buffer_size = wgpu::BufferSize::new(size)?;
+        queue.write_buffer_with(&self.vertex_buffer, 0, buffer_size)
+    }
+    pub fn view_index<'a>(&'a self, queue: &'a wgpu::Queue) -> Option<wgpu::QueueWriteBufferView<'a>> {
+        let buffer = self.index_buffer.as_ref()?;
+        let size = 4 * self.buffer_count.1 as u64;
+        let buffer_size = wgpu::BufferSize::new(size)?;
+        queue.write_buffer_with(buffer, 0, buffer_size)
     }
 }

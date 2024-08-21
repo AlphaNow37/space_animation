@@ -52,10 +52,13 @@ impl Scene {
         let ctx = WorldUpdateCtx {
             var_update: UpdateCtx { time },
             builders: MeshBuilders::from_views(
-                views.each_mut().map(|(v, i)| (
-                    bytemuck::cast_slice_mut(v.deref_mut()),
-                    bytemuck::cast_slice_mut(i.as_deref_mut().unwrap_or(&mut [])),
-                ))
+                views.each_mut()
+                    .map(|views|
+                         views.each_mut()
+                             .map(|v|
+                                 v.as_deref_mut().map(|buf| bytemuck::cast_slice_mut(buf)).unwrap_or(&mut [])
+                             )
+                    )
             ),
             cam: cam.cam,
         };

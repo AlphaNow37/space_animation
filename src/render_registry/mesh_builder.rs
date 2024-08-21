@@ -1,7 +1,7 @@
 use crate::math::Transform;
 use crate::render_registry::pipelines::PipelineLabel;
 
-use crate::render_registry::vertex::{TriVertex, UniformTriangleVertex, VertexLike};
+use crate::render_registry::vertex::{TriVertex, TriVertexCol1, TriVertexCol2, VertexLike};
 use crate::utils::{Count, make_trait_alias};
 
 #[allow(dead_code)]
@@ -37,11 +37,11 @@ pub struct BaseMeshBuilder<'a, T: VertexLike> {
     curr: Count,
     vertex: &'a mut [T],
     index: &'a mut [u32],
-    pub data: T::ShapeData,
-    pub global: Transform,
+    data: T::ShapeData,
+    global: Transform,
 }
 impl<'a, T: VertexLike> BaseMeshBuilder<'a, T> {
-    pub fn new((vertex, index): (&'a mut [u32], &'a mut [u32])) -> Self {
+    pub fn new([vertex, index]: [&'a mut [u32]; 2]) -> Self {
         Self {
             curr: Count::new(),
             vertex: bytemuck::cast_slice_mut(vertex),
@@ -49,6 +49,11 @@ impl<'a, T: VertexLike> BaseMeshBuilder<'a, T> {
             data: Default::default(),
             global: Default::default(),
         }
+    }
+    pub fn with_global_data(&mut self, global: Transform, data: T::ShapeData) -> &mut Self {
+        self.global = global;
+        self.data = data;
+        self
     }
 }
 impl<'a, T: VertexLike> MeshBuilder for BaseMeshBuilder<'a, T> {
@@ -87,7 +92,7 @@ macro_rules! make_builders {
             $(pub $name: BaseMeshBuilder<'a, $ty>),*
         }
         impl<'a> MeshBuilders<'a> {
-            pub fn from_views(mut views: [(&'a mut [u32], &'a mut [u32]); PipelineLabel::COUNT]) -> Self {
+            pub fn from_views(mut views: [[&'a mut [u32]; 2]; PipelineLabel::COUNT]) -> Self {
                 Self {
                     $(
                         $name: BaseMeshBuilder::new(std::mem::take(&mut views[PipelineLabel::$label as usize]))
@@ -99,5 +104,6 @@ macro_rules! make_builders {
 }
 
 make_builders!(
-    uniform_triangle = UniformTriangleVertex = UniformTriangle,
+    uniform_triangle = TriVertexCol1 = UniformTriangle,
+    sponge_triangle = TriVertexCol2 = SpongeTriangle,
 );

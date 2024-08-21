@@ -16,6 +16,7 @@ fn shader_sources() -> &'static str {
         "colors"
         "shadows"
         "vertex"
+        "selectors"
         "fragment"
     )
 }

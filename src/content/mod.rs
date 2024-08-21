@@ -1,7 +1,8 @@
 use crate::{models::put_axis, world::{primitives::color::Color, variators::variator::Variator, world::World}};
-use crate::math::{rotate_x, ToAngle, trans, Transform, Vec3, vec3};
+use crate::math::{rotate_x, scale, ToAngle, trans, Transform, Vec3, vec3};
 use crate::world::variators::combinators::Interpolate;
-use crate::world::visuals::material::UniformTri;
+use crate::world::variators::variator::UpdateCtx;
+use crate::world::visuals::material::{SpongeTri, UniformTri};
 use crate::world::visuals::shape::{Cube, Pyramid, Triangle};
 
 fn put_cube(world: &mut World) {
@@ -41,6 +42,15 @@ pub fn build(world: &mut World) {
         color: Color::RED,
         global: Transform::ID,
     });
+
+    world.push_mat(
+        SpongeTri {
+            global: trans(-2., 2., -2.),
+            shape: Cube(|ctx: UpdateCtx, world: &World| scale(2.5, 2.5, 2.5)),
+            color1: Color::RED,
+            color2: Color::WHITE,
+        },
+    );
 
     world.push_mat(
         UniformTri {

@@ -23,7 +23,7 @@ macro_rules! new_vertex {
             ),* $(,)?
         } -> $ssize: expr;
 
-        new($pos: ident : $posty: ty , $shape: ident : $shapety: ty)
+        new($pos: pat = $posty: ty , $shape: pat = $shapety: ty)
         -> {$new: expr}
 
         pos($self: ident) -> {$getpos: expr}
@@ -96,7 +96,7 @@ new_vertex!(
         normal: Normal : [1 => Snorm8x4],
         uv: [f32; 3] : [2 => Float32x3],
     } -> 7;
-    new(pos: Self, _shape: ()) -> {pos}
+    new(pos = Self, _shape = ()) -> {pos}
     pos(self) -> {*self}
 );
 impl TriVertex {
@@ -110,10 +110,19 @@ impl TriVertex {
 }
 
 new_vertex!(
-    UniformTriangleVertex {
+    TriVertexCol1 {
         vertex: TriVertex : [0 => Float32x3, 1 => Snorm8x4, 2 => Float32x3],
         color: CompressedVec : [3 => Snorm8x4],
     } -> 8;
-    new(vertex: TriVertex, color: CompressedVec) -> {Self {vertex, color}}
+    new(vertex = TriVertex, color = CompressedVec) -> {Self {vertex, color}}
+    pos(self) -> {self.vertex}
+);
+new_vertex!(
+    TriVertexCol2 {
+        vertex: TriVertex : [0 => Float32x3, 1 => Snorm8x4, 2 => Float32x3],
+        col1: CompressedVec : [3 => Snorm8x4],
+        col2: CompressedVec : [4 => Snorm8x4],
+    } -> 9;
+    new(vertex = TriVertex, (col1, col2) = (CompressedVec, CompressedVec)) -> {Self {vertex, col1, col2}}
     pos(self) -> {self.vertex}
 );

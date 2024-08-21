@@ -38,9 +38,30 @@ impl<S: TriShape, C: Variator<Item = Color>, G: Variator<Item=Transform>> Materi
         world: &World,
         builders: &mut MeshBuilders,
     ) {
-        let builder = &mut builders.uniform_triangle;
-        builder.data = self.color.update(ctx, world).as_array();
-        builder.global = self.global.update(ctx, world);
-        self.shape.put(builder, ctx, world);
+        let global = self.global.update(ctx, world);
+        let color = self.color.update(ctx, world).as_array();
+        self.shape.put(builders.uniform_triangle.with_global_data(global, color), ctx, world);
+    }
+}
+pub struct SpongeTri<S, C1, C2, G> {
+    pub global: G,
+    pub shape: S,
+    pub color1: C1,
+    pub color2: C2,
+}
+impl<S: TriShape, C1: Variator<Item = Color>, C2: Variator<Item = Color>, G: Variator<Item=Transform>> Material for SpongeTri<S, C1, C2, G> {
+    fn alloc(&self, alloc: &mut BuffersAllocPosition) {
+        alloc.alloc(PipelineLabel::SpongeTriangle, S::NB_VERTEX, S::NB_INDEX);
+    }
+    fn put(
+        &self,
+        ctx: UpdateCtx,
+        world: &World,
+        builders: &mut MeshBuilders,
+    ) {
+        let global = self.global.update(ctx, world);
+        let color1 = self.color1.update(ctx, world).as_array();
+        let color2 = self.color2.update(ctx, world).as_array();
+        self.shape.put(builders.sponge_triangle.with_global_data(global, (color1, color2)), ctx, world);
     }
 }
