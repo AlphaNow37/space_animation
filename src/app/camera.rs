@@ -73,7 +73,6 @@ impl ManualCamera {
                 let pos: Vec2 = (*position).into();
                 let angle = (pos - self.win_size/2.) / self.win_size.y() * self.cam.fov.rad();
                 self.cam.pos *= rotate_x(angle.y().rad()) * rotate_y(angle.x().rad());
-                // win.set_cursor_grab(winit::window::CursorGrabMode::Locked).unwrap();
                 win.set_cursor_position(PhysicalPosition::new(self.win_size.x()/2., self.win_size.y()/2.)).unwrap();
             }
         }

@@ -15,12 +15,6 @@ macro_rules! make_system {
         primitive: $(
             -
             $attr: ident : $prim_ty: ident : $prim_pty: ident
-            into $($prim_into: ident),*
-        );*
-        $(;)?
-        composite: $(
-            - $compo_ty: ident = $($sub: ident),*
-            into $($compo_into: ident),*
         );*
         $(;)?
     ) => {
@@ -36,13 +30,6 @@ macro_rules! make_system {
                     Global::$prim_pty
                 }
             }
-            $(
-                impl Into<$prim_into> for $prim_pty {
-                    fn into(self) -> $prim_into {
-                        $prim_into::$prim_ty
-                    }
-                }
-            )*
             impl PrimPush for $prim_ty {
                 type Label = $prim_pty;
                 fn push(world: &mut World, var: impl Variator<Item=Self>+'static) -> Ref<Self::Label> {
@@ -64,42 +51,6 @@ macro_rules! make_system {
                     world.$attr.get(self.index)
                 }
             }
-        )*
-        $(
-            #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-            pub enum $compo_ty {
-                $(
-                    $sub,
-                )*
-            }
-            impl Into<Global> for $compo_ty {
-                fn into(self) -> Global {
-                    match self {
-                        $(
-                            $compo_ty::$sub => Global::$sub,
-                        )*
-                    }
-                }
-            }
-            impl TryFrom<Global> for $compo_ty {
-                type Error = ();
-                fn try_from(val: Global) -> Result<$compo_ty, ()> {
-                    Ok(match val {
-                        $(
-                            Global::$sub => $compo_ty::$sub,
-                        )*
-                        _ => {return Err(());}
-                    })
-                }
-            }
-            $(
-                impl Into<$compo_into> for $compo_ty {
-                    fn into(&self) -> Ref<$compo_into> {
-                        let glob: Global = self.into();
-                        glob.try_into().unwrap()
-                    }
-                }
-            )*
         )*
         pub struct World {
             $(
@@ -136,18 +87,15 @@ macro_rules! make_system {
 type F32 = f32;
 make_system!(
     primitive:
-    - vec3: Vec3: PVec3 into ;
-    - transform: Transform: PTransform into ;
-    - color: Color: PColor into ;
-    - f32: F32: PF32 into ;
-    - vec2: Vec2: PVec2 into ;
-    - camera: Camera: PCamera into ;
-    - angle: Angle: PAngle into ;
-    - dir: Dir: PDir into ;
-    - vec4: Vec4: PVec4 into ;
-    composite:
-    // composite:
-    // - Point = Vec3A, Affine3A, Camera into ;
+    - vec3: Vec3: PVec3;
+    - transform: Transform: PTransform;
+    - color: Color: PColor;
+    - f32: F32: PF32;
+    - vec2: Vec2: PVec2;
+    - camera: Camera: PCamera;
+    - angle: Angle: PAngle;
+    - dir: Dir: PDir;
+    - vec4: Vec4: PVec4;
 );
 
 impl World {
@@ -160,7 +108,6 @@ impl World {
         for mat in &self.materials {
             mat.alloc(alloc)
         }
-        // self.materials.iter().map(|m| m.alloc(alloc)).collect()
     }
     pub fn push_mat(&mut self, mat: impl Material + 'static) {
         self.materials.push(Box::new(mat));
@@ -216,17 +163,6 @@ pub struct WorldUpdateCtx<'a> {
 pub struct WorldSettings {
     pub cam_settings: Camera,
 }
-
-// impl Variator for Ref<Point> {
-//     type Item = Vec3A;
-//     fn update(&self, _ctx: UpdateCtx, world: &World) -> Self::Item {
-//         match self.label {
-//             Point::Vec3A => world.vec3a.get(self.index),
-//             Point::Affine3A => world.affine3a.get(self.index).translation,
-//             Point::Camera => world.camera.get(self.index).pos.translation,
-//         }
-//     }
-// }
 
 pub trait Push {
     type Label: Into<Global> + Copy;

@@ -28,26 +28,3 @@ fn test() {
     dbg!(sin(TAU));
     dbg!(sin(TAU / 4.));
 }
-
-// pub const fn sin(x: f32) -> f32 {
-//     const fn sin_0_pi(x: f32) -> f32 {
-//         let x2 = x*x;
-//         x * (1. + x2 * (-1. + x2 / 20.) / 6.)
-//     }
-//     const fn sin_positive(x: f32) -> f32 {
-//         let x = x % TAU;
-//         if x > PI {sin_0_pi(TAU - x)} else {sin_0_pi(x)}
-//     }
-//     const fn sin_general(x: f32) -> f32 {
-//         if x < 0. {
-//             -sin_positive(-x)
-//         } else {
-//             sin_positive(x)
-//         }
-//     }
-//     sin_general(x)
-// }
-//
-// pub const fn cos(x: f32) -> f32 {
-//     sin(x + PI/2.)
-// }

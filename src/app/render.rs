@@ -20,7 +20,6 @@ pub fn check_render(app: &mut App, event: &WindowEvent) {
         label: Some("Render encoder")
     });
     holder.registry.render(&mut encoder, &view);
-    // render_pass(&mut encoder, &view, &holder.simple_pipeline);
     app.queue.submit([encoder.finish()]);
     output.present();
 }

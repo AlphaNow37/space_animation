@@ -85,6 +85,5 @@ impl<G: Variator<Item=Transform>, L: Variator<Item=Transform>, C: Variator<Item 
         let local = self.local.update(ctx, world);
         let color = self.color.update(ctx, world).as_array();
         builders.uniform_sphere.with_data(color).push_vertex(SphereVertex::create(global, local));
-        // self.shape.put(builders.sponge_triangle.with_global_data(global, c), ctx, world);
     }
 }

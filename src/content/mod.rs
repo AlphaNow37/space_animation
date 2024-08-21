@@ -45,7 +45,7 @@ pub fn build(world: &mut World) {
     world.push_mat(
         SpongeTri {
             global: trans(-2., 4., -2.),
-            shape: Cube(|ctx: UpdateCtx, world: &World| scale(0.5, 0.5, 0.5)),
+            shape: Cube(|_ctx: UpdateCtx, _world: &World| scale(0.5, 0.5, 0.5)),
             color1: Color::RED,
             color2: Color::WHITE,
         },

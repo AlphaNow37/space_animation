@@ -1,19 +1,6 @@
 use winit::dpi::{PhysicalPosition, PhysicalSize, Pixel};
 use crate::math::{Vec2, Vec4};
 
-// macro_rules! inter_casts {
-//     (
-//         $(
-//             $start: ty
-//             $($inter: ty),*
-//             $(,)?
-//         );*
-//         $(;)?
-//     ) => {
-        
-//     };
-// }
-
 impl<T: Pixel> Into<Vec2> for PhysicalPosition<T> {
     fn into(self) -> Vec2 {
         let t: (f32, f32) = self.cast::<f32>().into();

@@ -48,11 +48,7 @@ impl Vec2 {
     }
 }
 impl_vector_space_simd!(Vec2 (2));
-// impl PartialEq for Vec3 {
-//     fn eq(&self, other: &Self) -> bool {
-//         simd_swizzle!(self.0, [0, 1, 2, 2]) == simd_swizzle!(other.0, [0, 1, 2, 2])
-//     }
-// }
+
 impl Debug for Vec2 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "Vec3({}, {})", self.x(), self.y())

@@ -2,7 +2,7 @@ use tracing::{info, info_span};
 use wgpu::util::DeviceExt;
 use crate::render_registry::depth::DepthBuffer;
 use crate::render_registry::shaders::Shaders;
-use crate::render_registry::vertex::{PosVertex, SphereVertexCol1, TriVertex, TriVertexCol1, TriVertexCol2};
+use crate::render_registry::vertex::{PosVertex, SphereVertexCol1, TriVertexCol1, TriVertexCol2};
 use crate::utils::macros::array_key;
 use super::vertex::VertexLike;
 
@@ -34,13 +34,6 @@ enum VertexBufferLabel {
     InstTriVertex,
 }
 impl VertexBufferLabel {
-    // fn step_mode(&self) -> wgpu::VertexStepMode {
-    //     match self {
-    //         Self::TriCol1 | Self::TriCol2 => wgpu::VertexStepMode::Vertex,
-    //         Self::InstTriVertex => wgpu::VertexStepMode::Vertex,
-    //         Self::SphereCol1 => wgpu::VertexStepMode::Instance,
-    //     }
-    // }
     fn elt_size(&self) -> usize {
         match self {
             Self::TriCol1 => TriVertexCol1::SIZE,

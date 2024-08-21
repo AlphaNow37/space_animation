@@ -48,7 +48,6 @@ impl SurfaceHolder {
 
         Self {
             window: window.clone(),
-            // simple_pipeline: SimplePipeline::new(&app.device, &surface_config),
             registry,
             surface_config,
             surface,

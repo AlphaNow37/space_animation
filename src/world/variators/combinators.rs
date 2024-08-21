@@ -11,15 +11,6 @@ new_typed_variator!(
     [ctx, world],
     Interpolate(A, B: A::Item) [A::Item: VectorSpace] => A::Item {A * (1.-ctx.time) + B * ctx.time}
 );
-// pub struct Interpolate<A, B>(pub A, pub B);
-// impl<A: Variator, B: Variator<Item=A::Item>> Variator for Interpolate<A, B>
-//     where A::Item: VectorSpace
-// {
-//     type Item = A::Item;
-//     fn update(&self, ctx: super::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
-//         self.0.update(ctx, world).mul(1.-ctx.time).add(self.1.update(ctx, world).mul(ctx.time))
-//     }
-// }
 
 macro_rules! time_modifier {
     ($name: ident ($($ty: ty),* $(,)?): $time: ident, $arg: ident => $expr: expr) => {

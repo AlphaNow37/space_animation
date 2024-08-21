@@ -271,12 +271,6 @@ impl MulAssign for Transform {
         *self = *self * rhs
     }
 }
-// impl PartialEq for Transform {
-//     fn eq(&self, other: &Self) -> bool {
-//         simd_swizzle!(self.0, [0, 1, 2, 2, 4, 5, 6, 6, 8, 9, 10, 10, 12, 13, 14, 14])
-//          == simd_swizzle!(other.0, [0, 1, 2, 2, 4, 5, 6, 6, 8, 9, 10, 10, 12, 13, 14, 14])
-//     }
-// }
 
 impl Add<Vec3> for Transform {
     type Output = Self;

@@ -65,7 +65,7 @@ impl PipelinesRegistry {
             pipe.render(&mut render_pass)
         }
     }
-    pub fn set_time(&self, queue: &wgpu::Queue, time: f32){//, loop_time: f32) {
+    pub fn set_time(&self, queue: &wgpu::Queue, time: f32){
         self.bindings.write(queue, EntryType::Time, &[time])
     }
     pub fn set_camera(&self, queue: &wgpu::Queue, matrix: Mat4) {

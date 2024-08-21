@@ -21,8 +21,6 @@ use crate::app::resize::check_resize;
 use crate::app::surface_holder::SurfaceHolder;
 use crate::app::update::{check_update, Clock};
 
-// type EventLoop = winit::event_loop::EventLoop<()>;
-
 fn get_adapter(surf: Option<&wgpu::Surface>, inst: &wgpu::Instance) -> wgpu::Adapter {
     let options = surf.map(|s| wgpu::RequestAdapterOptions {
         compatible_surface: Some(&s),
@@ -92,7 +90,6 @@ impl App {
             window: None,
             adapter,
             instance,
-            // shaders: Shaders::load(&device),
             device,
             queue,
             scene: Scene::new(),
