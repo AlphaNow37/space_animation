@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use crate::math::{Vec2, Vec3, Vec4, Transform, Dir};
 use crate::render_registry::alloc::{BuffersAllocPosition};
 use crate::world::primitives::camera::Camera;
@@ -14,29 +15,29 @@ macro_rules! make_system {
     (
         primitive: $(
             -
-            $attr: ident : $prim_ty: ident : $prim_pty: ident
+            $attr: ident : $prim_ty: ident
         );*
         $(;)?
     ) => {
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
         pub enum Global {
-            $($prim_pty,)*
+            $($prim_ty,)*
+        }
+        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+        pub struct GlobalRef {
+            index: usize,
+            label: Global,
         }
         $(
-            #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-            pub struct $prim_pty;
-            impl Into<Global> for $prim_pty {
-                fn into(self) -> Global {
-                    Global::$prim_pty
-                }
-            }
             impl PrimPush for $prim_ty {
-                type Label = $prim_pty;
-                fn push(world: &mut World, var: impl Variator<Item=Self>+'static) -> Ref<Self::Label> {
+                fn push(world: &mut World, var: impl Variator<Item=Self>+'static) -> Ref<Self> {
                     Ref {
                         index: world.$attr.push(var),
-                        label: $prim_pty,
+                        label: PhantomData,
                     }
+                }
+                fn global_label() -> Global {
+                    Global::$prim_ty
                 }
             }
             impl Variator for $prim_ty {
@@ -45,7 +46,7 @@ macro_rules! make_system {
                     *self
                 }
             }
-            impl Variator for Ref<$prim_pty> {
+            impl Variator for Ref<$prim_ty> {
                 type Item=$prim_ty;
                 fn update(&self, _ctx: UpdateCtx, world: &World) -> $prim_ty {
                     world.$attr.get(self.index)
@@ -56,7 +57,7 @@ macro_rules! make_system {
             $(
                 $attr: Register<$prim_ty>,
             )*
-            insert_order: Vec<Ref<Global>>,
+            insert_order: Vec<GlobalRef>,
             materials: Vec<Box<dyn Material>>,
             pub settings: WorldSettings,
         }
@@ -73,10 +74,10 @@ macro_rules! make_system {
                 }
             }
             fn update_registers(&self, ctx: UpdateCtx) {
-                for &Ref {index, label} in &self.insert_order {
+                for &GlobalRef {index, label} in &self.insert_order {
                     match label {
                         $(
-                            Global::$prim_pty => self.$attr.update(index, ctx, self),
+                            Global::$prim_ty => self.$attr.update(index, ctx, self),
                         )*
                     }
                 }
@@ -87,21 +88,24 @@ macro_rules! make_system {
 type F32 = f32;
 make_system!(
     primitive:
-    - vec3: Vec3: PVec3;
-    - transform: Transform: PTransform;
-    - color: Color: PColor;
-    - f32: F32: PF32;
-    - vec2: Vec2: PVec2;
-    - camera: Camera: PCamera;
-    - angle: Angle: PAngle;
-    - dir: Dir: PDir;
-    - vec4: Vec4: PVec4;
+    - vec3: Vec3;
+    - transform: Transform;
+    - color: Color;
+    - f32: F32;
+    - vec2: Vec2;
+    - camera: Camera;
+    - angle: Angle;
+    - dir: Dir;
+    - vec4: Vec4;
 );
 
 impl World {
-    pub fn push<T: Push + 'static>(&mut self, var: T) -> Ref<T::Label> {
-        let id = var.push(self);
-        self.insert_order.push(id.as_ref());
+    pub fn push<T: Variator + 'static>(&mut self, var: T) -> Ref<T::Item> where T::Item: PrimPush {
+        let id = T::Item::push(self, var);
+        self.insert_order.push(GlobalRef {
+            label: T::Item::global_label(),
+            index: id.index,
+        });
         id
     }
     pub fn allocs(&self, alloc: &mut BuffersAllocPosition) {
@@ -138,19 +142,8 @@ impl World {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ref<T> {
-    label: T,
+    label: PhantomData<fn()->T>,
     index: usize,
-}
-impl<T: Copy> Ref<T> {
-    pub fn as_ref<U>(&self) -> Ref<U>
-    where
-        T: Into<U>,
-    {
-        Ref {
-            index: self.index,
-            label: self.label.into(),
-        }
-    }
 }
 
 pub struct WorldUpdateCtx<'a> {
@@ -164,20 +157,7 @@ pub struct WorldSettings {
     pub cam_settings: Camera,
 }
 
-pub trait Push {
-    type Label: Into<Global> + Copy;
-    fn push(self, world: &mut World) -> Ref<Self::Label>;
-}
-pub trait PrimPush {
-    type Label: Into<Global> + Copy;
-    fn push(world: &mut World, var: impl Variator<Item = Self> + 'static) -> Ref<Self::Label>;
-}
-impl<T: Variator + 'static> Push for T
-where
-    T::Item: PrimPush,
-{
-    type Label = <T::Item as PrimPush>::Label;
-    fn push(self, world: &mut World) -> Ref<Self::Label> {
-        <T::Item as PrimPush>::push(world, self)
-    }
+pub trait PrimPush: Sized {
+    fn push(world: &mut World, var: impl Variator<Item = Self> + 'static) -> Ref<Self>;
+    fn global_label() -> Global;
 }
