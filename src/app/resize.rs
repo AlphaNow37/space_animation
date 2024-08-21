@@ -5,6 +5,10 @@ use crate::app::App;
 pub fn check_resize(app: &mut App, event: &WindowEvent) {
     if let WindowEvent::Resized(new_size) = event {
         let _span = info_span!("resize").entered();
+        if new_size.width == 0 || new_size.height == 0 {
+            info!("Zero size: don't resize");
+            return;
+        }
         if let Some(ref mut win) = &mut app.window {
             info!("Resizing window to {}:{}", new_size.width, new_size.height);
             win.window.request_redraw();
