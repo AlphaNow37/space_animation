@@ -1,8 +1,7 @@
-use crate::{models::put_axis, world::{primitives::color::Color, variators::variator::Variator, world::World}};
-use crate::math::{rotate_x, scale, ToAngle, trans, Transform, Vec3, vec3};
-use crate::world::variators::combinators::Interpolate;
+use crate::{models::put_axis, world::{primitives::color::Color, world::World}};
+use crate::math::{rotate_x, scale, ToAngle, trans, Transform, vec3};
 use crate::world::variators::variator::UpdateCtx;
-use crate::world::visuals::material::{SpongeTri, UniformTri};
+use crate::world::visuals::material::{SpongeTri, UniformSphere, UniformTri};
 use crate::world::visuals::shape::{Cube, Pyramid, Triangle};
 
 fn put_cube(world: &mut World) {
@@ -25,10 +24,10 @@ pub fn build(world: &mut World) {
 
     // put_axis(world, Affine3A::IDENTITY);
 
-    put_axis(world, Interpolate(
-        Transform::ID,
-        Transform::from_cols(Vec3::X, Vec3::Z, -Vec3::Y).with_trans(trans(0., 1., 0.)),
-    ).time_lea(0.5, 0.5).time_sin(0.05));
+    // put_axis(world, Interpolate(
+    //     Transform::ID,
+    //     Transform::from_cols(Vec3::X, Vec3::Z, -Vec3::Y).with_trans(trans(0., 1., 0.)),
+    // ).time_lea(0.5, 0.5).time_sin(0.05));
 
     put_axis(world, trans(5., 5., 5.));
 
@@ -45,8 +44,8 @@ pub fn build(world: &mut World) {
 
     world.push_mat(
         SpongeTri {
-            global: trans(-2., 2., -2.),
-            shape: Cube(|ctx: UpdateCtx, world: &World| scale(2.5, 2.5, 2.5)),
+            global: trans(-2., 4., -2.),
+            shape: Cube(|ctx: UpdateCtx, world: &World| scale(0.5, 0.5, 0.5)),
             color1: Color::RED,
             color2: Color::WHITE,
         },
@@ -62,5 +61,13 @@ pub fn build(world: &mut World) {
             global: Transform::ID,
         },
     );
+
+    world.push_mat(
+        UniformSphere {
+            local: scale(1., 2., 1.),
+            color: Color::DEBUG,
+            global: trans(3., 3., 3.),
+        }
+    )
 }
 // from_rotation_y(180.0f32.to_radians())

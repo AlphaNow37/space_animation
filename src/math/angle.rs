@@ -15,7 +15,7 @@ impl Angle {
     pub fn tan(self) -> f32 {self.0.tan()}
     pub fn cotan(self) -> f32 {1./self.0.tan()}
 }
-// TODO: replace with derive from (derive_more?)
+
 impl Add for Angle {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {

@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use crate::math::{Dir, Vec3};
+use crate::math::{Dir, Transform, Vec3};
 use crate::utils::{compress_vec4_i, CompressedVec};
 
 pub trait VertexLike: bytemuck::AnyBitPattern + bytemuck::NoUninit {
@@ -110,9 +110,39 @@ impl TriVertex {
 }
 
 new_vertex!(
+    SphereVertex {
+        local: [f32; 16] : [0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4],
+        global: [f32; 16] : [4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Float32x4],
+    } -> 32;
+    new(pos = Self, _shape = ()) -> {pos}
+    pos(self) -> {*self}
+);
+impl SphereVertex {
+    pub fn create(global: Transform, local: Transform) -> Self {
+        Self {
+            local: local.to_mat4().to_array(),
+            global: global.to_mat4().to_array(),
+        }
+    }
+}
+
+new_vertex!(
+    PosVertex {
+        pos: [f32; 3]: [20 => Float32x3],
+    } -> 3;
+    new(pos = Self, _shape = ()) -> {pos}
+    pos(self) -> {*self}
+);
+impl PosVertex {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self {pos: [x, y, z]}
+    }
+}
+
+new_vertex!(
     TriVertexCol1 {
         vertex: TriVertex : [0 => Float32x3, 1 => Snorm8x4, 2 => Float32x3],
-        color: CompressedVec : [3 => Snorm8x4],
+        color: CompressedVec : [10 => Snorm8x4],
     } -> 8;
     new(vertex = TriVertex, color = CompressedVec) -> {Self {vertex, color}}
     pos(self) -> {self.vertex}
@@ -120,9 +150,17 @@ new_vertex!(
 new_vertex!(
     TriVertexCol2 {
         vertex: TriVertex : [0 => Float32x3, 1 => Snorm8x4, 2 => Float32x3],
-        col1: CompressedVec : [3 => Snorm8x4],
-        col2: CompressedVec : [4 => Snorm8x4],
+        col1: CompressedVec : [10 => Snorm8x4],
+        col2: CompressedVec : [11 => Snorm8x4],
     } -> 9;
     new(vertex = TriVertex, (col1, col2) = (CompressedVec, CompressedVec)) -> {Self {vertex, col1, col2}}
+    pos(self) -> {self.vertex}
+);
+new_vertex!(
+    SphereVertexCol1 {
+        vertex: SphereVertex : [0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Float32x4],
+        color: CompressedVec : [10 => Snorm8x4],
+    } -> 33;
+    new(vertex = SphereVertex, color = CompressedVec) -> {Self {vertex, color}}
     pos(self) -> {self.vertex}
 );

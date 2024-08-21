@@ -1,7 +1,7 @@
 use crate::math::Transform;
 use crate::render_registry::pipelines::PipelineLabel;
 
-use crate::render_registry::vertex::{TriVertex, TriVertexCol1, TriVertexCol2, VertexLike};
+use crate::render_registry::vertex::{SphereVertexCol1, TriVertex, TriVertexCol1, TriVertexCol2, VertexLike};
 use crate::utils::{Count, make_trait_alias};
 
 #[allow(dead_code)]
@@ -50,8 +50,11 @@ impl<'a, T: VertexLike> BaseMeshBuilder<'a, T> {
             global: Default::default(),
         }
     }
-    pub fn with_global_data(&mut self, global: Transform, data: T::ShapeData) -> &mut Self {
+    pub fn with_global(&mut self, global: Transform) -> &mut Self {
         self.global = global;
+        self
+    }
+    pub fn with_data(&mut self, data: T::ShapeData) -> &mut Self {
         self.data = data;
         self
     }
@@ -106,4 +109,5 @@ macro_rules! make_builders {
 make_builders!(
     uniform_triangle = TriVertexCol1 = UniformTriangle,
     sponge_triangle = TriVertexCol2 = SpongeTriangle,
+    uniform_sphere = SphereVertexCol1 = UniformSphere,
 );
