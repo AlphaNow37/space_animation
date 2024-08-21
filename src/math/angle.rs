@@ -1,3 +1,4 @@
+use std::f32::consts::TAU;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 
@@ -8,8 +9,10 @@ pub struct Angle(f32);
 impl Angle {
     pub const fn from_rad(rad: f32) -> Self {Self(rad)}
     pub fn from_deg(deg: f32) -> Self {Self(deg.to_radians())}
+    pub fn from_turn(turn: f32) -> Self {Self(turn * TAU)}
     pub const fn rad(self) -> f32 {self.0}
     pub fn deg(self) -> f32 {self.0.to_degrees()}
+    pub fn turn(self) -> f32 {self.0 / TAU}
     pub fn cos(self) -> f32 {self.0.cos()}
     pub fn sin(self) -> f32 {self.0.sin()}
     pub fn tan(self) -> f32 {self.0.tan()}
@@ -50,6 +53,7 @@ impl Neg for Angle {
 pub trait ToAngle {
     fn rad(self) -> Angle;
     fn deg(self) -> Angle;
+    fn turn(self) -> Angle;
 }
 impl ToAngle for f32 {
     fn rad(self) -> Angle {
@@ -57,5 +61,8 @@ impl ToAngle for f32 {
     }
     fn deg(self) -> Angle {
         Angle::from_deg(self)
+    }
+    fn turn(self) -> Angle {
+        Angle::from_turn(self)
     }
 }
