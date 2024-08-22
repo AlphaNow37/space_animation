@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use crate::math::{Dir, Transform, Vec3};
+use crate::math::{Dir, Mat4, Transform, Vec3};
 use crate::utils::{compress_vec4_i, CompressedVec, Zero};
 
 pub trait VertexLike: bytemuck::AnyBitPattern + bytemuck::NoUninit {
@@ -108,11 +108,49 @@ impl TriVertex {
         }
     }
 }
+new_vertex!(
+    LocalMatrixVertex {
+        mat: [f32; 16] : [0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4]
+    } -> 16;
+    new(pos = Self, _shape = ()) -> {pos}
+    pos(self) -> {*self}
+);
+impl LocalMatrixVertex {
+    pub fn create(mat: Transform) -> Self {
+        Self {mat: mat.to_mat4().to_array()}
+    }
+}
+new_vertex!(
+    GlobalMatrixVertex {
+        mat: [f32; 16] : [4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Float32x4]
+    } -> 16;
+    new(pos = Self, _shape = ()) -> {pos}
+    pos(self) -> {*self}
+);
+impl GlobalMatrixVertex {
+    pub fn create(mat: Transform) -> Self {
+        Self {mat: mat.to_mat4().to_array()}
+    }
+}
+new_vertex!(
+    Polynomial4x4Vertex {
+        global: GlobalMatrixVertex : [4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Float32x4],
+        facts: [[f32; 3]; 16] : [
+            // NOICE, THIS IS FINE
+            30 => Float32x4, 31 => Float32x4, 32 => Float32x4, 33 => Float32x4,
+            34 => Float32x4, 35 => Float32x4, 36 => Float32x4, 37 => Float32x4,
+            38 => Float32x4,39 => Float32x4, 40 => Float32x4, 41 => Float32x4,
+            42 => Float32x4, 43 => Float32x4, 44 => Float32x4, 45 => Float32x4,
+        ],
+    } -> 64;
+    new(pos = Self, _shape = ()) -> {pos}
+    pos(self) -> {*self}
+);
 
 new_vertex!(
     SphereVertex {
-        local: [f32; 16] : [0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4],
-        global: [f32; 16] : [4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Float32x4],
+        local: LocalMatrixVertex : [0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4],
+        global: GlobalMatrixVertex : [4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Float32x4],
     } -> 32;
     new(pos = Self, _shape = ()) -> {pos}
     pos(self) -> {*self}
@@ -120,24 +158,26 @@ new_vertex!(
 impl SphereVertex {
     pub fn create(global: Transform, local: Transform) -> Self {
         Self {
-            local: local.to_mat4().to_array(),
-            global: global.to_mat4().to_array(),
+            local: LocalMatrixVertex::create(local),
+            global: GlobalMatrixVertex::create(global),
         }
     }
 }
 
 new_vertex!(
-    PosVertex {
+    Pos3Vertex {
         pos: [f32; 3]: [20 => Float32x3],
     } -> 3;
     new(pos = Self, _shape = ()) -> {pos}
     pos(self) -> {*self}
 );
-impl PosVertex {
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Self {pos: [x, y, z]}
-    }
-}
+new_vertex!(
+    Pos2Vertex {
+        pos: [f32; 2]: [20 => Float32x2],
+    } -> 2;
+    new(pos = Self, _shape = ()) -> {pos}
+    pos(self) -> {*self}
+);
 
 new_vertex!(
     TriVertexCol1 {
@@ -163,4 +203,12 @@ new_vertex!(
     } -> 33;
     new(vertex = SphereVertex, color = CompressedVec) -> {Self {vertex, color}}
     pos(self) -> {self.vertex}
+);
+new_vertex!(
+    Polynomial4x4VertexCol1 {
+        // vertex: Polynomial4x4Vertex: [4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Float32x4, 30 => Float32x4, 31 => Float32x4, 32 => Float32x4, 33 => Float32x4, 34 => Float32x4, 35 => Float32x4, 36 => Float32x4, 37 => Float32x4, 38 => Float32x4,39 => Float32x4, 40 => Float32x4, 41 => Float32x4, 42 => Float32x4, 43 => Float32x4, 44 => Float32x4, 45 => Float32x4],
+        // color: CompressedVec : [10 => Snorm8x4],
+    } -> 0;
+    new(vertex = Polynomial4x4Vertex, color = CompressedVec) -> {todo!()}
+    pos(self) -> {todo!()}
 );

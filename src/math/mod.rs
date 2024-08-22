@@ -6,7 +6,7 @@ pub mod plane;
 pub mod mat4;
 pub mod vec2;
 mod vec4;
-mod polynom_curve;
+mod polynomial;
 
 pub use transform::*;
 pub use vec3::*;

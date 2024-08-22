@@ -8,6 +8,9 @@ pub trait Zero {
 impl Zero for f32 {
     const ZERO: Self = 0.;
 }
+impl Zero for usize {
+    const ZERO: Self = 0;
+}
 
 make_trait_alias!(
     VectorSpace = [

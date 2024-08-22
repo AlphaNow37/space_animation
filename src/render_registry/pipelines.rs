@@ -1,9 +1,9 @@
 use tracing::{info, info_span};
 use wgpu::util::DeviceExt;
 use crate::render_registry::depth::DepthBuffer;
-use crate::render_registry::prefabs::CIRCLE_POS;
+use crate::render_registry::prefabs::{CIRCLE_POS, FLAT_POS};
 use crate::render_registry::shaders::Shaders;
-use crate::render_registry::vertex::{PosVertex, SphereVertexCol1, TriVertexCol1, TriVertexCol2};
+use crate::render_registry::vertex::{Polynomial4x4VertexCol1, Pos2Vertex, Pos3Vertex, SphereVertexCol1, TriVertexCol1, TriVertexCol2};
 use crate::utils::macros::array_key;
 use super::vertex::VertexLike;
 
@@ -32,7 +32,9 @@ enum VertexBufferLabel {
     TriCol1,
     TriCol2,
     SphereCol1,
-    InstTriVertex,
+    Polynomial4x4Col1,
+    Pos3,
+    Pos2,
 }
 impl VertexBufferLabel {
     fn elt_size(&self) -> usize {
@@ -40,7 +42,9 @@ impl VertexBufferLabel {
             Self::TriCol1 => TriVertexCol1::SIZE,
             Self::TriCol2 => TriVertexCol2::SIZE,
             Self::SphereCol1 => SphereVertexCol1::SIZE,
-            Self::InstTriVertex => PosVertex::SIZE,
+            Self::Polynomial4x4Col1 => Polynomial4x4VertexCol1::SIZE,
+            Self::Pos3 => Pos3Vertex::SIZE,
+            Self::Pos2 => Pos2Vertex::SIZE,
         }
     }
     fn attrs(&self) -> &'static [wgpu::VertexAttribute] {
@@ -48,7 +52,9 @@ impl VertexBufferLabel {
             Self::TriCol1 => TriVertexCol1::ATTRS,
             Self::TriCol2 => TriVertexCol2::ATTRS,
             Self::SphereCol1 => SphereVertexCol1::ATTRS,
-            Self::InstTriVertex => PosVertex::ATTRS,
+            Self::Polynomial4x4Col1 => Polynomial4x4VertexCol1::ATTRS,
+            Self::Pos3 => Pos3Vertex::ATTRS,
+            Self::Pos2 => Pos2Vertex::ATTRS,
         }
     }
 }
@@ -58,6 +64,7 @@ array_key!(
         UniformTriangle,
         SpongeTriangle,
         UniformSphere,
+        UniformPolynomial4x4,
     }
 );
 impl PipelineLabel {
@@ -66,6 +73,7 @@ impl PipelineLabel {
             Self::UniformTriangle => pipe_names!("UniformTriangle"),
             Self::SpongeTriangle => pipe_names!("SpongeTriangle"),
             Self::UniformSphere => pipe_names!("UniformSphere"),
+            Self::UniformPolynomial4x4 => pipe_names!("UniformPolynomial4x4"),
         }
     }
     fn vertex_entry_point(&self) -> &'static str {
@@ -73,6 +81,7 @@ impl PipelineLabel {
             Self::UniformTriangle => "vs_tri_color1",
             Self::SpongeTriangle => "vs_tri_color2",
             Self::UniformSphere => "vs_sphere_color1",
+            Self::UniformPolynomial4x4 => "vs_polynomial4x4_color1",
         }
     }
     fn fragment_entry_point(&self) -> &'static str {
@@ -80,6 +89,7 @@ impl PipelineLabel {
             Self::UniformTriangle => "fs_uniform",
             Self::SpongeTriangle => "fs_sponge",
             Self::UniformSphere => "fs_uniform",
+            Self::UniformPolynomial4x4 => "fs_uniform",
         }
     }
     fn vertex_buffer_label(&self) -> VertexBufferLabel {
@@ -87,17 +97,20 @@ impl PipelineLabel {
             Self::UniformTriangle => VertexBufferLabel::TriCol1,
             Self::SpongeTriangle => VertexBufferLabel::TriCol2,
             Self::UniformSphere => VertexBufferLabel::SphereCol1,
+            Self::UniformPolynomial4x4 => VertexBufferLabel::Polynomial4x4Col1,
         }
     }
     fn vertex_aux_buffer_label(&self) -> Option<VertexBufferLabel> {
         match self {
-            Self::UniformSphere => Some(VertexBufferLabel::InstTriVertex),
+            Self::UniformSphere => Some(VertexBufferLabel::Pos3),
+            Self::UniformPolynomial4x4 => Some(VertexBufferLabel::Pos2),
             _ => None,
         }
     }
     fn vertex_aux_buffer_content(&self) -> Option<(u32, &'static [u32])> {
         match self {
             Self::UniformSphere => Some(*CIRCLE_POS),
+            Self::UniformPolynomial4x4 => Some(*FLAT_POS),
             _ => None,
         }
     }

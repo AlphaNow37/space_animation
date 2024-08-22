@@ -30,7 +30,15 @@ fn get_adapter(surf: Option<&wgpu::Surface>, inst: &wgpu::Instance) -> wgpu::Ada
 }
 
 fn get_device_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
-    pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default(), None)).unwrap()
+    let desc = wgpu::DeviceDescriptor {
+        label: Some("Device get desc"),
+        required_limits: wgpu::Limits {
+            // max_vertex_attributes: 23,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    pollster::block_on(adapter.request_device(&desc, None)).unwrap()
 }
 
 pub struct App {
