@@ -1,5 +1,6 @@
 use std::ops::{Deref, Neg};
 use crate::math::{Angle, rotate_x, Vec3, Plane};
+use crate::utils::Zero;
 
 /// A normalized vector
 #[derive(Copy, Clone, PartialEq, Debug)]

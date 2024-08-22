@@ -1,5 +1,4 @@
 
-
 macro_rules! array_key {
     (
         $vis: vis
@@ -38,15 +37,14 @@ macro_rules! impl_vector_space_simd {
         $t: ident ($n: literal)
     ) => {
         use std::ops::{Add, Sub, Mul, Div, Neg, AddAssign, SubAssign, MulAssign, DivAssign};
+        use crate::utils::Zero;
         impl $t {
-            pub const ZERO: Self = Self::splat(0.);
-
-            pub const fn splat(val: f32) -> Self {
-                Self(Simd::from_array([val; $n]))
-            }
             pub fn clamp(self, min: Self, max: Self) -> Self {
                 Self(self.0.simd_clamp(min.0, max.0))
             }
+        }
+        impl Zero for $t {
+            const ZERO: Self = Self(Simd::from_array([0.; $n]));
         }
         impl Add for $t {
             type Output = Self;
@@ -109,9 +107,9 @@ pub(crate) use impl_vector_space_simd;
 
 macro_rules! make_trait_alias {
     (
-        $new: ident = $($old: tt)*
+        $new: ident = [$($old: tt)*] { $($content: tt)* }
     ) => {
-        pub trait $new: $($old)* {}
+        pub trait $new: $($old)* { $($content)* }
         impl<T: $($old)*> $new for T {}
     };
 }

@@ -31,7 +31,7 @@ pub trait MeshBuilder {
     fn global(&self) -> &Transform;
 }
 
-make_trait_alias!(TriMeshBuilder = MeshBuilder<Vertex=TriVertex>);
+make_trait_alias!(TriMeshBuilder = [MeshBuilder<Vertex=TriVertex>] {});
 
 pub struct BaseMeshBuilder<'a, T: VertexLike> {
     curr: Count,

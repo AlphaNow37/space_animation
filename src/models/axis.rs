@@ -1,4 +1,5 @@
 use crate::math::{Vec3, Transform};
+use crate::utils::Zero;
 use crate::world::{primitives::color::Color, variators::variator::Variator, world::World};
 use crate::world::visuals::material::UniformTri;
 use crate::world::visuals::shape::Triangle;

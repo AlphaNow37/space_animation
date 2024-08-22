@@ -1,5 +1,6 @@
 use std::f32::consts::TAU;
 use std::ops::{Add, Div, Mul, Neg, Sub};
+use crate::utils::Zero;
 
 
 /// A radian angle
@@ -48,6 +49,9 @@ impl Neg for Angle {
     fn neg(self) -> Self::Output {
         Self(-self.0)
     }
+}
+impl Zero for Angle {
+    const ZERO: Self = Self(0.);
 }
 
 pub trait ToAngle {

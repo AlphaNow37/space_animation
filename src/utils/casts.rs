@@ -1,5 +1,6 @@
 use winit::dpi::{PhysicalPosition, PhysicalSize, Pixel};
 use crate::math::{Vec2, Vec4};
+use crate::utils::Zero;
 
 impl<T: Pixel> Into<Vec2> for PhysicalPosition<T> {
     fn into(self) -> Vec2 {

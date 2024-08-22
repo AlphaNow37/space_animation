@@ -4,6 +4,7 @@ use winit::{dpi::PhysicalPosition, event::WindowEvent, window::Window};
 
 use crate::app::keybinds::{KeyBinds, MoveKey};
 use crate::math::{Vec2, Vec3, rotate_x, ToAngle, rotate_y};
+use crate::utils::Zero;
 use crate::world::primitives::camera::Camera;
 
 fn move_key_to_dir(key: MoveKey) -> Vec3 {

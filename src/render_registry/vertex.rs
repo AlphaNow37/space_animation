@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use crate::math::{Dir, Transform, Vec3};
-use crate::utils::{compress_vec4_i, CompressedVec};
+use crate::utils::{compress_vec4_i, CompressedVec, Zero};
 
 pub trait VertexLike: bytemuck::AnyBitPattern + bytemuck::NoUninit {
     const SIZE: usize;

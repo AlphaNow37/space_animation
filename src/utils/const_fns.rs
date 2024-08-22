@@ -21,6 +21,16 @@ pub const fn cos(x: f32) -> f32 {
     eval_taylor([1., 0., -1., 0., 1., 0., -1., 0., 1., 0., -1., 0.], x)
 }
 
+// pub const fn factorial(n: usize) -> usize {
+//     let mut k = 0;
+//     let mut fact = 1;
+//     while k < n {
+//         k += 1;
+//         fact *= k;
+//     }
+//     fact
+// }
+
 #[test]
 fn test() {
     dbg!(cos(TAU));
