@@ -1,11 +1,12 @@
 use crate::{models::put_axis, world::{primitives::color::Color, world::World}};
 use crate::math::{rotate_x, scale, ToAngle, trans, Transform, vec3, Vec3};
+use crate::world::primitives::camera::GetManualCamera;
 use crate::world::variators::variator::UpdateCtx;
 use crate::world::visuals::material::{SpongeTri, UniformSphere, UniformTri};
 use crate::world::visuals::shape::{Cube, Pyramid, Triangle};
 
 fn put_cube(world: &mut World) {
-    let pos = world.push(|_ctx, _world: &World| {
+    let pos = world.push_stored(|_ctx, _world: &World| {
         trans(0., 5., 0.) * rotate_x(45.0f32.deg())
     });
     world.push_mat(UniformTri {

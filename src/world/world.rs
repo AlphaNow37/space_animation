@@ -13,49 +13,91 @@ use super::{
 
 macro_rules! make_system {
     (
-        primitive: $(
-            -
-            $attr: ident : $prim_ty: ident
+        $(
+            $reg: ident ($global_attr: ident) ($world_reg: ident) ($holder: ident $($getattr: tt)?) ($push_trait: ident $push_method: ident):
+            $(
+                - $attr: ident : $prim_ty: ident
+            );*
         );*
         $(;)?
     ) => {
+
+        $(
+            #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+            pub enum $global_attr {
+                $(
+                    $prim_ty,
+                )*
+            }
+        )*
+
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-        pub enum Global {
-            $($prim_ty,)*
+        pub enum GlobalLabel {
+            $(
+                $holder($global_attr),
+            )*
         }
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
         pub struct GlobalRef {
             index: usize,
-            label: Global,
+            label: GlobalLabel,
         }
         $(
-            impl PrimPush for $prim_ty {
-                fn push(world: &mut World, var: impl Variator<Item=Self>+'static) -> Ref<Self> {
+            pub trait $push_trait: Sized {
+                fn push(world: &mut World, var: impl Variator<Item=Self>) -> usize;
+                fn global_label() -> GlobalLabel;
+                fn _holder_to_inner<T>(holder: $holder<T>) -> T {
+                    holder $(. $getattr)?
+                }
+            }
+            impl World {
+                pub fn $push_method<T: Variator>(&mut self, var: T) -> Ref<$holder<T::Item>> where T::Item: $push_trait  {
+                    let idx = T::Item::push(self, var);
+                    self.insert_order.push(GlobalRef {
+                        label: T::Item::global_label(),
+                        index: idx,
+                    });
                     Ref {
-                        index: world.$attr.push(var),
+                        index: idx,
                         label: PhantomData,
                     }
                 }
-                fn global_label() -> Global {
-                    Global::$prim_ty
-                }
             }
-            impl Variator for $prim_ty {
-                type Item=$prim_ty;
-                fn update(&self, _ctx: UpdateCtx, _world: &World) -> $prim_ty {
-                    *self
+            $(
+                impl $push_trait for $prim_ty {
+                    fn push(world: &mut World, var: impl Variator<Item=Self>) -> usize {
+                        world.$reg.$attr.push(var)
+                    }
+                    fn global_label() -> GlobalLabel {
+                        GlobalLabel::$holder($global_attr::$prim_ty)
+                    }
                 }
-            }
-            impl Variator for Ref<$prim_ty> {
-                type Item=$prim_ty;
-                fn update(&self, _ctx: UpdateCtx, world: &World) -> $prim_ty {
-                    world.$attr.get(self.index)
+                impl Variator for $holder<$prim_ty> {
+                    type Item=$prim_ty;
+                    fn update(&self, _ctx: UpdateCtx, _world: &World) -> $prim_ty {
+                        <$prim_ty as $push_trait>::_holder_to_inner(*self)
+                    }
                 }
+                impl Variator for Ref<$holder<$prim_ty>> {
+                    type Item=$prim_ty;
+                    fn update(&self, _ctx: UpdateCtx, world: &World) -> $prim_ty {
+                        world.$reg.$attr.get(self.index)
+                    }
+                }
+            )*
+        )*
+
+        $(
+            struct $world_reg {
+                $(
+                    $attr: Register<$prim_ty>,
+                )*
             }
         )*
+
         pub struct World {
             $(
-                $attr: Register<$prim_ty>,
+                $reg: $world_reg,
             )*
             insert_order: Vec<GlobalRef>,
             materials: Vec<Box<dyn Material>>,
@@ -63,11 +105,14 @@ macro_rules! make_system {
         }
         impl World {
             pub fn new() -> Self {
-                $(
-                    let $attr = Register::new();
-                )*
                 Self {
-                    $($attr,)*
+                    $(
+                        $reg: $world_reg {
+                            $(
+                                $attr: Register::new(),
+                            )*
+                        },
+                    )*
                     insert_order: Vec::new(),
                     materials: Vec::new(),
                     settings: WorldSettings::default(),
@@ -76,9 +121,9 @@ macro_rules! make_system {
             fn update_registers(&self, ctx: UpdateCtx) {
                 for &GlobalRef {index, label} in &self.insert_order {
                     match label {
-                        $(
-                            Global::$prim_ty => self.$attr.update(index, ctx, self),
-                        )*
+                        $($(
+                            GlobalLabel::$holder($global_attr::$prim_ty) => self.$reg.$attr.update(index, ctx, self),
+                        )*)*
                     }
                 }
             }
@@ -87,7 +132,7 @@ macro_rules! make_system {
 }
 type F32 = f32;
 make_system!(
-    primitive:
+    main (GlobalMain) (WorldMain) (Main) (MainPrimPush push):
     - vec3: Vec3;
     - transform: Transform;
     - color: Color;
@@ -97,17 +142,17 @@ make_system!(
     - angle: Angle;
     - dir: Dir;
     - vec4: Vec4;
+    store (GlobalStore) (WorldStore) (Stored 0) (StorePrimPush push_stored):
+    - vec3: Vec3;
+    - transform: Transform;
+    - color: Color;
+    - f32: F32;
+    - vec2: Vec2;
+    - dir: Dir;
+    - vec4: Vec4;
 );
 
 impl World {
-    pub fn push<T: Variator + 'static>(&mut self, var: T) -> Ref<T::Item> where T::Item: PrimPush {
-        let id = T::Item::push(self, var);
-        self.insert_order.push(GlobalRef {
-            label: T::Item::global_label(),
-            index: id.index,
-        });
-        id
-    }
     pub fn allocs(&self, alloc: &mut BuffersAllocPosition) {
         for mat in &self.materials {
             mat.alloc(alloc)
@@ -136,9 +181,14 @@ impl World {
         self.redraw(&mut ctx);
     }
     pub fn get_cam(&self, idx: isize) -> Camera {
-        self.camera.get_mod(idx)
+        self.main.camera.get_mod(idx)
     }
 }
+
+pub type Main<T> = T;
+
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub struct Stored<T>(pub T);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ref<T> {
@@ -157,7 +207,7 @@ pub struct WorldSettings {
     pub cam_settings: Camera,
 }
 
-pub trait PrimPush: Sized {
-    fn push(world: &mut World, var: impl Variator<Item = Self> + 'static) -> Ref<Self>;
-    fn global_label() -> Global;
-}
+// pub trait Push: Sized + 'static {
+//     type Ref;
+//     fn push(self, world: &mut World) -> (Self::Ref, GlobalRef);
+// }
