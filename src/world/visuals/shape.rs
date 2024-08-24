@@ -2,7 +2,7 @@ use crate::math::Vec3;
 
 use crate::render_registry::{vertex::TriVertex, mesh_builder::TriMeshBuilder};
 
-use crate::world::world::{Ref, Stored};
+use crate::world::world::Ref;
 
 pub trait TriShape {
     const NB_INSTANCE: usize;
@@ -30,7 +30,7 @@ pub trait BorderShape {
 //     builder.push_vertexes(ps)
 // }
 
-pub struct Triangle(pub Ref<Stored<Vec3>>, pub Ref<Stored<Vec3>>, pub Ref<Stored<Vec3>>);
+pub struct Triangle(pub Ref<Vec3>, pub Ref<Vec3>, pub Ref<Vec3>);
 impl TriShape for Triangle {
     // const NB_INDEX: usize = 3;
     const NB_INSTANCE: usize = 1;

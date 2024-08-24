@@ -9,11 +9,11 @@ use crate::render_registry::vertex::{LocalGlobalMatrixVertex};
 
 use crate::world::{
     primitives::color::Color,
-    variators::variator::{UpdateCtx, Variator},
+    variators::variator::UpdateCtx,
     world::World,
 };
 use crate::world::visuals::shape::TriShape;
-use crate::world::world::{Ref, Stored};
+use crate::world::world::Ref;
 
 pub trait Material {
     fn alloc(&self, alloc: &mut BufferAllocator);
@@ -26,9 +26,9 @@ pub trait Material {
 }
 
 pub struct UniformTri<S> {
-    pub global: Ref<Stored<Transform>>,
+    pub global: Ref<Transform>,
     pub shape: S,
-    pub color: Ref<Stored<Color>>,
+    pub color: Ref<Color>,
 }
 impl<S: TriShape> Material for UniformTri<S> {
     fn alloc(&self, alloc: &mut BufferAllocator) {
@@ -67,9 +67,9 @@ impl<S: TriShape> Material for UniformTri<S> {
 //     }
 // }
 pub struct UniformSphere {
-    pub global: Ref<Stored<Transform>>,
-    pub local: Ref<Stored<Transform>>,
-    pub color: Ref<Stored<Color>>,
+    pub global: Ref<Transform>,
+    pub local: Ref<Transform>,
+    pub color: Ref<Color>,
 }
 impl Material for UniformSphere {
     fn alloc(&self, alloc: &mut BufferAllocator) {

@@ -5,7 +5,7 @@ use crate::world::visuals::material::{UniformSphere, UniformTri};
 use crate::world::visuals::shape::{Triangle};
 
 fn put_cube(world: &mut World) {
-    let pos = world.push_stored(|_ctx, _world: &World| {
+    let pos = world.push(|_ctx, _world: &World| {
         trans(0., 5., 0.) * rotate_x(45.0f32.deg())
     });
     // world.push_mat(UniformTri {
@@ -62,9 +62,9 @@ pub fn build(world: &mut World) {
     //     },
     // );
 
-    let loc = world.push_stored(|ctx: UpdateCtx, _: &World| scale(1., 3., 1.).rotate_around(Vec3::ONE, ctx.time.turn()));
-    let glob = world.push_stored(trans(3., 3., 3.));
-    let col = world.push_stored(Color::DEBUG);
+    let loc = world.push(|ctx: UpdateCtx, _: &World| scale(1., 3., 1.).rotate_around(Vec3::ONE, ctx.time.turn()));
+    let glob = world.push(trans(3., 3., 3.));
+    let col = world.push(Color::DEBUG);
 
     world.push_mat(
         UniformSphere {

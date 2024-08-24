@@ -4,7 +4,6 @@ use crate::render_registry::bind_group_base::BaseBindings;
 use crate::render_registry::bind_groups_store::StoreBindings;
 use crate::render_registry::pipelines::{Pipeline, PipelineLabel};
 use crate::render_registry::shaders::Shaders;
-use crate::world::world::GlobalStore;
 
 use super::alloc::BufferAllocator;
 use super::depth::DepthBuffer;
@@ -20,7 +19,7 @@ impl PipelinesRegistry {
     pub fn new(device: &wgpu::Device, surf_config: &wgpu::SurfaceConfiguration, pos: &BufferAllocator) -> Self {
         let _span = info_span!("registry").entered();
         let base_bindings = BaseBindings::new(device);
-        let store_bindings = StoreBindings::new(device, pos.store);
+        let store_bindings = StoreBindings::new(device, pos);
         let shaders = Shaders::new(device);
         let depth_buffer = DepthBuffer::new(device, surf_config);
         let pipes = PipelineLabel::ARRAY
@@ -31,7 +30,7 @@ impl PipelinesRegistry {
                 &base_bindings.layout,
                 &store_bindings.layout,
                 &shaders,
-                pos.get_count(label) as u32
+                pos.get_instance_count(label) as u32
             ));
         info!("Succesfully created {} pipelines", pipes.len());
         Self {

@@ -11,7 +11,6 @@ use crate::{
     },
 };
 use crate::render_registry::mesh_builder::MeshBuilders;
-use crate::world::world::GlobalStore;
 
 use super::camera::ManualCamera;
 

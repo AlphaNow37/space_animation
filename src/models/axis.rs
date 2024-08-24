@@ -7,14 +7,14 @@ use crate::world::visuals::material::UniformTri;
 use crate::world::visuals::shape::Triangle;
 
 pub fn put_axis(world: &mut World, pos: impl Variator<Item=Transform>+Copy) {
-    let global = world.push_stored(pos);
-    let o = world.push_stored(Vec3::ZERO);
-    let x = world.push_stored(Vec3::X);
-    let y = world.push_stored(Vec3::Y);
-    let z = world.push_stored(Vec3::Z);
-    let red = world.push_stored(Color::RED);
-    let green = world.push_stored(Color::GREEN);
-    let blue = world.push_stored(Color::BLUE);
+    let global = world.push(pos);
+    let o = world.push(Vec3::ZERO);
+    let x = world.push(Vec3::X);
+    let y = world.push(Vec3::Y);
+    let z = world.push(Vec3::Z);
+    let red = world.push(Color::RED);
+    let green = world.push(Color::GREEN);
+    let blue = world.push(Color::BLUE);
 
     world.push_mat(UniformTri {
         shape: Triangle(o, x, y),
