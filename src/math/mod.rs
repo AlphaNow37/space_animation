@@ -5,8 +5,8 @@ pub mod angle;
 pub mod plane;
 pub mod mat4;
 pub mod vec2;
-mod vec4;
-mod polynomial;
+pub mod vec4;
+pub mod polynomial;
 
 pub use transform::*;
 pub use vec3::*;
@@ -16,3 +16,4 @@ pub use plane::*;
 pub use mat4::*;
 pub use vec2::*;
 pub use vec4::*;
+pub use polynomial::*;

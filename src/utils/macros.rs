@@ -9,7 +9,7 @@ macro_rules! array_key {
             $(,)?
         }
     ) => {
-        #[derive(Copy, Clone, Debug)]
+        #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
         $vis enum $name {
             $($variant),*
         }

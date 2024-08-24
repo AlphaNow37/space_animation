@@ -68,6 +68,9 @@ impl Color {
     pub fn as_array(self) -> CompressedVec {
         compress_vec4_i(self.0.to_vec4(1.0))
     }
+    pub fn to_array(self) -> [f32; 3] {
+        self.0.to_array()
+    }
     pub fn from_rgbv(rgb: Vec3) -> Self {
         Self(conversion::rgb_to_oklab(rgb))
     }

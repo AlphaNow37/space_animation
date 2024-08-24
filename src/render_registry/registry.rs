@@ -1,22 +1,26 @@
 use tracing::{info_span, info};
 use crate::math::Mat4;
-use crate::render_registry::bind_groups::{Bindings, EntryType};
+use crate::render_registry::bind_group_base::BaseBindings;
+use crate::render_registry::bind_groups_store::StoreBindings;
 use crate::render_registry::pipelines::{Pipeline, PipelineLabel};
 use crate::render_registry::shaders::Shaders;
+use crate::world::world::GlobalStore;
 
-use super::alloc::BuffersAllocPosition;
+use super::alloc::BufferAllocator;
 use super::depth::DepthBuffer;
 
 pub struct PipelinesRegistry {
-    bindings: Bindings,
+    pub base_bindings: BaseBindings,
+    pub store_bindings: StoreBindings,
     depth_buffer: DepthBuffer,
     // shaders: Shaders,
     pub pipes: [Pipeline; PipelineLabel::COUNT],
 }
 impl PipelinesRegistry {
-    pub fn new(device: &wgpu::Device, surf_config: &wgpu::SurfaceConfiguration, pos: &BuffersAllocPosition) -> Self {
+    pub fn new(device: &wgpu::Device, surf_config: &wgpu::SurfaceConfiguration, pos: &BufferAllocator) -> Self {
         let _span = info_span!("registry").entered();
-        let bindings = Bindings::new(device);
+        let base_bindings = BaseBindings::new(device);
+        let store_bindings = StoreBindings::new(device, pos.store);
         let shaders = Shaders::new(device);
         let depth_buffer = DepthBuffer::new(device, surf_config);
         let pipes = PipelineLabel::ARRAY
@@ -24,13 +28,15 @@ impl PipelinesRegistry {
                 label, 
                 device, 
                 surf_config,
-                &bindings.layout,
+                &base_bindings.layout,
+                &store_bindings.layout,
                 &shaders,
-                pos.get_count(label)
+                pos.get_count(label) as u32
             ));
         info!("Succesfully created {} pipelines", pipes.len());
         Self {
-            bindings,
+            base_bindings,
+            store_bindings,
             // shaders,
             pipes,
             depth_buffer,
@@ -60,25 +66,17 @@ impl PipelinesRegistry {
             }),
             ..Default::default()
         });
-        self.bindings.put(&mut render_pass);
+        self.base_bindings.put(&mut render_pass);
+        self.store_bindings.put(&mut render_pass);
+
         for pipe in &self.pipes {
             pipe.render(&mut render_pass)
         }
     }
-    pub fn set_time(&self, queue: &wgpu::Queue, time: f32){
-        self.bindings.write(queue, EntryType::Time, &[time])
-    }
-    pub fn set_camera(&self, queue: &wgpu::Queue, matrix: Mat4) {
-        self.bindings.write(queue, EntryType::Camera, &matrix.to_array());
-    }
-    pub fn set_camera_transform(&self, queue: &wgpu::Queue, matrix: Mat4) {
-        self.bindings.write(queue, EntryType::CameraTransform, &matrix.to_array());
-    }
-    pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [[Option<wgpu::QueueWriteBufferView<'a>>; 2]; PipelineLabel::COUNT] {
+    pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [Option<wgpu::QueueWriteBufferView<'a>>; PipelineLabel::COUNT] {
         PipelineLabel::ARRAY
             .map(|label| {
-                let pipe = &self.pipes[label as usize];
-                [pipe.view_vertex(queue), pipe.view_index(queue)]
+                self.pipes[label as usize].view_instance(queue)
             })
     }
 }

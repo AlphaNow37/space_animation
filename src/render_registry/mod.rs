@@ -1,9 +1,11 @@
 pub mod pipelines;
 pub mod registry;
-pub mod bind_groups;
+pub mod bind_group_base;
 pub mod vertex;
 pub mod shaders;
 pub mod alloc;
 pub mod depth;
 pub mod mesh_builder;
-mod prefabs;
+pub mod prefabs;
+pub mod storage_structs;
+pub mod bind_groups_store;

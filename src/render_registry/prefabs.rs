@@ -1,8 +1,15 @@
 use std::sync::LazyLock;
 use tracing::info;
 use crate::math::Vec3;
-use crate::render_registry::vertex::{Pos2Vertex, Pos3Vertex};
+use crate::render_registry::vertex::{Pos2Vertex, Pos3Vertex, VertexBufferLabel};
 use crate::utils::VectorSpace;
+
+#[derive(Clone, Copy, Debug)]
+pub struct VertexPoss {
+    pub label: VertexBufferLabel,
+    pub content: &'static [u32],
+    pub len: u32,
+}
 
 // Looks good, like a rose
 // pub static CIRCLE_POS: LazyLock<(u32, &'static [u32])> = LazyLock::new(|| {
@@ -48,7 +55,7 @@ use crate::utils::VectorSpace;
 
 
 const CIRCLE_ITERATIONS: usize = 3;
-pub static CIRCLE_POS: LazyLock<(u32, &'static [u32])> = LazyLock::new(|| {
+pub static CIRCLE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
     let mut vertexes = vec![
         Vec3::X, -Vec3::X,
         Vec3::Y, -Vec3::Y,
@@ -87,15 +94,24 @@ pub static CIRCLE_POS: LazyLock<(u32, &'static [u32])> = LazyLock::new(|| {
         .map(|v| Pos3Vertex {pos: v.to_array()})
         .collect::<Vec<_>>();
     info!("Created circle, size={}", vs.len());
-    (vs.len() as u32, bytemuck::cast_slice(vs.leak()))
+    VertexPoss {
+        len: vs.len() as u32,
+        label: VertexBufferLabel::Pos3,
+        content: bytemuck::cast_slice(vs.leak()),
+    }
 });
 
 const FLAT_SUBDIVISIONS: usize = 5;
-pub static FLAT_POS: LazyLock<(u32, &'static [u32])> = LazyLock::new(|| {
+pub static FLAT_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
     let vs = (0..FLAT_SUBDIVISIONS)
         .flat_map(|x| (0..FLAT_SUBDIVISIONS).map(move |y| (x, y)))
         .flat_map(|(x, y)| [(x, y), (x+1, y), (x, y+1), (x+1, y), (x+1, y), (x+1, y+1)])
         .map(|(x, y)| Pos2Vertex {pos: [x as f32 / FLAT_SUBDIVISIONS as f32, y as f32 / FLAT_SUBDIVISIONS as f32]})
         .collect::<Vec<_>>();
-    (vs.len() as u32, bytemuck::cast_slice(vs.leak()))
+
+    VertexPoss {
+        len: vs.len() as u32,
+        label: VertexBufferLabel::Pos2,
+        content: bytemuck::cast_slice(vs.leak()),
+    }
 });

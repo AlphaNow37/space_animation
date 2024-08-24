@@ -89,6 +89,19 @@ impl<T: VectorSpace, const N: usize, const M: usize> Polynomial<T, N, M> {
             )
         )
     }
+
+}
+
+impl<T: Copy, const N: usize, const M: usize> Polynomial<T, N, M>  {
+    pub fn map_comp<U: Zero+Copy>(mut self, mut f: impl FnMut(T)->U) -> Polynomial<U, N, M> {
+        let mut new = Polynomial::ZERO;
+        for y in 0..M {
+            for x in 0..N {
+                new.0[y][x] = f(self.0[y][x])
+            }
+        }
+        new
+    }
 }
 
 impl<T: Debug, const N: usize, const M: usize> Debug for Polynomial<T, N, M> {

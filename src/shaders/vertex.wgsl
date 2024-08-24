@@ -1,51 +1,7 @@
 
-struct TriVertex {
-    @location(0) pos: vec3<f32>,
-    @location(1) normal: vec4<f32>,
-    @location(2) uv: vec3<f32>,
+struct LocalGlobalMatrix {
+    @location(1) local_global_material: vec3<u32>,
 }
-
-struct LocalMatrix {
-    @location(0) local1: vec4<f32>,
-    @location(1) local2: vec4<f32>,
-    @location(2) local3: vec4<f32>,
-    @location(3) local4: vec4<f32>,
-}
-
-struct GlobalMatrix {
-    @location(4) global1: vec4<f32>,
-    @location(5) global2: vec4<f32>,
-    @location(6) global3: vec4<f32>,
-    @location(7) global4: vec4<f32>,
-}
-
-//struct Polynomial4x4 {
-//    @location(30) p00: vec3<f32>,
-//    @location(31) p01: vec3<f32>,
-//    @location(32) p02: vec3<f32>,
-//    @location(33) p03: vec3<f32>,
-//    @location(34) p10: vec3<f32>,
-//    @location(35) p11: vec3<f32>,
-//    @location(36) p12: vec3<f32>,
-//    @location(37) p13: vec3<f32>,
-//    @location(38) p20: vec3<f32>,
-//    @location(39) p21: vec3<f32>,
-//    @location(40) p22: vec3<f32>,
-//    @location(41) p23: vec3<f32>,
-//    @location(42) p30: vec3<f32>,
-//    @location(43) p31: vec3<f32>,
-//    @location(44) p32: vec3<f32>,
-//    @location(45) p33: vec3<f32>,
-//}
-
-struct Col1 {
-    @location(10) col: vec4<f32>,
-};
-
-struct Col2 {
-    @location(10) col1: vec4<f32>,
-    @location(11) col2: vec4<f32>,
-};
 
 struct Pos2Vertex {
     @location(20) pos: vec2<f32>,
@@ -54,53 +10,54 @@ struct Pos3Vertex {
     @location(20) pos: vec3<f32>,
 }
 
-fn local_matrix(in: LocalMatrix) -> mat4x4<f32> {
-    return mat4x4(in.local1, in.local2, in.local3, in.local4);
-}
-fn global_matrix(in: GlobalMatrix) -> mat4x4<f32> {
-    return  mat4x4(in.global1, in.global2, in.global3, in.global4);
-}
-
 @vertex
-fn vs_tri_color1(
-    in_vertex: TriVertex,
-    in_col: Col1,
-) -> FragInputCol1 {
-    var out: FragInputCol1;
-    out.clip_position = camera * vec4<f32>(in_vertex.pos, 1.0);
-    out.col = in_col.col.xyz;
-    out.uv = in_vertex.uv;
-    out.normal = in_vertex.normal.xyz;
-    out.delta_pos = in_vertex.pos - camera_transform[3].xyz;
+fn vs_tri(
+    @location(0) pos_global: vec4<u32>,
+    @location(3) material: u32,
+    @builtin(vertex_index) vertex_index: u32,
+) -> FragInput {
+    var out: FragInput;
+
+    let global: mat4x4<f32> = matrices[pos_global.w];
+    let local_a: vec4<f32> = vec4(vecs3[pos_global.x].xyz, 1.);
+    let local_b: vec4<f32> = vec4(vecs3[pos_global.y].xyz, 1.);
+    let local_c: vec4<f32> = vec4(vecs3[pos_global.z].xyz, 1.);
+    let global_a: vec4<f32> = global * local_a;
+    let global_b: vec4<f32> = global * local_b;
+    let global_c: vec4<f32> = global * local_c;
+
+    var normal: vec3<f32> = cross(global_a.xyz-global_b.xyz, global_a.xyz-global_c.xyz);
+    normal = normal / length(normal);
+
+    if(vertex_index == 0) {
+        out.clip_position = camera * global_a;
+        out.delta_pos = global_a.xyz - camera_transform[3].xyz;
+        out.uv = local_a.xyz;
+    } else if(vertex_index == 1) {
+        out.clip_position = camera * global_b;
+        out.delta_pos = global_b.xyz - camera_transform[3].xyz;
+        out.uv = local_b.xyz;
+    } else if(vertex_index == 2) {
+        out.clip_position = camera * global_c;
+        out.delta_pos = global_c.xyz - camera_transform[3].xyz;
+        out.uv = local_c.xyz;
+    } else {
+        out.clip_position = vec4(1., 1., 0., 1.);
+    }
+    out.normal = normal.xyz;
+    out.mat_id = material;
     return out;
 }
 
 @vertex
-fn vs_tri_color2(
-    in_vertex: TriVertex,
-    in_col: Col2,
-) -> FragInputCol2 {
-    var out: FragInputCol2;
-    out.clip_position = camera * vec4<f32>(in_vertex.pos, 1.0);
-    out.col1 = in_col.col1.xyz;
-    out.col2 = in_col.col2.xyz;
-    out.uv = in_vertex.uv;
-    out.normal = in_vertex.normal.xyz;
-    out.delta_pos = in_vertex.pos - camera_transform[3].xyz;
-    return out;
-}
-
-@vertex
-fn vs_sphere_color1(
-    in_local: LocalMatrix,
-    in_global: GlobalMatrix,
-    in_col: Col1,
+fn vs_sphere(
     in_pos: Pos3Vertex,
-) -> FragInputCol1 {
-    var out: FragInputCol1;
+    @location(1) local_global_material: vec3<u32>,
+) -> FragInput {
+    var out: FragInput;
 
-    let local: mat4x4<f32> = local_matrix(in_local);
-    let global: mat4x4<f32> = global_matrix(in_global);
+    let local: mat4x4<f32> = matrices[local_global_material.x];
+    let global: mat4x4<f32> = matrices[local_global_material.y];
 
     let normal = global * local * vec4(in_pos.pos.xyz, 0.);
     let local_pos = local * vec4(in_pos.pos.xyz, 1.);
@@ -108,8 +65,8 @@ fn vs_sphere_color1(
     out.uv = local_pos.xyz;
     out.clip_position = camera * global_pos;
     out.delta_pos = global_pos.xyz - camera_transform[3].xyz;
-    out.col = in_col.col.xyz;
     out.normal = normal.xyz / length(normal.xyz);
+    out.mat_id = local_global_material.z;
     return out;
 }
 
@@ -124,15 +81,12 @@ fn vs_sphere_color1(
 //         +(((poly.p03 * u + poly.p02) * u + poly.p01) * u + poly.p00)
 //    );
 //}
-//
-//@vertex
-//fn vs_polynomial4x4_color1(
-//    in_global: GlobalMatrix,
-//    in_poly: Polynomial4x4,
-//    in_pos: Pos2Vertex,
-//    in_col: Col1,
-//) -> FragInputCol1 {
-//    var out: FragInputCol1;
+
+@vertex
+fn vs_polynomial4x4(
+    @location(2) global_facts_material: vec3<u32>,
+) -> FragInput {
+    var out: FragInput;
 //
 //    let global: mat4x4<f32> = global_matrix(in_global);
 //
@@ -144,11 +98,6 @@ fn vs_sphere_color1(
 //    out.uv = pos;
 //    out.delta_pos = global_pos.xyz - camera_transform[3].xyz;
 //    out.normal = vec3(0., 0., 1.);
-//
-//    return out;
-//}
-@vertex
-fn vs_polynomial4x4_color1() -> FragInputCol1 {
-    var out: FragInputCol1;
+
     return out;
 }

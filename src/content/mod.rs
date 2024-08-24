@@ -1,19 +1,18 @@
 use crate::{models::put_axis, world::{primitives::color::Color, world::World}};
 use crate::math::{rotate_x, scale, ToAngle, trans, Transform, vec3, Vec3};
-use crate::world::primitives::camera::GetManualCamera;
 use crate::world::variators::variator::UpdateCtx;
-use crate::world::visuals::material::{SpongeTri, UniformSphere, UniformTri};
-use crate::world::visuals::shape::{Cube, Pyramid, Triangle};
+use crate::world::visuals::material::{UniformSphere, UniformTri};
+use crate::world::visuals::shape::{Triangle};
 
 fn put_cube(world: &mut World) {
     let pos = world.push_stored(|_ctx, _world: &World| {
         trans(0., 5., 0.) * rotate_x(45.0f32.deg())
     });
-    world.push_mat(UniformTri {
-        shape: Cube(Transform::ID),
-        color: Color::WHITE,
-        global: pos,
-    })
+    // world.push_mat(UniformTri {
+    //     shape: Cube(Transform::ID),
+    //     color: Color::WHITE,
+    //     global: pos,
+    // })
 }
 
 pub fn build(world: &mut World) {
@@ -37,37 +36,41 @@ pub fn build(world: &mut World) {
     //     shape: Triangle(Vec3A::X, Vec3A::Y, Vec3A::Z),
     // });
 
-    world.push_mat(UniformTri {
-        shape: Cube(trans(2., -2., 2.)*rotate_x(180.0f32.deg())),
-        color: Color::RED,
-        global: Transform::ID,
-    });
+    // world.push_mat(UniformTri {
+    //     shape: Cube(trans(2., -2., 2.)*rotate_x(180.0f32.deg())),
+    //     color: Color::RED,
+    //     global: Transform::ID,
+    // });
 
-    world.push_mat(
-        SpongeTri {
-            global: trans(-2., 4., -2.),
-            shape: Cube(|_ctx: UpdateCtx, _world: &World| scale(0.5, 0.5, 0.5)),
-            color1: Color::RED,
-            color2: Color::WHITE,
-        },
-    );
+    // world.push_mat(
+    //     SpongeTri {
+    //         global: trans(-2., 4., -2.),
+    //         shape: Cube(|_ctx: UpdateCtx, _world: &World| scale(0.5, 0.5, 0.5)),
+    //         color1: Color::RED,
+    //         color2: Color::WHITE,
+    //     },
+    // );
 
-    world.push_mat(
-        UniformTri {
-            shape: Pyramid(
-                Triangle(vec3(-5., 5., -5.), vec3(-4., 5., -5.), vec3(-5., 4., -6.)),
-                vec3(-5., 6., -5.)
-            ),
-            color: Color::DEBUG,
-            global: Transform::ID,
-        },
-    );
+    // world.push_mat(
+    //     UniformTri {
+    //         shape: Pyramid(
+    //             Triangle(vec3(-5., 5., -5.), vec3(-4., 5., -5.), vec3(-5., 4., -6.)),
+    //             vec3(-5., 6., -5.)
+    //         ),
+    //         color: Color::DEBUG,
+    //         global: Transform::ID,
+    //     },
+    // );
+
+    let loc = world.push_stored(|ctx: UpdateCtx, _: &World| scale(1., 3., 1.).rotate_around(Vec3::ONE, ctx.time.turn()));
+    let glob = world.push_stored(trans(3., 3., 3.));
+    let col = world.push_stored(Color::DEBUG);
 
     world.push_mat(
         UniformSphere {
-            local: |ctx: UpdateCtx, _: &World| scale(1., 3., 1.).rotate_around(Vec3::ONE, ctx.time.turn()),
-            color: Color::DEBUG,
-            global: trans(3., 3., 3.),
+            local: loc,
+            color: col,
+            global: glob,
         }
     )
 }

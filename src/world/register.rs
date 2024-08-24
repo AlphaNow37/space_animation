@@ -1,4 +1,5 @@
 use std::cell::Cell;
+use crate::render_registry::storage_structs::AsStrorageStruct;
 
 use super::{variators::variator::{UpdateCtx, Variator}, world::World};
 
@@ -26,5 +27,14 @@ impl<T: Copy + Default + 'static> Register<T> {
         let idx = self.vars.len();
         self.vars.push((Cell::new(T::default()), Box::new(var)));
         idx
+    }
+    pub fn len(&self) -> usize {
+        self.vars.len()
+    }
+    pub fn write(&self, store: &mut [u32]) where T: AsStrorageStruct {
+        let arr: &mut [T::S] = bytemuck::cast_slice_mut(store);
+        for i in 0..self.vars.len() {
+            arr[i] = self.vars[i].0.get().as_strorage_struct();
+        }
     }
 }
