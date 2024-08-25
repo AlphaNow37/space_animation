@@ -13,10 +13,37 @@ pub trait VisualDirective {
     fn exec(&self, executor: &mut VisualExecutor);
     fn alloc(&self, curr_mty: &mut MaterialType, alloc: &mut BufferAllocator);
 }
-pub struct SetGlobal(pub Ref<Transform>);
-impl VisualDirective for SetGlobal {
+
+impl VisualDirective for Ref<Transform> {
     fn exec(&self, executor: &mut VisualExecutor) {
-        executor.set_global(self.0.index())
+        executor.set_global(self.index());
     }
-    fn alloc(&self, _curr_mty: &mut MaterialType, alloc: &mut BufferAllocator) {}
+    fn alloc(&self, _curr_mty: &mut MaterialType, _alloc: &mut BufferAllocator) {
+
+    }
 }
+
+macro_rules! impl_visual_dir_tuple {
+    (
+        $a: ident, $($t: ident, )*
+    ) => {
+        #[allow(non_snake_case, unused_variables)]
+        impl<$($t: VisualDirective), *> VisualDirective for ($($t,)*) {
+            fn exec(&self, executor: &mut VisualExecutor) {
+                let ($($t, )*) = self;
+                $(
+                    $t.exec(executor);
+                )*
+            }
+            fn alloc(&self, curr_mty: &mut MaterialType, alloc: &mut BufferAllocator) {
+                let ($($t, )*) = self;
+                $(
+                    $t.alloc(curr_mty, alloc);
+                )*
+            }
+        }
+        impl_visual_dir_tuple!($($t, )*);
+    };
+    () => {}
+}
+impl_visual_dir_tuple!(A,B, C, D, E, F, G, );

@@ -1,6 +1,5 @@
 use std::num::NonZeroU64;
 use tracing::{info_span, info};
-use crate::math::Mat4;
 use crate::render_registry::bind_group_base::BaseBindings;
 use crate::render_registry::bind_groups_store::StoreBindings;
 use crate::render_registry::materials::MaterialType;

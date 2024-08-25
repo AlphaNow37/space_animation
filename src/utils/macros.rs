@@ -115,11 +115,11 @@ macro_rules! make_trait_alias {
 }
 pub(crate) use make_trait_alias;
 
-macro_rules! forget {
-    (
-        $($i: tt)*
-    ) => {
-
-    };
-}
-pub(crate) use forget;
+// macro_rules! forget {
+//     (
+//         $($i: tt)*
+//     ) => {
+//
+//     };
+// }
+// pub(crate) use forget;

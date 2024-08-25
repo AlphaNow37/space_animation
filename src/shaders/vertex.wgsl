@@ -70,6 +70,49 @@ fn vs_sphere(
     return out;
 }
 
+
+@vertex
+fn vs_cube(
+    @location(1) local_global_material: vec3<u32>,
+    @builtin(vertex_index) vertex_index: u32,
+) -> FragInput {
+    var out: FragInput;
+
+    var DIR_A = array<f32, 6>(-1., 1., -1., 1., -1., 1.);
+    var DIR_B = array<f32, 6>(-1., -1., 1., -1., 1., 1.);
+    var DIR_C = array<f32, 2>(-1., 1.);
+
+    let local: mat4x4<f32> = matrices[local_global_material.x];
+    var global: mat4x4<f32> = matrices[local_global_material.y];
+
+    let face = vertex_index / 6;
+    let face_dir = face % 3;
+    let in_face_id = vertex_index % 6;
+    let dir_a = DIR_A[in_face_id];
+    let dir_b = DIR_B[in_face_id];
+    let dir_c = DIR_C[u32(vertex_index >= 18)];
+
+    var pos: vec3<f32>;
+    if(face_dir == 0) {
+        pos = vec3(dir_c, dir_a, dir_b);
+    } else if(face_dir == 1) {
+        pos = vec3(dir_a, dir_c, dir_b);
+    } else if(face_dir == 2) {
+        pos = vec3(dir_a, dir_b, dir_c);
+    }
+
+    let local_pos = local * vec4(pos, 1.);
+    let global_pos = global * local_pos;
+    out.uv = local_pos.xyz;
+    out.clip_position = camera * global_pos;
+    out.delta_pos = global_pos.xyz - camera_transform[3].xyz;
+    let normal = global[face_dir];
+    out.normal = normal.xyz / length(normal.xyz);
+    out.mat_id = local_global_material.z;
+
+    return out;
+}
+
 //fn project_poly(poly: Polynomial4x4, pt: Pos2Vertex) -> vec3<f32> {
 //    let u: f32 = pt.pos.x;
 //    let v: f32 = pt.pos.x;

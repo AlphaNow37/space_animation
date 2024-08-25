@@ -1,82 +1,14 @@
-use std::num::{NonZeroU32, NonZeroU64};
+use std::num::NonZeroU64;
 use tracing::{info, info_span};
 use wgpu::util::DeviceExt;
 use crate::render_registry::depth::DepthBuffer;
 use crate::render_registry::materials::MaterialType;
-use crate::render_registry::prefabs::{CIRCLE_POS, FLAT_POS, VertexPoss};
+use crate::render_registry::prefabs::VertexPoss;
 use crate::render_registry::shaders::Shaders;
-use crate::render_registry::vertex::{Pos2Vertex, Pos3Vertex, SecondaryBufferDesc, VertexBufferLabel, VertexType};
-use crate::utils::macros::array_key;
-use super::vertex::VertexLike;
-
-// pub struct PipeNames {
-//     pub base_name: &'static str,
-//     pub render_pipe_layout: &'static str,
-//     pub render_pipe: &'static str,
-//     // pub index_buffer: &'static str,
-//     pub instance_buffer: &'static str,
-//     pub vertex_poss_buffer: &'static str,
-// }
-// macro_rules! pipe_names {
-//     ($name: literal) => {
-//         crate::render_registry::pipelines::PipeNames {
-//             base_name: $name,
-//             render_pipe_layout: concat!("Render pipe layout: ", $name),
-//             render_pipe: concat!("Render pipe: ", $name),
-//             // index_buffer: concat!("Index buffer: ", $name),
-//             instance_buffer: concat!("Instance buffer: ", $name),
-//             vertex_poss_buffer: concat!("Vertex poss buffer: ", $name)
-//         }
-//     };
-// }
-
-// array_key!(
-//     pub enum PipelineLabel {
-//         UniformTriangle,
-//         SpongeTriangle,
-//         UniformSphere,
-//         UniformPolynomial4x4,
-//     }
-// );
-// impl PipelineLabel {
-    // fn names(&self) -> PipeNames {
-    //     match self {
-    //         Self::UniformTriangle => pipe_names!("UniformTriangle"),
-    //         Self::SpongeTriangle => pipe_names!("SpongeTriangle"),
-    //         Self::UniformSphere => pipe_names!("UniformSphere"),
-    //         Self::UniformPolynomial4x4 => pipe_names!("UniformPolynomial4x4"),
-    //     }
-    // }
-    // fn vertex_entry_point(&self) -> &'static str {
-    //     match self {
-    //         Self::UniformTriangle => "vs_tri",
-    //         Self::SpongeTriangle => "vs_tri",
-    //         Self::UniformSphere => "vs_sphere",
-    //         Self::UniformPolynomial4x4 => "vs_polynomial4x4",
-    //     }
-    // }
-    // fn fragment_entry_point(&self) -> &'static str {
-    //     match self {
-    //         Self::UniformTriangle => "fs_uniform",
-    //         Self::SpongeTriangle => "fs_sponge",
-    //         Self::UniformSphere => "fs_uniform",
-    //         Self::UniformPolynomial4x4 => "fs_uniform",
-    //     }
-    // }
-    // fn secondary_buffer(&self) -> SecondaryBufferDesc {
-    //     match self {
-    //         Self::UniformSphere => SecondaryBufferDesc::VertexPoss(*CIRCLE_POS),
-    //         Self::UniformPolynomial4x4 => SecondaryBufferDesc::VertexPoss(*FLAT_POS),
-    //         _ => SecondaryBufferDesc::None,
-    //     }
-    // }
-// }
+use crate::render_registry::vertex::{SecondaryBufferDesc, VertexType};
 
 enum SecondaryBuffer {
-    VertexPoss {
-        buffer: wgpu::Buffer,
-        len: u32,
-    },
+    VertexPoss(wgpu::Buffer),
     None,
 }
 
@@ -166,16 +98,15 @@ impl Pipeline {
         });
         let secondary_buffer = match secondary_label {
             SecondaryBufferDesc::None => SecondaryBuffer::None,
-            SecondaryBufferDesc::VertexPoss(VertexPoss {len, content, ..}) => SecondaryBuffer::VertexPoss {
-                len,
-                buffer: device.create_buffer_init(
+            SecondaryBufferDesc::VertexPoss(VertexPoss { content, ..}) => SecondaryBuffer::VertexPoss(
+                device.create_buffer_init(
                     &wgpu::util::BufferInitDescriptor {
                         label: Some(&format!("Vertex poss buffer {name}")),
                         usage: wgpu::BufferUsages::VERTEX,
                         contents: bytemuck::cast_slice(&content),
                     },
                 )
-            },
+            ),
         };
         Self {
             render_pipeline,
@@ -191,14 +122,12 @@ impl Pipeline {
         render_pass.set_vertex_buffer(0, self.instance_buffer.slice(..));
 
         match &self.secondary_buffer {
-            SecondaryBuffer::VertexPoss {len, buffer} => {
+            SecondaryBuffer::VertexPoss(buffer) => {
                 render_pass.set_vertex_buffer(1, buffer.slice(..));
-                render_pass.draw(0..*len, 0..self.nb_instance.get() as u32);
             },
-            SecondaryBuffer::None => {
-                render_pass.draw(0..3, 0..self.nb_instance.get() as u32)
-            },
+            SecondaryBuffer::None => {},
         }
+        render_pass.draw(0..self.vertex.nb_vertex(), 0..self.nb_instance.get() as u32);
     }
 
     pub fn view_instance<'a>(&'a self, queue: &'a wgpu::Queue) -> wgpu::QueueWriteBufferView<'a> {

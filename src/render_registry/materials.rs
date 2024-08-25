@@ -21,3 +21,9 @@ impl MaterialType {
         }
     }
 }
+
+#[derive(Default)]
+pub struct MaterialRef {
+    pub index: usize,
+    pub mty: MaterialType,
+}

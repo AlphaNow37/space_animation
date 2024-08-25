@@ -1,8 +1,6 @@
-use std::array::from_fn;
 use tracing::{info, info_span};
 use crate::render_registry::alloc::BufferAllocator;
 use crate::world::stores::StoreLabel;
-use crate::world::world::{GlobalLabel, World};
 
 pub struct StoreBindings {
     pub layout: wgpu::BindGroupLayout,

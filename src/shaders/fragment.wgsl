@@ -8,6 +8,13 @@ struct FragInput {
 };
 
 @fragment
+fn fs_none(in: FragInput) -> @location(0) vec4<f32> {
+    var col: vec3<f32> = vec3(0.35, 0.12, -0.12); // Purple
+    col.x *= pass_all(in.normal, in.clip_position.z, in.delta_pos);
+    return frag_out(col);
+}
+
+@fragment
 fn fs_uniform(in: FragInput) -> @location(0) vec4<f32> {
     var col: vec3<f32>= colors[in.mat_id].xyz;
     col.x *= pass_all(in.normal, in.clip_position.z, in.delta_pos);

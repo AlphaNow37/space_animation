@@ -157,8 +157,6 @@ impl World {
     }
 }
 
-pub type Main<T> = T;
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ref<T> {
     label: PhantomData<fn()->T>,
