@@ -1,4 +1,4 @@
-
+use std::ops::DerefMut;
 use tracing::{info_span, info};
 use crate::{
     render_registry::{
@@ -10,7 +10,6 @@ use crate::{
         world::{World, WorldUpdateCtx},
     },
 };
-use crate::render_registry::mesh_builder::MeshBuilders;
 
 use super::camera::ManualCamera;
 
@@ -51,14 +50,16 @@ impl Scene {
         let mut store_views = registry.store_bindings.views(queue);
         let ctx = WorldUpdateCtx {
             var_update: UpdateCtx { time },
-            builders: MeshBuilders::from_views(
-                instance_views.each_mut()
-                    .map(|view|
-                        view.as_deref_mut()
-                            .map(|buf| bytemuck::cast_slice_mut(buf))
-                            .unwrap_or(&mut [])
-                    )
-            ),
+            instance_bufs: instance_views.each_mut()
+                .map(|r|
+                    r.each_mut()
+                        .map(|view_opt|
+                            view_opt
+                                .as_mut()
+                                .map(|view|
+                                    bytemuck::cast_slice_mut(&mut *view)).unwrap_or(&mut [])
+                        )
+                ),
             stores: store_views.each_mut()
                 .map(|v|
                     v.as_deref_mut()

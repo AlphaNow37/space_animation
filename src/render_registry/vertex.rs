@@ -1,5 +1,6 @@
 use bytemuck::{Pod, Zeroable};
-use crate::utils::CompressedVec;
+use crate::render_registry::prefabs::{CIRCLE_POS, FLAT_POS, VertexPoss};
+use crate::utils::{array_key, CompressedVec};
 
 pub trait VertexLike: bytemuck::AnyBitPattern + bytemuck::NoUninit {
     const SIZE: wgpu::BufferAddress;
@@ -145,6 +146,41 @@ new_vertex!(
     new(pos = Self, _shape = ()) -> {pos}
     pos(self) -> {*self}
 );
+
+pub enum SecondaryBufferDesc {
+    VertexPoss(VertexPoss),
+    None,
+}
+array_key!(
+    pub enum VertexType {
+        Tri,
+        Sphere,
+        Poly4x4,
+    }
+);
+impl VertexType {
+    pub fn entry_point(self) -> &'static str {
+        match self {
+            Self::Tri => "vs_tri",
+            Self::Sphere => "vs_sphere",
+            Self::Poly4x4 => "vs_poly4x4",
+        }
+    }
+    pub fn instance_buffer_label(&self) -> VertexBufferLabel {
+        match self {
+            Self::Tri => VertexBufferLabel::Tri,
+            Self::Sphere => VertexBufferLabel::Sphere,
+            Self::Poly4x4 => VertexBufferLabel::Polynomial4x4,
+        }
+    }
+    pub fn secondary_buffer(&self) -> SecondaryBufferDesc {
+        match self {
+            Self::Sphere => SecondaryBufferDesc::VertexPoss(*CIRCLE_POS),
+            Self::Poly4x4 => SecondaryBufferDesc::VertexPoss(*FLAT_POS),
+            _ => SecondaryBufferDesc::None,
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum VertexBufferLabel {

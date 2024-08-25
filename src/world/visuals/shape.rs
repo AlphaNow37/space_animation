@@ -1,57 +1,32 @@
-use crate::math::Vec3;
+use crate::math::{Transform, Vec3};
 
-use crate::render_registry::{vertex::TriVertex, mesh_builder::TriMeshBuilder};
+use crate::render_registry::alloc::BufferAllocator;
+use crate::render_registry::materials::MaterialType;
+use crate::render_registry::mesh_builder::VisualExecutor;
+use crate::render_registry::vertex::VertexType;
+use crate::world::visuals::VisualDirective;
 
 use crate::world::world::Ref;
 
-pub trait TriShape {
-    const NB_INSTANCE: usize;
-
-    // /// Cheap
-    // fn nb_index(&self) -> usize;
-    // /// Cheap
-    // fn nb_vertex(&self) -> usize;
-    fn put(&self, builder: &mut impl TriMeshBuilder, global: usize, mat: usize);
-}
-
-pub trait BorderShape {
-    const NB_BORDER_SEGMENT: usize;
-    // /// number of segment
-    // fn border_size(&self) -> usize;
-    fn segment_border(&self) -> impl IntoIterator<Item=(usize, usize)>;
-}
-// Overwrite normals
-// fn put_triangle(builder: &mut impl TriMeshBuilder, mut ps: [TriVertex; 3]) {
-//     let normal = Normal::from_tri(ps[0].pos, ps[1].pos, ps[2].pos);
-//     for p in &mut ps {
-//         p.normal = normal;
-//     }
-//     builder.push_indexes_offset([0, 1, 2]);
-//     builder.push_vertexes(ps)
-// }
-
 pub struct Triangle(pub Ref<Vec3>, pub Ref<Vec3>, pub Ref<Vec3>);
-impl TriShape for Triangle {
-    // const NB_INDEX: usize = 3;
-    const NB_INSTANCE: usize = 1;
-    // fn nb_index(&self) -> usize {
-    //     3
-    // }
-    // fn nb_vertex(&self) -> usize {
-    //     3
-    // }
-    fn put(&self, builder: &mut impl TriMeshBuilder, global: usize, mat: usize) {
-        // let (a, b, c) = (self.0.update(ctx, world), self.1.update(ctx, world), self.2.update(ctx, world));
-        // let g = builder.global();
-        // let (apos, bpos, cpos) = (g.tr_point(a), g.tr_point(b), g.tr_point(c));
-        // put_triangle(builder, [
-        //     TriVertex::create(apos, Normal::ZERO, a),
-        //     TriVertex::create(bpos, Normal::ZERO, b),
-        //     TriVertex::create(cpos, Normal::ZERO, c),
-        // ])
-        builder.push_vertex(TriVertex::create([self.0.index(), self.1.index(), self.2.index()], global, mat))
+impl VisualDirective for Triangle {
+    fn exec(&self, executor: &mut VisualExecutor) {
+        executor.push_tri([self.0.index(), self.1.index(), self.2.index()])
+    }
+    fn alloc(&self, curr_mty: &mut MaterialType, alloc: &mut BufferAllocator) {
+        alloc.alloc_instance(VertexType::Tri, *curr_mty, 1);
     }
 }
+pub struct Sphere(pub Ref<Transform>);
+impl VisualDirective for Sphere {
+    fn exec(&self, executor: &mut VisualExecutor) {
+        executor.push_sphere(self.0.index())
+    }
+    fn alloc(&self, curr_mty: &mut MaterialType, alloc: &mut BufferAllocator) {
+        alloc.alloc_instance(VertexType::Sphere, *curr_mty, 1);
+    }
+}
+
 // impl<P1: Variator<Item=Vec3>, P2: Variator<Item=Vec3>, P3: Variator<Item=Vec3>> BorderShape for Triangle<P1, P2, P3> {
 //     const NB_BORDER_SEGMENT: usize = 3;
 //     // fn border_size(&self) -> usize {

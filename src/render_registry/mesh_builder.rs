@@ -1,113 +1,42 @@
-use crate::math::Transform;
-use crate::render_registry::pipelines::PipelineLabel;
+use bytemuck::NoUninit;
+use crate::render_registry::materials::MaterialType;
 
-use crate::render_registry::vertex::{LocalGlobalMatrixVertex, TriVertex, VertexLike};
-use crate::utils::{Count, make_trait_alias};
+use crate::render_registry::vertex::{LocalGlobalMatrixVertex, TriVertex, VertexType};
 
-#[allow(dead_code)]
-pub trait MeshBuilder {
-    type Vertex;
-
-    /// Push multiple vertex (Pos, Normal, Uv)
-    fn push_vertexes<const N: usize>(&mut self, vertexes: [Self::Vertex; N]);
-    /// Push a single vertex, returns it index (Pos, Normal, Uv)
-    fn push_vertex(&mut self, vertex: Self::Vertex);
-    // /// Push multiple absolute index
-    // fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]);
-    // /// Push an absolute index
-    // fn push_index(&mut self, idx: u32);
-    /// The next absolute index
-    fn next_index(&self) -> u32;
-    // /// Push multiple relative index (0=>the next to be pushed)
-    // fn push_indexes_offset<const N: usize>(&mut self, idxs: [u32; N]) {
-    //     let curr = self.next_index();
-    //     self.push_indexes(idxs.map(|i| i+curr));
-    // }
-    // /// Push a relative index
-    // fn push_index_offset(&mut self, idx: u32) {self.push_index(idx+self.next_index())}
-    /// retrieve info about another vertex
-    fn get_vertex(&self, idx: u32) -> Self::Vertex;
-    /// The global transform, don't affect uvs
-    fn global(&self) -> &Transform;
+pub struct VisualExecutor<'a> {
+    curr_global: usize,
+    curr_mat: usize,
+    curr_mty: MaterialType,
+    bufs: [[&'a mut [u32]; MaterialType::COUNT]; VertexType::COUNT],
 }
-
-make_trait_alias!(TriMeshBuilder = [MeshBuilder<Vertex=TriVertex>] {});
-
-pub struct BaseMeshBuilder<'a, T: VertexLike> {
-    curr: Count,
-    vertex: &'a mut [T],
-    // index: &'a mut [u32],
-    data: T::ShapeData,
-    global: Transform,
-}
-impl<'a, T: VertexLike> BaseMeshBuilder<'a, T> {
-    pub fn new(vertex: &'a mut [u32]) -> Self {
+impl<'a> VisualExecutor<'a> {
+    pub fn new(bufs: [[&'a mut [u32]; MaterialType::COUNT]; VertexType::COUNT]) -> Self {
         Self {
-            curr: Count::new(),
-            vertex: bytemuck::cast_slice_mut(vertex),
-            // index, //: index.chunks_exact_mut(4),
-            data: Default::default(),
-            global: Default::default(),
+            curr_global: 0,
+            curr_mat: 0,
+            curr_mty: MaterialType::Uniform,
+            bufs,
         }
     }
-    pub fn with_global(&mut self, global: Transform) -> &mut Self {
-        self.global = global;
-        self
+    fn push(&mut self, vty: VertexType, data: impl NoUninit) {
+        let buf = &mut self.bufs[vty as usize][self.curr_mty as usize];
+        let arraay = [data];
+        let slice: &[u32] = bytemuck::cast_slice(&arraay);
+        let a;
+        (a, *buf) = std::mem::take(buf).split_at_mut(slice.len());
+        a.copy_from_slice(slice);
     }
-    pub fn with_data(&mut self, data: T::ShapeData) -> &mut Self {
-        self.data = data;
-        self
+    pub fn set_mat(&mut self, mat: usize, mty: MaterialType) {
+        self.curr_mat = mat;
+        self.curr_mty = mty;
     }
-}
-impl<'a, T: VertexLike> MeshBuilder for BaseMeshBuilder<'a, T> {
-    type Vertex = T::PosData;
-    fn push_vertexes<const N: usize>(&mut self, vertexes: [Self::Vertex; N]) {
-        (&mut self.vertex[self.curr.range_of(N)])
-            .copy_from_slice(&vertexes.map(|v| T::new(v, self.data)));
+    pub fn set_global(&mut self, global: usize) {
+        self.curr_global = global;
     }
-    fn push_vertex(&mut self, vertex: Self::Vertex) {
-        self.vertex[self.curr.next()] = T::new(vertex, self.data);
+    pub fn push_tri(&mut self, pts: [usize; 3]) {
+        self.push(VertexType::Tri, TriVertex::create(pts, self.curr_global, self.curr_mat))
     }
-    // fn push_indexes<const N: usize>(&mut self, idxs: [u32; N]) {
-    //     let a;
-    //     (a, self.index) = std::mem::take(&mut self.index).split_at_mut(N);
-    //     a.copy_from_slice(&idxs);
-    // }
-    // fn push_index(&mut self, idx: u32) {
-    //     self.push_indexes([idx])
-    // }
-    fn next_index(&self) -> u32 {
-        self.curr.curr() as u32
-    }
-    fn get_vertex(&self, idx: u32) -> Self::Vertex {
-        self.vertex[idx as usize].pos()
-    }
-    fn global(&self) -> &Transform {
-        &self.global
+    pub fn push_sphere(&mut self, tr: usize) {
+        self.push(VertexType::Sphere, LocalGlobalMatrixVertex::create(tr, self.curr_global, self.curr_mat))
     }
 }
-
-macro_rules! make_builders {
-    (
-        $($name: ident = $ty: ty = $label: ident),* $(,)?
-    ) => {
-        pub struct MeshBuilders<'a> {
-            $(pub $name: BaseMeshBuilder<'a, $ty>),*
-        }
-        impl<'a> MeshBuilders<'a> {
-            pub fn from_views(mut views: [&'a mut [u32]; PipelineLabel::COUNT]) -> Self {
-                Self {
-                    $(
-                        $name: BaseMeshBuilder::new(std::mem::take(&mut views[PipelineLabel::$label as usize]))
-                    ),*
-                }
-            }
-        }
-    };
-}
-
-make_builders!(
-    uniform_triangle = TriVertex = UniformTriangle,
-    sponge_triangle = TriVertex = SpongeTriangle,
-    uniform_sphere = LocalGlobalMatrixVertex = UniformSphere,
-);

@@ -1,7 +1,7 @@
 use crate::{models::put_axis, world::{primitives::color::Color, world::World}};
 use crate::math::{rotate_x, scale, ToAngle, trans, Transform, vec3, Vec3};
 use crate::world::variators::variator::UpdateCtx;
-use crate::world::visuals::material::{UniformSphere, UniformTri};
+use crate::world::visuals::{SetGlobal, Sphere, Uniform};
 use crate::world::visuals::shape::{Triangle};
 
 fn put_cube(world: &mut World) {
@@ -66,12 +66,8 @@ pub fn build(world: &mut World) {
     let glob = world.push(trans(3., 3., 3.));
     let col = world.push(Color::DEBUG);
 
-    world.push_mat(
-        UniformSphere {
-            local: loc,
-            color: col,
-            global: glob,
-        }
-    )
+    world.push_visual(SetGlobal(glob));
+    world.push_visual(Uniform(col));
+    world.push_visual(Sphere(loc));
 }
 // from_rotation_y(180.0f32.to_radians())

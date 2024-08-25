@@ -9,3 +9,4 @@ pub mod mesh_builder;
 pub mod prefabs;
 pub mod storage_structs;
 pub mod bind_groups_store;
+pub mod materials;

@@ -3,9 +3,11 @@ use crate::math::{Vec2, Vec3, Vec4, Transform, Dir, Polynomial};
 use crate::render_registry::alloc::{BufferAllocator};
 use crate::world::primitives::camera::Camera;
 use crate::math::Angle;
-use crate::render_registry::mesh_builder::MeshBuilders;
+use crate::render_registry::materials::MaterialType;
+use crate::render_registry::mesh_builder::VisualExecutor;
+use crate::render_registry::vertex::VertexType;
 use crate::world::stores::StoreLabel;
-use crate::world::visuals::material::Material;
+use crate::world::visuals::VisualDirective;
 
 use super::variators::variator::{UpdateCtx, Variator};
 use super::{
@@ -55,8 +57,8 @@ macro_rules! make_system {
                 $attr: Register<$prim_ty>,
             )*
             insert_order: Vec<GlobalRef>,
-            materials: Vec<Box<dyn Material>>,
             pub settings: WorldSettings,
+            directives: Vec<Box<dyn VisualDirective>>,
         }
         impl World {
             pub fn new() -> Self {
@@ -65,7 +67,7 @@ macro_rules! make_system {
                         $attr: Register::new(),
                     )*
                     insert_order: Vec::new(),
-                    materials: Vec::new(),
+                    directives: Vec::new(),
                     settings: WorldSettings::default(),
                 }
             }
@@ -109,23 +111,21 @@ make_system!(
 
 impl World {
     pub fn allocs(&self, alloc: &mut BufferAllocator) {
-        for mat in &self.materials {
-            mat.alloc(alloc)
+        let mut curr_mty = MaterialType::default();
+        for vis in &self.directives {
+            vis.alloc(&mut curr_mty, alloc);
         }
         for label in StoreLabel::ARRAY {
             label.alloc(self, alloc);
         }
     }
-    pub fn push_mat(&mut self, mat: impl Material + 'static) {
-        self.materials.push(Box::new(mat));
+    pub fn push_visual(&mut self, vis: impl VisualDirective + 'static) {
+        self.directives.push(Box::new(vis));
     }
     fn redraw(&self, ctx: &mut WorldUpdateCtx) {
-        for mat in &self.materials {
-            mat.put(
-                ctx.var_update,
-                self,
-                &mut ctx.builders,
-            );
+        let mut executor = VisualExecutor::new(std::mem::take(&mut ctx.instance_bufs));
+        for dir in &self.directives {
+            dir.exec(&mut executor)
         }
     }
     fn update_settings(&mut self, ctx: &WorldUpdateCtx) {
@@ -170,7 +170,7 @@ impl<T> Ref<T> {
 
 pub struct WorldUpdateCtx<'a> {
     pub var_update: UpdateCtx,
-    pub builders: MeshBuilders<'a>,
+    pub instance_bufs: [[&'a mut [u32]; MaterialType::COUNT]; VertexType::COUNT],
     pub stores: [&'a mut [u32]; StoreLabel::COUNT],
     pub cam: Camera,
 }
