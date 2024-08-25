@@ -19,9 +19,9 @@ fn vs_tri(
     var out: FragInput;
 
     let global: mat4x4<f32> = matrices[pos_global.w];
-    let local_a: vec4<f32> = vec4(vecs3[pos_global.x].xyz, 1.);
-    let local_b: vec4<f32> = vec4(vecs3[pos_global.y].xyz, 1.);
-    let local_c: vec4<f32> = vec4(vecs3[pos_global.z].xyz, 1.);
+    let local_a: vec4<f32> = vec4(vecs3[pos_global.x], 1.);
+    let local_b: vec4<f32> = vec4(vecs3[pos_global.y], 1.);
+    let local_c: vec4<f32> = vec4(vecs3[pos_global.z], 1.);
     let global_a: vec4<f32> = global * local_a;
     let global_b: vec4<f32> = global * local_b;
     let global_c: vec4<f32> = global * local_c;
