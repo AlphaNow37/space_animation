@@ -47,11 +47,12 @@ impl Transform {
         ]))
     }
     pub fn from_cols(x: Vec3, y: Vec3, z: Vec3) -> Self {
-        Self(Simd::load_or_default(&[
-            x.0.to_array(),
-            y.0.to_array(),
-            z.0.to_array(),
-        ].concat()))
+        Self::from_array([
+            x.x(), x.y(), x.z(),
+            y.x(), y.y(), y.z(),
+            z.x(), z.y(), z.z(),
+            0., 0., 0.,
+        ])
     }
     pub fn from_rows(a: Vec3, b: Vec3, c: Vec3) -> Self {
         Self::from_array([

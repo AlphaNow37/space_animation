@@ -1,9 +1,10 @@
 use bytemuck::NoUninit;
 use tracing::{info, info_span};
+use crate::math::Mat4;
 use crate::utils::macros::array_key;
 
 array_key!(
-    pub enum EntryType {
+    enum EntryType {
         Time,
         Camera,
         CameraTransform,
@@ -28,15 +29,15 @@ impl EntryType {
     }
 }
 
-pub struct Bindings {
+pub struct BaseBindings {
     pub layout: wgpu::BindGroupLayout,
     pub bind_group: wgpu::BindGroup,
     pub buffers: [wgpu::Buffer; EntryType::COUNT],
 }
-impl Bindings {
+impl BaseBindings {
     pub fn new(device: &wgpu::Device) -> Self {
-        let _span = info_span!("bindings").entered();
-        info!("Creating bindings");
+        let _span = info_span!("base_bindings").entered();
+        info!("Creating base bindings");
         let layout_entries = EntryType::ARRAY
             .map(|e| wgpu::BindGroupLayoutEntry {
                 binding: e as u32,
@@ -49,7 +50,7 @@ impl Bindings {
                 },
             });
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Bind group layout"),
+            label: Some("Base bind group layout"),
             entries: &layout_entries,
         });
         let buffers = EntryType::ARRAY
@@ -65,11 +66,11 @@ impl Bindings {
                 resource: buffers[e as usize].as_entire_binding()
             });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Bind group"),
+            label: Some("Base bind group"),
             entries: &entries,
             layout: &layout,
         });
-        info!("Succesfully created {} bindings", EntryType::COUNT);
+        info!("Succesfully created {} base bindings", EntryType::COUNT);
         Self {
             layout,
             bind_group,
@@ -79,11 +80,20 @@ impl Bindings {
     pub fn put(&self, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_bind_group(0, &self.bind_group, &[]);
     }
-    pub fn write(&self, queue: &wgpu::Queue, entry: EntryType, value: &[impl NoUninit]) {
+    fn write(&self, queue: &wgpu::Queue, entry: EntryType, value: &[impl NoUninit]) {
         queue.write_buffer(
             &self.buffers[entry as usize],
             0,
             bytemuck::cast_slice(value),
         )
+    }
+    pub fn set_time(&self, queue: &wgpu::Queue, time: f32){
+        self.write(queue, EntryType::Time, &[time])
+    }
+    pub fn set_camera(&self, queue: &wgpu::Queue, matrix: Mat4) {
+        self.write(queue, EntryType::Camera, &matrix.to_array());
+    }
+    pub fn set_camera_transform(&self, queue: &wgpu::Queue, matrix: Mat4) {
+        self.write(queue, EntryType::CameraTransform, &matrix.to_array());
     }
 }

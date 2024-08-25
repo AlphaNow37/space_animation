@@ -9,7 +9,7 @@ macro_rules! array_key {
             $(,)?
         }
     ) => {
-        #[derive(Copy, Clone, Debug)]
+        #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
         $vis enum $name {
             $($variant),*
         }
@@ -114,3 +114,12 @@ macro_rules! make_trait_alias {
     };
 }
 pub(crate) use make_trait_alias;
+
+// macro_rules! forget {
+//     (
+//         $($i: tt)*
+//     ) => {
+//
+//     };
+// }
+// pub(crate) use forget;

@@ -1,20 +1,26 @@
-
-use super::pipelines::PipelineLabel;
+use crate::render_registry::materials::MaterialType;
+use crate::render_registry::vertex::VertexType;
+use crate::world::stores::StoreLabel;
 
 #[derive(Default)]
-pub struct BuffersAllocPosition {
-    vertex_index: [(usize, usize); PipelineLabel::COUNT],
+pub struct BufferAllocator {
+    instance: [[usize; MaterialType::COUNT]; VertexType::COUNT],
+    store: [usize; StoreLabel::COUNT],
 }
-impl BuffersAllocPosition {
+impl BufferAllocator {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn get_count(&self, pipe: PipelineLabel) -> (usize, usize) {
-        self.vertex_index[pipe as usize]
+    pub fn get_instance_count(&self, vertex: VertexType, material: MaterialType) -> usize {
+        self.instance[vertex as usize][material as usize]
     }
-    pub fn alloc(&mut self, pipe: PipelineLabel, nb_vertex: usize, nb_index: usize) {
-        let (start_vertex, start_index) = &mut self.vertex_index[pipe as usize];
-        *start_vertex += nb_vertex;
-        *start_index += nb_index;
+    pub fn get_store_count(&self, store: StoreLabel) -> usize {
+        self.store[store as usize]
+    }
+    pub fn alloc_instance(&mut self, vertex: VertexType, material: MaterialType, nb_instance: usize) {
+        self.instance[vertex as usize][material as usize] += nb_instance;
+    }
+    pub fn alloc_store(&mut self, store: StoreLabel, nb_stored: usize) {
+        self.store[store as usize] += nb_stored;
     }
 }

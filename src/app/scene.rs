@@ -1,8 +1,7 @@
-
 use tracing::{info_span, info};
 use crate::{
     render_registry::{
-        alloc::BuffersAllocPosition,
+        alloc::BufferAllocator,
         registry::PipelinesRegistry,
     },
     world::{
@@ -10,7 +9,6 @@ use crate::{
         world::{World, WorldUpdateCtx},
     },
 };
-use crate::render_registry::mesh_builder::MeshBuilders;
 
 use super::camera::ManualCamera;
 
@@ -19,7 +17,7 @@ fn init_world(world: &mut World) {
 }
 
 pub struct Scene {
-    pub final_position: BuffersAllocPosition,
+    pub alloc: BufferAllocator,
     world: World,
 }
 impl Scene {
@@ -30,11 +28,11 @@ impl Scene {
         init_world(&mut world);
         crate::content::build(&mut world);
 
-        let mut alloc = BuffersAllocPosition::new();
+        let mut alloc = BufferAllocator::new();
         world.allocs(&mut alloc);
 
         Scene {
-            final_position: alloc,
+            alloc,
             world,
         }
     }
@@ -47,23 +45,31 @@ impl Scene {
     ) {
         // let _span = info_span!("update_scene").entered();
         // info!("Updating scene");
-        let mut views = registry.views(queue);
+        let mut instance_views = registry.views(queue);
+        let mut store_views = registry.store_bindings.views(queue);
         let ctx = WorldUpdateCtx {
             var_update: UpdateCtx { time },
-            builders: MeshBuilders::from_views(
-                views.each_mut()
-                    .map(|views|
-                         views.each_mut()
-                             .map(|v|
-                                 v.as_deref_mut().map(|buf| bytemuck::cast_slice_mut(buf)).unwrap_or(&mut [])
-                             )
-                    )
-            ),
+            instance_bufs: instance_views.each_mut()
+                .map(|r|
+                    r.each_mut()
+                        .map(|view_opt|
+                            view_opt
+                                .as_mut()
+                                .map(|view|
+                                    bytemuck::cast_slice_mut(&mut *view)).unwrap_or(&mut [])
+                        )
+                ),
+            stores: store_views.each_mut()
+                .map(|v|
+                    v.as_deref_mut()
+                        .map(|view| bytemuck::cast_slice_mut(view))
+                        .unwrap_or(&mut [])
+                ),
             cam: cam.cam,
         };
         self.world.update(ctx);
         let wcam = self.world.get_cam(cam.current_cam_idx);
-        registry.set_camera(queue, wcam.matrix(cam.aspect_ratio()));
-        registry.set_camera_transform(queue, wcam.pos.to_mat4());
+        registry.base_bindings.set_camera(queue, wcam.matrix(cam.aspect_ratio()));
+        registry.base_bindings.set_camera_transform(queue, wcam.pos.to_mat4());
     }
 }

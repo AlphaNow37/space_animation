@@ -11,6 +11,9 @@ impl Zero for f32 {
 impl Zero for usize {
     const ZERO: Self = 0;
 }
+impl<T: Zero, const N: usize> Zero for [T; N] {
+    const ZERO: Self = [T::ZERO; N];
+}
 
 make_trait_alias!(
     VectorSpace = [
