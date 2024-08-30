@@ -1,4 +1,4 @@
-use crate::math::{Transform, Vec3};
+use crate::math::{Polynomial, Transform, Vec3};
 
 use crate::render_registry::alloc::BufferAllocator;
 use crate::render_registry::materials::MaterialType;
@@ -34,6 +34,15 @@ impl VisualDirective for Cube {
     }
     fn alloc(&self, curr_mty: &mut MaterialType, alloc: &mut BufferAllocator) {
         alloc.alloc_instance(VertexType::Cube, *curr_mty, 1);
+    }
+}
+
+impl VisualDirective for Ref<Polynomial<Vec3, 4, 4>> {
+    fn exec(&self, executor: &mut VisualExecutor) {
+        executor.push_poly4x4(self.index())
+    }
+    fn alloc(&self, curr_mty: &mut MaterialType, alloc: &mut BufferAllocator) {
+        alloc.alloc_instance(VertexType::Poly4x4, *curr_mty, 1);
     }
 }
 

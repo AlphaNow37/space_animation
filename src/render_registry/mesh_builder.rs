@@ -1,7 +1,7 @@
 use bytemuck::NoUninit;
 use crate::render_registry::materials::{MaterialRef, MaterialType};
 
-use crate::render_registry::vertex::{LocalGlobalMatrixVertex, TriVertex, VertexType};
+use crate::render_registry::vertex::{LocalGlobalMatrixVertex, Polynomial4x4Vertex, TriVertex, VertexType};
 
 pub struct VisualExecutor<'a> {
     curr_global: usize,
@@ -38,5 +38,8 @@ impl<'a> VisualExecutor<'a> {
     }
     pub fn push_cube(&mut self, tr: usize) {
         self.push(VertexType::Cube, LocalGlobalMatrixVertex::create(tr, self.curr_global, self.curr_mat.index))
+    }
+    pub fn push_poly4x4(&mut self, facts: usize) {
+        self.push(VertexType::Poly4x4, Polynomial4x4Vertex::create(facts, self.curr_global, self.curr_mat.index))
     }
 }

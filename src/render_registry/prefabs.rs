@@ -101,11 +101,11 @@ pub static CIRCLE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
     }
 });
 
-const FLAT_SUBDIVISIONS: usize = 5;
+const FLAT_SUBDIVISIONS: usize = 10;
 pub static FLAT_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
     let vs = (0..FLAT_SUBDIVISIONS)
         .flat_map(|x| (0..FLAT_SUBDIVISIONS).map(move |y| (x, y)))
-        .flat_map(|(x, y)| [(x, y), (x+1, y), (x, y+1), (x+1, y), (x+1, y), (x+1, y+1)])
+        .flat_map(|(x, y)| [(x, y), (x+1, y), (x, y+1), (x+1, y), (x, y+1), (x+1, y+1)])
         .map(|(x, y)| Pos2Vertex {pos: [x as f32 / FLAT_SUBDIVISIONS as f32, y as f32 / FLAT_SUBDIVISIONS as f32]})
         .collect::<Vec<_>>();
 

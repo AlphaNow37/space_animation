@@ -70,8 +70,8 @@ new_vertex!(
     } -> 3;
 );
 impl Polynomial4x4Vertex {
-    pub fn create(local: usize, facts: usize, material: usize) -> Self {
-        Self {global_facts_material: [local, facts, material].map(|i| i as u32)}
+    pub fn create(facts: usize, global: usize, material: usize) -> Self {
+        Self {global_facts_material: [global, facts, material].map(|i| i as u32)}
     }
 }
 

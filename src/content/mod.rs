@@ -1,5 +1,6 @@
 use crate::{models::put_axis, world::{primitives::color::Color, world::World}};
-use crate::math::{rotate_x, scale, ToAngle, trans, Transform};
+use crate::math::{Polynomial, rotate_x, scale, ToAngle, trans, Transform, vec3};
+use crate::world::variators::combinators::Interpolate;
 use crate::world::variators::variator::{UpdateCtx, Variator};
 use crate::world::visuals::{Cube, Sphere, Sponge};
 
@@ -61,6 +62,23 @@ pub fn build(world: &mut World) {
     //         color2: Color::WHITE,
     //     },
     // );
+
+    let surf1 = world.push(|ctx: UpdateCtx, world: &World| Polynomial::new_bezier_surface([
+        [vec3(0., 0., 3.), vec3(1., 2., 0.), vec3(2., 2., -2.)],
+        [vec3(0., -1., 2.), vec3(2., 1., 2.), vec3(2., 3., 0.)],
+        [vec3(1., 0., 2.), vec3(2., 0., 2.), vec3(3., 2., ctx.time.sin())],
+    ]).to_size::<4, 4>());
+    let surf2 = world.push(|ctx: UpdateCtx, world: &World| Polynomial::new_bezier_surface([
+        [vec3(4., ctx.time.sin(), 1.), vec3(3., 3., 0.), vec3(2., 2., -2.)],
+        [vec3(2., -1., 2.), vec3(2., 1., 2.), vec3(2., 3., 0.)],
+        [vec3(1., 0., 2.), vec3(0., 0., 3.), vec3(1., 1., 2.)],
+    ]).to_size::<4, 4>());
+    let surf = world.push(Interpolate(surf1, surf2).time_sin(4.));
+    let tr = world.push(trans(-5., 0., 0.));
+    world.push_visual((
+        tr,
+        surf,
+    ));
 
     // world.push_mat(
     //     UniformTri {

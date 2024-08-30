@@ -113,34 +113,53 @@ fn vs_cube(
     return out;
 }
 
-//fn project_poly(poly: Polynomial4x4, pt: Pos2Vertex) -> vec3<f32> {
-//    let u: f32 = pt.pos.x;
-//    let v: f32 = pt.pos.x;
-//
-//    return (
-//        (((((poly.p33 * u + poly.p32) * u + poly.p31) * u + poly.p30) * v
-//         +(((poly.p23 * u + poly.p22) * u + poly.p21) * u + poly.p20)) * v
-//         +(((poly.p13 * u + poly.p12) * u + poly.p11) * u + poly.p10)) * v
-//         +(((poly.p03 * u + poly.p02) * u + poly.p01) * u + poly.p00)
-//    );
-//}
+fn poly4x4_project_poly(poly: array<vec3<f32>, 16>, u: f32, v: f32) -> vec3<f32> {
+    return (
+        (((((poly[15] * u + poly[14]) * u + poly[13]) * u + poly[12]) * v
+         +(((poly[11] * u + poly[10]) * u + poly[9]) * u + poly[8])) * v
+         +(((poly[7] * u + poly[6]) * u + poly[5]) * u + poly[4])) * v
+         +(((poly[3] * u + poly[2]) * u + poly[1]) * u + poly[0])
+    );
+}
+fn poly4x4_dir_u(poly: array<vec3<f32>, 16>, u: f32, v: f32) -> vec3<f32> {
+    return (
+        ((((poly[15] * u * 3. + poly[14]) * u * 2. + poly[13]) * v
+         +((poly[11] * u * 3. + poly[10]) * u * 2. + poly[9])) * v
+         +((poly[7] * u * 3. + poly[6]) * u * 2. + poly[5])) * v
+         +((poly[3] * u * 3. + poly[2]) * u * 2. + poly[1])
+    );
+}
+fn poly4x4_dir_v(poly: array<vec3<f32>, 16>, u: f32, v: f32) -> vec3<f32> {
+    return (
+        ((((poly[15] * u + poly[14]) * u + poly[13]) * u + poly[12]) * v * 3.
+         +(((poly[11] * u + poly[10]) * u + poly[9]) * u + poly[8])) * v * 2.
+         +(((poly[7] * u + poly[6]) * u + poly[5]) * u + poly[4])
+    );
+}
 
 @vertex
-fn vs_polynomial4x4(
+fn vs_poly4x4(
+    in_pos: Pos2Vertex,
     @location(2) global_facts_material: vec3<u32>,
 ) -> FragInput {
     var out: FragInput;
-//
-//    let global: mat4x4<f32> = global_matrix(in_global);
-//
-//    let pos = project_poly(in_poly, in_pos);
-//    let global_pos = global * vec4(pos, 1.);
-//
-//    out.clip_position = camera * global_pos;
-//    out.col = in_col.col.xyz;
-//    out.uv = pos;
-//    out.delta_pos = global_pos.xyz - camera_transform[3].xyz;
-//    out.normal = vec3(0., 0., 1.);
+
+    let u: f32 = in_pos.pos.x;
+    let v: f32 = in_pos.pos.y;
+    let global: mat4x4<f32> = matrices[global_facts_material.x];
+    let facts = polys4x4[global_facts_material.y];
+    let local_pos = poly4x4_project_poly(facts, u, v);
+    let dir_u = poly4x4_dir_u(facts, u, v);
+    let dir_v = poly4x4_dir_v(facts, u, v);
+    let normal = (global * vec4(cross(dir_u, dir_v), 0.)).xyz;
+
+    let global_pos = global * vec4(local_pos, 1.);
+
+    out.clip_position = camera * global_pos;
+    out.uv = local_pos;
+    out.delta_pos = global_pos.xyz - camera_transform[3].xyz;
+    out.normal = normal / length(normal);
+    out.mat_id = global_facts_material.z;
 
     return out;
 }

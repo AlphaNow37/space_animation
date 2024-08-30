@@ -34,4 +34,4 @@ var<storage> colors: array<vec3<f32>>;
 var<storage> colors2: array<vec3<f32>>;
 
 @group(1) @binding(7)
-var<storage> polynomials4x4: array<array<vec3<f32>, 16>>;
+var<storage> polys4x4: array<array<vec3<f32>, 16>>;
