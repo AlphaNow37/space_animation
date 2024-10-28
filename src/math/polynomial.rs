@@ -2,7 +2,7 @@ use std::array::from_fn;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use bytemuck::{Pod, Zeroable};
-use crate::utils::{binomial, VectorSpace, Zero};
+use crate::utils::{binomial, Length, VectorSpace, Zero};
 
 /// A polynomial parametric curve
 /// the eval is sum_(k=0)^(N-1) t^k * F_k
@@ -25,6 +25,29 @@ impl<T: VectorSpace, const N: usize> Polynomial<T, N, 1> {
         }
         Self([coeffs])
     }
+    pub fn new_loop_curve(points: [T; N]) -> [Polynomial<T, 4, 1>; N] where T: Length {
+        if N == 0 {
+            return [Polynomial::default(); N];
+        } else if N == 1 {
+            return [Polynomial::new_const(points[0]); N];
+        }
+        from_fn(|i| {
+            let a = points[i];
+            let b = points[(i+1)%N];
+            let bef = points[(i+N-1)%N];
+            let aft = points[(i+2)%N];
+            let delta_bef = a-bef;
+            let delta = b-a;
+            let delta_aft = b-aft;
+            let length = delta.length_squared();
+            Polynomial::new_bezier_curve([
+                a,
+                a + delta_bef.with_length_or_zero_squared(length),
+                b + delta_aft.with_length_or_zero_squared(length),
+                b,
+            ])
+        })
+    }
     pub fn derivative(&self) -> Self {
         self.derivative_x()
     }
@@ -37,6 +60,11 @@ impl<T: VectorSpace, const N: usize> Polynomial<T, N, 1> {
     }
 }
 impl<T: VectorSpace, const N: usize, const M: usize> Polynomial<T, N, M> {
+    pub fn new_const(point: T) -> Polynomial<T, N, M> {
+        let mut v = Self::default();
+        v.0[0][0] = point;
+        v
+    }
     pub fn new_bezier_surface(points: [[T; N]; M]) -> Self {  // Can't be const because of the non-const T*f32 & T+T
         let mut coeffs = [[T::ZERO; N]; M];
 
@@ -52,6 +80,9 @@ impl<T: VectorSpace, const N: usize, const M: usize> Polynomial<T, N, M> {
         }
         Self(coeffs)
     }
+    // pub fn new_loop_surface(points: [[]]) -> Polynomial<T, 0, 0> {
+
+    // }
     pub fn derivative_x(mut self) -> Self {
         for row in &mut self.0 {
             for x in 1..N {
@@ -89,9 +120,12 @@ impl<T: VectorSpace, const N: usize, const M: usize> Polynomial<T, N, M> {
             )
         )
     }
-
 }
-
+// impl<const N: usize, const M: usize> Polynomial<f32, N, M> {
+//     pub fn to_ne_bytes(self) -> [[[u8; 4]; N]; M] {
+//         self.0.map(|c| c.map(|c| c.to_ne_bytes()))
+//     }
+// }
 impl<T: Copy, const N: usize, const M: usize> Polynomial<T, N, M>  {
     pub fn map_comp<U: Zero+Copy>(self, mut f: impl FnMut(T)->U) -> Polynomial<U, N, M> {
         let mut new = Polynomial::ZERO;

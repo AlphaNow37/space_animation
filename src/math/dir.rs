@@ -1,6 +1,6 @@
 use std::ops::{Deref, Neg};
 use crate::math::{Angle, rotate_x, Vec3, Plane};
-use crate::utils::Zero;
+use crate::utils::{Length, Zero};
 
 /// A normalized vector
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -31,7 +31,7 @@ impl TryFrom<Option<Dir>> for Dir {
 impl TryFrom<Vec3> for Dir {
     type Error = ();
     fn try_from(value: Vec3) -> Result<Self, Self::Error> {
-        (value != Vec3::ZERO).then(|| Self(value.with_len(1.))).ok_or(())
+        (value != Vec3::ZERO).then(|| Self(value.normalize())).ok_or(())
     }
 }
 impl Deref for Dir {
@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn test_a() {
-        assert_eq!(Vec3::ONE.len(), 3.0f32.sqrt());
+        assert_eq!(Vec3::ONE.length(), 3.0f32.sqrt());
         // dbg!(Vec3::ONE.rotate_around(Vec3::new(1., 1., 0.), Angle::from_deg(60.)));
     }
 }

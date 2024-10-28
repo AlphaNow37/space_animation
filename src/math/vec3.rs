@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::simd::num::SimdFloat;
-use std::simd::{Simd, simd_swizzle};
-use crate::utils::impl_vector_space_simd;
+use std::simd::{simd_swizzle, Simd};
+use crate::utils::{impl_vector_space_simd, Length};
 use crate::math::{Dir, Angle, Vec4};
 
 pub const fn vec3(x: f32, y: f32, z: f32) -> Vec3 {
@@ -27,25 +27,6 @@ impl Vec3 {
     pub fn translate(self, other: Self) -> Self {
         self + other
     }
-    pub fn len_squared(self) -> f32 {
-        self.dot(self)
-    }
-    pub fn len(self) -> f32 {
-        self.len_squared().sqrt()
-    }
-    pub fn with_len_squared(self, len2: f32) -> Self {
-        self * (len2 / self.len_squared()).sqrt()
-    }
-    pub fn with_len(self, len: f32) -> Self {
-        self * len / self.len()
-    }
-    pub fn normalize_or_zero(self) -> Self {
-        if self == Self::ZERO {
-            Self::ZERO
-        } else {
-            self / self.len()
-        }
-    }
     pub fn map_comp(self, mut f: impl FnMut(f32)->f32) -> Self {
         Self::new(
             f(self.x()),
@@ -64,10 +45,6 @@ impl Vec3 {
     }
     pub const fn z(self) -> f32 {
         self.0.as_array()[2]
-    }
-    pub fn is_normalized(self) -> bool {
-        let l = self.len_squared();
-        0.99 < l && l < 1.01
     }
     pub fn dot(self, other: Self) -> f32 {
         (self.0 * other.0).reduce_sum()
@@ -95,6 +72,11 @@ impl Vec3 {
     pub fn to_vec4(self, w: f32) -> Vec4 {Vec4::new(self.x(), self.y(), self.z(), w)}
 }
 impl_vector_space_simd!(Vec3 (4));
+impl Length for Vec3 {
+    fn length_squared(self) -> f32 {
+        self.dot(self)
+    }
+}
 
 impl Debug for Vec3 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

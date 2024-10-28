@@ -46,6 +46,16 @@ impl VisualDirective for Ref<Polynomial<Vec3, 4, 4>> {
     }
 }
 
+pub struct Tiled<T>(pub T, pub Ref<Transform>);
+impl VisualDirective for Tiled<Triangle> {
+    fn alloc(&self, curr_mty: &mut MaterialType, alloc: &mut BufferAllocator) {
+        alloc.alloc_instance(VertexType::TiledTri, *curr_mty, 1);
+    }
+    fn exec(&self, executor: &mut VisualExecutor) {
+        executor.push_tiled_tri([self.0.0.index(), self.0.1.index(), self.0.2.index()], self.1.index())
+    }
+}
+
 // pub struct Pyramid<A, S>(pub A, pub S);
 // impl<A: TriShape+BorderShape, S: Variator<Item=Vec3>> TriShape for Pyramid<A, S> {
 //     // const NB_INDEX: usize = A::NB_INDEX + 3*A::NB_BORDER_SEGMENT;

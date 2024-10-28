@@ -1,6 +1,12 @@
 use std::marker::PhantomData;
+use std::cell::Cell;
+use std::collections::HashMap;
+use std::any::Any;
+use std::ops::Deref;
+
+use crate::render_registry::storage_structs::AsStrorageStruct;
 use crate::math::{Vec2, Vec3, Vec4, Transform, Dir, Polynomial};
-use crate::render_registry::alloc::{BufferAllocator};
+use crate::render_registry::alloc::BufferAllocator;
 use crate::world::primitives::camera::Camera;
 use crate::math::Angle;
 use crate::render_registry::materials::MaterialType;
@@ -8,11 +14,11 @@ use crate::render_registry::mesh_builder::VisualExecutor;
 use crate::render_registry::vertex::VertexType;
 use crate::world::stores::StoreLabel;
 use crate::world::visuals::VisualDirective;
+use crate::utils::traits::GeneralHash;
 
-use super::variators::variator::{UpdateCtx, Variator};
-use super::{
-    primitives::color::Color, register::Register,
-};
+use super::variators::variator::Variator;
+use super::primitives::color::Color;
+
 macro_rules! make_system {
     (
         $(
@@ -20,43 +26,48 @@ macro_rules! make_system {
         );*
         $(;)?
     ) => {
-        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-        pub enum GlobalLabel {
-            $($prim_ty),*
-        }
-        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-        pub struct GlobalRef {
-            index: usize,
-            label: GlobalLabel,
-        }
             $(
-                impl PrimPush for $prim_ty {
-                    fn push(world: &mut World, var: impl Variator<Item=Self>) -> usize {
-                        world.$attr.push(var)
-                    }
-                    fn global_label() -> GlobalLabel {
-                        GlobalLabel::$prim_ty
-                    }
-                }
                 impl Variator for $prim_ty {
                     type Item=$prim_ty;
-                    fn update(&self, _ctx: UpdateCtx, _world: &World) -> $prim_ty {
+                    fn hash_var(&self) -> u32 {
+                        self.gen_hash()
+                    }
+                    fn eq_var(&self, other: &Self) -> bool {
+                        self == other
+                    }
+                    fn update(&self, _world: &World) -> $prim_ty {
                         *self
                     }
                 }
-                impl Variator for Ref<$prim_ty> {
-                    type Item=$prim_ty;
-                    fn update(&self, _ctx: UpdateCtx, world: &World) -> $prim_ty {
-                        world.$attr.get(self.index)
+                impl WorldPrimitive for $prim_ty {
+                    fn alloc(world: &mut World, size: usize) -> usize {
+                        let idx = world.$attr.len();
+                        world.$attr.reserve(size);
+                        for _ in 0..size {
+                            world.$attr.push(Cell::new(Self::default()));
+                        }
+                        idx
+                    }
+                    fn get(world: &World, index: usize) -> Self {
+                        world.$attr[index].get()
+                    }
+                    fn set(world: &World, index: usize, value: Self) {
+                        world.$attr[index].set(value);
+                    }
+                    fn sets<const N: usize>(world: &World, index: usize, values: [Self; N]) {
+                        for i in 0..values.len() {
+                            Self::set(world, index+i, values[i]) // i hope this gets optimised away
+                        }
                     }
                 }
             )*
 
         pub struct World {
             $(
-                $attr: Register<$prim_ty>,
+                $attr: Vec<Cell<$prim_ty>>,
             )*
-            insert_order: Vec<GlobalRef>,
+            variators: Vec<Box<dyn SavedVariator>>,
+            variators_cache: HashMap<u32, usize>,
             pub settings: WorldSettings,
             directives: Vec<Box<dyn VisualDirective>>,
         }
@@ -64,25 +75,21 @@ macro_rules! make_system {
             pub fn new() -> Self {
                 Self {
                     $(
-                        $attr: Register::new(),
+                        $attr: Vec::new(),
                     )*
-                    insert_order: Vec::new(),
                     directives: Vec::new(),
                     settings: WorldSettings::default(),
+                    variators: Vec::new(),
+                    variators_cache: HashMap::new(),
                 }
             }
-            fn update_registers(&self, ctx: UpdateCtx) {
-                for &GlobalRef {index, label} in &self.insert_order {
-                    match label {
-                        $(
-                            GlobalLabel::$prim_ty => self.$attr.update(index, ctx, self),
-                        )*
-                    }
-                }
-            }
+
             $($(
                 pub fn $store_method(&self, buf: &mut [u32]) {
-                    self.$attr.write(buf)
+                    let arr: &mut [<$prim_ty as AsStrorageStruct>::S] = bytemuck::cast_slice_mut(buf);
+                    for i in 0..self.$attr.len() {
+                        arr[i] = self.$attr[i].get().as_strorage_struct();
+                    }
                 }
                 pub fn $len_method(&self) -> usize {
                     self.$attr.len()
@@ -131,29 +138,85 @@ impl World {
     fn update_settings(&mut self, ctx: &WorldUpdateCtx) {
         self.settings = WorldSettings {
             cam_settings: ctx.cam,
+            base_time: ctx.time,
+        }
+    }
+    fn update_registers(&self) {
+        for saved_var in &self.variators {
+            saved_var.write(self);
         }
     }
     pub fn update(&mut self, mut ctx: WorldUpdateCtx) {
         self.update_settings(&ctx);
-        self.update_registers(ctx.var_update);
+        self.update_registers();
         for label in StoreLabel::ARRAY {
             label.write(ctx.stores[label as usize], self);
         }
         self.redraw(&mut ctx);
     }
     pub fn get_cam(&self, idx: isize) -> Camera {
-        self.camera.get_mod(idx)
+        Camera::get(self, idx.rem_euclid(self.camera.len() as isize) as usize)
     }
-    pub fn push<T: Variator>(&mut self, var: T) -> Ref<T::Item> where T::Item: PrimPush {
-        let idx = T::Item::push(self, var);
-        self.insert_order.push(GlobalRef {
-            label: T::Item::global_label(),
+    pub fn push<V: Variator>(&mut self, var: V) -> Ref<V::Item> where V::Item: WorldPrimitive {
+        let hash = var.finished_hash_var();
+        let mut add = false;
+        if let Some(&var_idx) = self.variators_cache.get(&hash) {
+            let v: &dyn SavedVariator = Box::deref(&self.variators[var_idx]);
+            let v: &dyn Any = v;
+            if let Some(SavedVariatorSingle { index, var: var2 }) = v.downcast_ref::<SavedVariatorSingle<V>>() {
+                if var.eq_var(var2) {
+                    return Ref {
+                        index: *index,
+                        label: PhantomData,
+                    };
+                }
+            }
+        } else {
+            add = true;
+        }
+        if add {
+            self.variators_cache.insert(hash, self.variators.len());
+        }
+        let idx = V::Item::alloc(self, 1);
+        self.variators.push(Box::new(SavedVariatorSingle {
             index: idx,
-        });
+            var,
+        }));
         Ref {
             index: idx,
             label: PhantomData,
         }
+    }
+    pub fn push_multi<const N: usize, T: WorldPrimitive, V: Variator<Item=[T; N]>>(&mut self, var: V) -> [Ref<T>; N] {
+        if N==0 {return std::array::from_fn(|_| Ref {index: 0, label: PhantomData})}
+        let hash = var.finished_hash_var();
+        let mut add = false;
+        if let Some(&var_idx) = self.variators_cache.get(&hash) {
+            let v: &dyn SavedVariator = Box::deref(&self.variators[var_idx]);
+            let v: &dyn Any = v;
+            if let Some(SavedVariatorMultiple { index, var: var2 }) = v.downcast_ref::<SavedVariatorMultiple<V>>() {
+                if var.eq_var(var2) {
+                    return std::array::from_fn(|i| Ref {
+                        index: *index+i,
+                        label: PhantomData,
+                    });
+                }
+            }
+        } else {
+            add = true;
+        }
+        if add {
+            self.variators_cache.insert(hash, self.variators.len());
+        }
+        let idx = T::alloc(self, N);
+        self.variators.push(Box::new(SavedVariatorMultiple {
+            index: idx,
+            var,
+        }));
+        std::array::from_fn(|i| Ref {
+            index: idx+i,
+            label: PhantomData,
+        })
     }
 }
 
@@ -165,20 +228,59 @@ pub struct Ref<T> {
 impl<T> Ref<T> {
     pub fn index(&self) -> usize {self.index}
 }
+impl<T: WorldPrimitive> Variator for Ref<T> {
+    type Item=T;
+    fn update(&self, world: &World) -> T {
+        T::get(world, self.index)
+    }
+    fn hash_var(&self) -> u32 {
+        self.index as u32
+    }
+    fn eq_var(&self, other: &Self) -> bool {
+        self.index == other.index
+    }
+}
 
 pub struct WorldUpdateCtx<'a> {
-    pub var_update: UpdateCtx,
     pub instance_bufs: [[&'a mut [u32]; MaterialType::COUNT]; VertexType::COUNT],
     pub stores: [&'a mut [u32]; StoreLabel::COUNT],
     pub cam: Camera,
+    pub time: f32,
 }
 
 #[derive(Default)]
 pub struct WorldSettings {
     pub cam_settings: Camera,
+    pub base_time: f32,
 }
 
-pub trait PrimPush: Sized + 'static {
-    fn push(world: &mut World, var: impl Variator<Item=Self>) -> usize;
-    fn global_label() -> GlobalLabel;
+pub trait WorldPrimitive: Sized + 'static {
+    fn alloc(world: &mut World, size: usize) -> usize;
+    fn get(world: &World, index: usize) -> Self;
+    fn set(world: &World, index: usize, value: Self);
+    fn sets<const N: usize>(world: &World, index: usize, values: [Self; N]);
+}
+
+trait SavedVariator: Any {
+    fn write(&self, world: &World);
+}
+struct SavedVariatorSingle<V> {
+    var: V,
+    index: usize,
+}
+impl<V: Variator> SavedVariator for SavedVariatorSingle<V> where V::Item: WorldPrimitive {
+    fn write(&self, world: &World) {
+        let res = self.var.update(world);
+        V::Item::set(world, self.index, res);
+    }
+}
+struct SavedVariatorMultiple<V> {
+    var: V,
+    index: usize,
+}
+impl<const N: usize, T, V: Variator<Item=[T; N]>> SavedVariator for SavedVariatorMultiple<V> where T: WorldPrimitive {
+    fn write(&self, world: &World) {
+        let res = self.var.update(world);
+        T::sets(world, self.index, res);
+    }
 }

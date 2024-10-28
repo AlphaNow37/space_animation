@@ -38,6 +38,8 @@ macro_rules! impl_vector_space_simd {
     ) => {
         use std::ops::{Add, Sub, Mul, Div, Neg, AddAssign, SubAssign, MulAssign, DivAssign};
         use crate::utils::Zero;
+        use std::simd::ToBytes;
+
         impl $t {
             pub fn clamp(self, min: Self, max: Self) -> Self {
                 Self(self.0.simd_clamp(min.0, max.0))
@@ -99,6 +101,11 @@ macro_rules! impl_vector_space_simd {
         impl Default for $t {
             fn default() -> Self {
                 Self::ZERO
+            }
+        }
+        impl std::hash::Hash for $t {
+            fn hash<T: std::hash::Hasher>(&self, hasher: &mut T) {
+                self.0.to_ne_bytes().hash(hasher)
             }
         }
     };

@@ -13,11 +13,11 @@ macro_rules! make_pack {
             impl<$($gen: Variator<Item=f32>),*> Variator for $sname<$($gen),*> {
                 type Item=$res;
                 #[allow(non_snake_case)]
-                fn update(&self, ctx: crate::world::variators::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
+                fn update(&self, world: &super::world::World) -> Self::Item {
                     let $sname($($gen),*) = self;
                     $res::new(
                         $(
-                            $gen.update(ctx, world)
+                            $gen.update(world)
                         ),*
                     )
                 }

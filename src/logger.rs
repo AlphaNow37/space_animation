@@ -8,6 +8,7 @@ pub fn init_logger() {
             info,
             wgpu_hal=warn,
             wgpu_core=warn,
+            naga=warn,
         "#.replace([' ', '\n', '\t'], "")))
         .init()
 }

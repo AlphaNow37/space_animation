@@ -2,7 +2,9 @@ use std::sync::LazyLock;
 use tracing::info;
 use crate::math::Vec3;
 use crate::render_registry::vertex::{Pos2Vertex, Pos3Vertex, VertexBufferLabel};
-use crate::utils::VectorSpace;
+use crate::utils::{Length, VectorSpace};
+
+use super::vertex::{TilePosVertex, VertexType};
 
 #[derive(Clone, Copy, Debug)]
 pub struct VertexPoss {
@@ -77,7 +79,7 @@ pub static CIRCLE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
             let (va, vb, vc) = (vertexes[a], vertexes[b], vertexes[c]);
             let (vmida, vmidb, vmidc) = (vb.mid(vc), va.mid(vc), va.mid(vb));
             let (mida, midb, midc) = (vertexes.len(), vertexes.len()+1, vertexes.len()+2);
-            vertexes.extend([vmida.with_len(1.), vmidb.with_len(1.), vmidc.with_len(1.)]);
+            vertexes.extend([vmida.normalize(), vmidb.normalize(), vmidc.normalize()]);
             new_idxs.extend([
                 [mida, c, midb],
                 [mida, b, midc],
@@ -115,3 +117,41 @@ pub static FLAT_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
         content: bytemuck::cast_slice(vs.leak()),
     }
 });
+
+const TILED_HALF_WIDTH: isize = 20;
+const TILED_WIDTH: usize = TILED_HALF_WIDTH as usize * 2 + 1;
+const TILED_COUNT: usize = TILED_WIDTH * TILED_WIDTH;
+fn make_tiled_tertiary(each_len: u32) -> VertexPoss {
+    let vs = (-TILED_HALF_WIDTH..TILED_HALF_WIDTH+1)
+        .flat_map(|x| (-TILED_HALF_WIDTH..TILED_HALF_WIDTH+1).map(move |y| (x, y)))
+        .flat_map(|(x, y)| (0..each_len).map(move |_| (x, y)))
+        .map(|(x, y)| TilePosVertex {pos: [x as f32, y as f32]})
+        .collect::<Vec<_>>();
+
+    VertexPoss {
+        len: vs.len() as u32,
+        label: VertexBufferLabel::TilePos,
+        content: bytemuck::cast_slice(vs.leak()),
+    }
+}
+fn make_tiled_pos_base(base: &LazyLock<VertexPoss>) -> (VertexPoss, VertexPoss) {
+    let tertiary = make_tiled_tertiary(base.len);
+
+    let secondary = VertexPoss {
+        content: base.content.repeat(TILED_COUNT).leak(),
+        label: base.label,
+        len: base.len * TILED_COUNT as u32
+    };
+
+    assert_eq!(secondary.len, tertiary.len);
+
+    (secondary, tertiary)
+}
+fn make_tiled_pos_len(each_len: u32) -> VertexPoss {
+    make_tiled_tertiary(each_len)
+}
+
+pub static TILED_TRI_POS: LazyLock<VertexPoss> = LazyLock::new(|| make_tiled_pos_len(VertexType::Tri.nb_vertex()));
+pub static TILED_CUBE_POS: LazyLock<VertexPoss> = LazyLock::new(|| make_tiled_pos_len(VertexType::Cube.nb_vertex()));
+pub static TILED_SPHERE_POS: LazyLock<(VertexPoss, VertexPoss)> = LazyLock::new(|| make_tiled_pos_base(&CIRCLE_POS));
+pub static TILED_FLAT_POS: LazyLock<(VertexPoss, VertexPoss)> = LazyLock::new(|| make_tiled_pos_base(&FLAT_POS));

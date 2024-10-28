@@ -9,19 +9,22 @@ struct Pos2Vertex {
 struct Pos3Vertex {
     @location(20) pos: vec3<f32>,
 }
+struct TilePosVertex {
+    @location(21) pos: vec2<f32>,
+}
 
-@vertex
-fn vs_tri(
-    @location(0) pos_global: vec4<u32>,
-    @location(3) material: u32,
-    @builtin(vertex_index) vertex_index: u32,
+fn fvs_tri(
+    pos_global: vec4<u32>,
+    material: u32,
+    vertex_index: u32,
+    offset: vec3<f32>,
 ) -> FragInput {
     var out: FragInput;
 
     let global: mat4x4<f32> = matrices[pos_global.w];
-    let local_a: vec4<f32> = vec4(vecs3[pos_global.x], 1.);
-    let local_b: vec4<f32> = vec4(vecs3[pos_global.y], 1.);
-    let local_c: vec4<f32> = vec4(vecs3[pos_global.z], 1.);
+    let local_a: vec4<f32> = vec4(vecs3[pos_global.x] + offset, 1.);
+    let local_b: vec4<f32> = vec4(vecs3[pos_global.y] + offset, 1.);
+    let local_c: vec4<f32> = vec4(vecs3[pos_global.z] + offset, 1.);
     let global_a: vec4<f32> = global * local_a;
     let global_b: vec4<f32> = global * local_b;
     let global_c: vec4<f32> = global * local_c;
@@ -47,6 +50,43 @@ fn vs_tri(
     out.normal = normal.xyz;
     out.mat_id = material;
     return out;
+}
+
+@vertex
+fn vs_tri(
+    @location(0) pos_global: vec4<u32>,
+    @location(3) material: u32,
+    @builtin(vertex_index) vertex_index: u32,
+) -> FragInput {
+    return fvs_tri(pos_global, material, vertex_index, vec3(0., 0., 0.));
+}
+
+@vertex
+fn vs_tiled_tri(
+    @location(0) pos_global: vec4<u32>,
+    @location(3) material: u32,
+    @location(4) tiled_matrix: u32,
+    @builtin(vertex_index) vertex_index: u32,
+    tile_pos: TilePosVertex,
+) -> FragInput {
+    let matrix: mat4x4<f32> = matrices[tiled_matrix];
+    let global: mat4x4<f32> = matrices[pos_global.w];
+    let plane: mat4x4<f32> = global * matrix;
+
+    let x_axis = plane[0].xyz; let y_axis = plane[1].xyz; let trans = plane[3].xyz;
+
+    var delta: vec3<f32> = camera_transform[3].xyz-trans;
+
+    let normal = normalize(cross(x_axis, y_axis));
+    delta -= dot(normal, delta) * normal;
+    
+    let xnormal = normalize(cross(x_axis, normal));
+    let y = dot(delta, xnormal) / dot(y_axis, xnormal);
+    delta -= y*y_axis;
+    let x = dot(delta, x_axis) / dot(x_axis, x_axis);
+
+    let offset = matrix * vec4(vec2(round(x), round(y)) + tile_pos.pos, 0., 1.);
+    return fvs_tri(pos_global, material, vertex_index % 3, offset.xyz);
 }
 
 @vertex

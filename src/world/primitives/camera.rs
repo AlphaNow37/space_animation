@@ -1,11 +1,10 @@
 use crate::math::{Transform, Mat4};
 use crate::world::variators::variator::Variator;
 use crate::math::Angle;
-use crate::world::variators::variator::UpdateCtx;
 use crate::world::world::World;
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Camera {
     pub pos: Transform,
     pub fov: Angle,
@@ -28,17 +27,18 @@ impl Camera {
 pub struct GetManualCamera;
 impl Variator for GetManualCamera {
     type Item = Camera;
-    fn update(&self, _ctx: UpdateCtx, world: &World) -> Self::Item {
+    fn update(&self, world: &World) -> Self::Item {
         world.settings.cam_settings
     }
 }
+
 pub struct TrackCamera<P, F>(pub P, pub F);
 impl<P: Variator<Item=Transform>, F: Variator<Item=Angle>> Variator for TrackCamera<P, F> {
     type Item = Camera;
-    fn update(&self, ctx: UpdateCtx, world: &World) -> Self::Item {
+    fn update(&self, world: &World) -> Self::Item {
         Camera {
-            pos: self.0.update(ctx, world),
-            fov: self.1.update(ctx, world),
+            pos: self.0.update(world),
+            fov: self.1.update(world),
         }
     }
 }
