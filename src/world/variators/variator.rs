@@ -1,23 +1,5 @@
 use crate::utils::GeneralHash;
 use crate::world::world::World;
-// use crate::world::variators::combinators::{TimeLea, TimeMod, TimeMul, TimeOffset, TimeSin};
-
-// #[derive(Clone, Copy)]
-// pub struct UpdateCtx {
-//     pub time: f32,
-// }
-
-// macro_rules! time_methods {
-//     (
-//         $($name: ident ($($arg: ident : $ty: ty),* $(,)?)=>$s: ident);* $(;)?
-//     ) => {
-//         $(
-//             fn $name(self, $($arg: $ty,)*) -> $s<Self> where Self: Sized {
-//                 $s(self, ($($arg,)*))
-//             }
-//         )*
-//     };
-// }
 
 #[allow(dead_code)]
 pub trait Variator: 'static + std::any::Any {
@@ -32,13 +14,9 @@ pub trait Variator: 'static + std::any::Any {
     #[allow(unused_variables)]
     fn eq_var(&self, other: &Self) -> bool where Self: Sized {false}
 
-    // time_methods!(
-    //     time_mod(t: f32) => TimeMod;
-    //     time_add(t: f32) => TimeOffset;
-    //     time_mul(t: f32) => TimeMul;
-    //     time_sin(p: f32) => TimeSin;
-    //     time_lea(m: f32, a: f32) => TimeLea;
-    // );
+    fn pipe<U>(self, f: impl Fn(Self::Item)->U + 'static) -> impl Variator<Item=U> where Self: Sized {
+        move |world: &World| f(self.update(world))
+    }
 }
 
 macro_rules! new_typed_variator {
