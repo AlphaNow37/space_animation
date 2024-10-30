@@ -54,9 +54,9 @@ pub trait Length: VectorSpace {
     fn with_length_or_zero(self, length: f32) -> Self {
         let len = self.length();
         if len == 0. {
-            return Self::ZERO;
+            Self::ZERO
         } else {
-            return self * length / len;
+            self * length / len
         }
     }
     fn normalize(self) -> Self {self / self.length()}
@@ -136,7 +136,7 @@ impl_hash!(
     f32: {self.to_bits().into()};
     usize: {*self as u32};
     u8: {*self as u32};
-    u32: {*self as u32};
+    u32: {*self};
     (A, B): <A, B> {(self.0.gen_hash() << 1) ^ self.1.gen_hash()};
     (A, B, C): <A, B, C> {((self.0.gen_hash()<<1) ^ self.1.gen_hash() << 1) ^ self.2.gen_hash()};
     (A, B, C, D): <A, B, C, D> {(((self.0.gen_hash()<<1) ^ self.1.gen_hash()<<1) ^ self.2.gen_hash()<<1) ^ self.3.gen_hash()};
