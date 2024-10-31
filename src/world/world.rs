@@ -1,122 +1,34 @@
 use std::marker::PhantomData;
-use std::cell::Cell;
 use std::collections::HashMap;
 use std::any::Any;
 use std::ops::Deref;
 
-use crate::render_registry::storage_structs::AsStrorageStruct;
-use crate::math::{Vec2, Vec3, Vec4, Transform, Dir, Polynomial};
 use crate::render_registry::alloc::BufferAllocator;
 use crate::world::primitives::camera::Camera;
-use crate::math::Angle;
 use crate::render_registry::materials::MaterialType;
 use crate::render_registry::mesh_builder::VisualExecutor;
 use crate::render_registry::vertex::VertexType;
 use crate::world::stores::StoreLabel;
 use crate::world::visuals::VisualDirective;
-use crate::utils::traits::GeneralHash;
+use crate::world::primitives::primitives::PrimitiveRegisters;
+use crate::world::variators::saved_variator::{SavedVariator, SavedVariatorMultiple, SavedVariatorSingle};
 
 use super::variators::variator::Variator;
-use super::primitives::color::Color;
 
-macro_rules! make_system {
-    (
-        $(
-            $attr: ident : $prim_ty: ident $(($store_method: ident, $len_method: ident))?
-        );*
-        $(;)?
-    ) => {
-            $(
-                impl Variator for $prim_ty {
-                    type Item=$prim_ty;
-                    fn hash_var(&self) -> u32 {
-                        self.gen_hash()
-                    }
-                    fn eq_var(&self, other: &Self) -> bool {
-                        self == other
-                    }
-                    fn update(&self, _world: &World) -> $prim_ty {
-                        *self
-                    }
-                }
-                impl WorldPrimitive for $prim_ty {
-                    fn alloc(world: &mut World, size: usize) -> usize {
-                        let idx = world.$attr.len();
-                        world.$attr.reserve(size);
-                        for _ in 0..size {
-                            world.$attr.push(Cell::new(Self::default()));
-                        }
-                        idx
-                    }
-                    fn get(world: &World, index: usize) -> Self {
-                        world.$attr[index].get()
-                    }
-                    fn set(world: &World, index: usize, value: Self) {
-                        world.$attr[index].set(value);
-                    }
-                    fn sets<const N: usize>(world: &World, index: usize, values: [Self; N]) {
-                        for i in 0..values.len() {
-                            Self::set(world, index+i, values[i]) // i hope this gets optimised away
-                        }
-                    }
-                }
-            )*
-
-        pub struct World {
-            $(
-                $attr: Vec<Cell<$prim_ty>>,
-            )*
-            variators: Vec<Box<dyn SavedVariator>>,
-            variators_cache: HashMap<u32, usize>,
-            pub settings: WorldSettings,
-            directives: Vec<Box<dyn VisualDirective>>,
-        }
-        impl World {
-            pub fn new() -> Self {
-                Self {
-                    $(
-                        $attr: Vec::new(),
-                    )*
-                    directives: Vec::new(),
-                    settings: WorldSettings::default(),
-                    variators: Vec::new(),
-                    variators_cache: HashMap::new(),
-                }
-            }
-
-            $($(
-                pub fn $store_method(&self, buf: &mut [u32]) {
-                    let arr: &mut [<$prim_ty as AsStrorageStruct>::S] = bytemuck::cast_slice_mut(buf);
-                    for i in 0..self.$attr.len() {
-                        arr[i] = self.$attr[i].get().as_strorage_struct();
-                    }
-                }
-                pub fn $len_method(&self) -> usize {
-                    self.$attr.len()
-                }
-            )?)*
-        }
-    };
+#[derive(Default)]
+pub struct World {
+    registers: PrimitiveRegisters,
+    variators: Vec<Box<dyn SavedVariator>>,
+    variators_cache: HashMap<u32, usize>,
+    pub settings: WorldSettings,
+    directives: Vec<Box<dyn VisualDirective>>,
+    sub_worlds: Vec<World>,
 }
 
-type F32 = f32;
-type Color2 = (Color, Color);
-type Polynomial4x4 = Polynomial<Vec3, 4, 4>;
-make_system!(
-    vec3: Vec3 (store_vec3, len_vec3);
-    transform: Transform (store_transform, len_transform);
-    color: Color (store_color, len_color);
-    f32: F32 (store_f32, len_f32);
-    vec2: Vec2 (store_vec2, len_vec2);
-    camera: Camera;
-    angle: Angle;
-    dir: Dir;
-    vec4: Vec4 (store_vec4, len_vec4);
-    color2: Color2 (store_color2, len_color2);
-    polynomial4x4: Polynomial4x4 (store_poly4x4, len_poly4x4);
-);
-
 impl World {
+    pub fn new() {
+
+    }
     pub fn allocs(&self, alloc: &mut BufferAllocator) {
         let mut curr_mty = MaterialType::default();
         for vis in &self.directives {
@@ -259,28 +171,4 @@ pub trait WorldPrimitive: Sized + 'static {
     fn get(world: &World, index: usize) -> Self;
     fn set(world: &World, index: usize, value: Self);
     fn sets<const N: usize>(world: &World, index: usize, values: [Self; N]);
-}
-
-trait SavedVariator: Any {
-    fn write(&self, world: &World);
-}
-struct SavedVariatorSingle<V> {
-    var: V,
-    index: usize,
-}
-impl<V: Variator> SavedVariator for SavedVariatorSingle<V> where V::Item: WorldPrimitive {
-    fn write(&self, world: &World) {
-        let res = self.var.update(world);
-        V::Item::set(world, self.index, res);
-    }
-}
-struct SavedVariatorMultiple<V> {
-    var: V,
-    index: usize,
-}
-impl<const N: usize, T, V: Variator<Item=[T; N]>> SavedVariator for SavedVariatorMultiple<V> where T: WorldPrimitive {
-    fn write(&self, world: &World) {
-        let res = self.var.update(world);
-        T::sets(world, self.index, res);
-    }
 }
