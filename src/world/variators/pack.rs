@@ -1,5 +1,5 @@
 use crate::math::{Vec2, Vec3, Vec4};
-use super::{primitives::color::Color, variators::variator::Variator};
+use super::super::{primitives::color::Color, variators::variator::Variator};
 
 macro_rules! make_pack {
     (
@@ -13,7 +13,7 @@ macro_rules! make_pack {
             impl<$($gen: Variator<Item=f32>),*> Variator for $sname<$($gen),*> {
                 type Item=$res;
                 #[allow(non_snake_case)]
-                fn update(&self, ctx: crate::world::variators::variator::UpdateCtx, world: &super::world::World) -> Self::Item {
+                fn update(&self, ctx: crate::world::variators::variator::UpdateCtx, world: &super::super::world::World) -> Self::Item {
                     let $sname($($gen),*) = self;
                     $res::new(
                         $(
