@@ -1,4 +1,4 @@
-#![feature(portable_simd, const_fn_floating_point_arithmetic)]
+#![feature(portable_simd)]
 
 use crate::app::App;
 

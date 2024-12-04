@@ -64,12 +64,12 @@ impl Pipeline {
             vertex: wgpu::VertexState {
                 buffers: &buffers_descriptor,
                 module: shaders.get(),
-                entry_point: vertex.entry_point(),
+                entry_point: Some(vertex.entry_point()),
                 compilation_options: wgpu::PipelineCompilationOptions::default()
             },
             fragment: Some(wgpu::FragmentState {
                 module: shaders.get(),
-                entry_point: material.entry_point(),
+                entry_point: Some(material.entry_point()),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: surface_config.format,
                     blend: Some(wgpu::BlendState::REPLACE),
