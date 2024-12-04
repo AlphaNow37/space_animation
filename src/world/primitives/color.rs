@@ -1,8 +1,6 @@
 use std::ops::{Add, Mul};
 use crate::math::{Vec3, vec3};
 
-use crate::utils::{compress_vec4_i, CompressedVec};
-
 macro_rules! consts_lch {
     (
         $($name: ident = $l: expr, $c: expr, $h: expr);*
@@ -40,13 +38,13 @@ mod conversion {
     }
     fn lms_to_oklab(lms: Vec3) -> Vec3 {
         let lms_ = lms.map_comp(f32::cbrt);
-        const LMS__TO_OKLAB: Transform = Transform::from_array([
+        const LMS_TO_OKLAB: Transform = Transform::from_array([
              0.2104542553,  1.9779984951,  0.0259040371,
              0.7936177850, -2.4285922050,  0.7827717662,
             -0.0040720468,  0.4505937099, -0.8086757660,
             0., 0., 0.
         ]);
-        LMS__TO_OKLAB.tr_vec(lms_)
+        LMS_TO_OKLAB.tr_vec(lms_)
     }
     pub fn rgb_to_oklab(rgb: Vec3) -> Vec3 {
         lms_to_oklab(rgb_to_lms(rgb))
@@ -62,12 +60,9 @@ mod conversion {
 }
 
 /// OKLAB color
-#[derive(Clone, Copy, PartialEq, Debug, Default)]
+#[derive(Clone, Copy, PartialEq, Debug, Default, Hash)]
 pub struct Color(Vec3);
 impl Color {
-    pub fn as_array(self) -> CompressedVec {
-        compress_vec4_i(self.0.to_vec4(1.0))
-    }
     pub fn to_array(self) -> [f32; 3] {
         self.0.to_array()
     }
@@ -92,7 +87,7 @@ impl Color {
 consts_lch!(
     WHITE = 1., 0., 0.;
     BLACK = 0., 0., 0.;
-    DEBUG = 0.5, 0.2, 320.;
+    DEBUG = 0.5, 0.2, -30.;
     RED = 0.5, 0.2, 30.;
     GREEN = 0.5, 0.2, 140.;
     BLUE = 0.5, 0.2, 267.;

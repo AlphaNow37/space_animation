@@ -3,6 +3,8 @@ use crate::render_registry::materials::{MaterialRef, MaterialType};
 
 use crate::render_registry::vertex::{LocalGlobalMatrixVertex, Polynomial4x4Vertex, TriVertex, VertexType};
 
+use super::vertex::TiledTriVertex;
+
 pub struct VisualExecutor<'a> {
     curr_global: usize,
     curr_mat: MaterialRef,
@@ -41,5 +43,8 @@ impl<'a> VisualExecutor<'a> {
     }
     pub fn push_poly4x4(&mut self, facts: usize) {
         self.push(VertexType::Poly4x4, Polynomial4x4Vertex::create(facts, self.curr_global, self.curr_mat.index))
+    }
+    pub fn push_tiled_tri(&mut self, pts: [usize; 3], tilematrix: usize) {
+        self.push(VertexType::TiledTri, TiledTriVertex::create(pts, tilematrix, self.curr_global, self.curr_mat.index))
     }
 }

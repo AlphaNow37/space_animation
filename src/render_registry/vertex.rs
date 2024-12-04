@@ -2,6 +2,17 @@ use bytemuck::{Pod, Zeroable};
 use crate::render_registry::prefabs::{CIRCLE_POS, FLAT_POS, VertexPoss};
 use crate::utils::array_key;
 
+use super::prefabs::TILED_TRI_POS;
+
+// Bindings
+// 0 -> pos_global
+// 1 -> local_global_material
+// 2 -> global_facts_material
+// 3 -> material
+// 4 -> tilematrix
+// 20 -> pos
+// 21 -> tile_pos TODO
+
 pub trait VertexLike: bytemuck::AnyBitPattern + bytemuck::NoUninit {
     const SIZE: wgpu::BufferAddress;
     const SIZE_U32: wgpu::BufferAddress;
@@ -76,6 +87,21 @@ impl Polynomial4x4Vertex {
 }
 
 new_vertex!(
+    TiledTriVertex {
+        pos_global: [u32; 4] : [0 => Uint32x4],
+        material_tilematrix: [u32; 2] : [3 => Uint32, 4 => Uint32],
+    } -> 6;
+);
+impl TiledTriVertex {
+    pub fn create(pos: [usize; 3], tilematrix: usize, global: usize, material: usize) -> Self {
+        Self {
+            pos_global: [pos[0], pos[1], pos[2], global].map(|i| i as u32),
+             material_tilematrix: [material as u32, tilematrix as u32]
+        }
+    }
+}
+
+new_vertex!(
     Pos3Vertex {
         pos: [f32; 3]: [20 => Float32x3],
     } -> 3;
@@ -87,9 +113,15 @@ new_vertex!(
     } -> 2;
 );
 
-pub enum SecondaryBufferDesc {
+new_vertex!(
+    TilePosVertex {
+        pos: [f32; 2]: [21 => Float32x2],
+    } -> 2;
+);
+
+
+pub enum AuxiliaryBufferDesc {
     VertexPoss(VertexPoss),
-    None,
 }
 array_key!(
     pub enum VertexType {
@@ -97,6 +129,7 @@ array_key!(
         Sphere,
         Poly4x4,
         Cube,
+        TiledTri,
     }
 );
 impl VertexType {
@@ -106,6 +139,7 @@ impl VertexType {
             Self::Sphere => "vs_sphere",
             Self::Poly4x4 => "vs_poly4x4",
             Self::Cube => "vs_cube",
+            Self::TiledTri => "vs_tiled_tri"
         }
     }
     pub fn instance_buffer_label(&self) -> VertexBufferLabel {
@@ -114,14 +148,15 @@ impl VertexType {
             Self::Sphere => VertexBufferLabel::Sphere,
             Self::Poly4x4 => VertexBufferLabel::Polynomial4x4,
             Self::Cube => VertexBufferLabel::Cube,
+            Self::TiledTri => VertexBufferLabel::TiledTri,
         }
     }
-    pub fn secondary_buffer(&self) -> SecondaryBufferDesc {
+    pub fn aux_buffers(&self) -> Vec<AuxiliaryBufferDesc> {
         match self {
-            Self::Sphere => SecondaryBufferDesc::VertexPoss(*CIRCLE_POS),
-            Self::Poly4x4 => SecondaryBufferDesc::VertexPoss(*FLAT_POS),
-            Self::Cube => SecondaryBufferDesc::None,
-            Self::Tri => SecondaryBufferDesc::None,
+            Self::Sphere => vec![AuxiliaryBufferDesc::VertexPoss(*CIRCLE_POS)],
+            Self::Poly4x4 => vec![AuxiliaryBufferDesc::VertexPoss(*FLAT_POS)],
+            Self::Cube | Self::Tri => Vec::new(),
+            Self::TiledTri => vec![AuxiliaryBufferDesc::VertexPoss(*TILED_TRI_POS)],
         }
     }
     pub fn nb_vertex(&self) -> u32 {
@@ -130,6 +165,7 @@ impl VertexType {
             Self::Poly4x4 => FLAT_POS.len,
             Self::Tri => 3,
             Self::Cube => 36,
+            Self::TiledTri => TILED_TRI_POS.len,
         }
     }
 }
@@ -141,7 +177,9 @@ pub enum VertexBufferLabel {
     Polynomial4x4,
     Pos3,
     Pos2,
+    TilePos,
     Cube,
+    TiledTri,
 }
 impl VertexBufferLabel {
     pub fn elt_size(&self) -> wgpu::BufferAddress {
@@ -149,8 +187,10 @@ impl VertexBufferLabel {
             Self::Tri => TriVertex::SIZE,
             Self::Sphere | Self::Cube => LocalGlobalMatrixVertex::SIZE,
             Self::Polynomial4x4 => Polynomial4x4Vertex::SIZE,
+            Self::TiledTri => TiledTriVertex::SIZE,
             Self::Pos3 => Pos3Vertex::SIZE,
             Self::Pos2 => Pos2Vertex::SIZE,
+            Self::TilePos => TilePosVertex::SIZE,
         }
     }
     pub fn attrs(&self) -> &'static [wgpu::VertexAttribute] {
@@ -158,8 +198,10 @@ impl VertexBufferLabel {
             Self::Tri => TriVertex::ATTRS,
             Self::Sphere | Self::Cube => LocalGlobalMatrixVertex::ATTRS,
             Self::Polynomial4x4 => Polynomial4x4Vertex::ATTRS,
+            Self::TiledTri => TiledTriVertex::ATTRS,
             Self::Pos3 => Pos3Vertex::ATTRS,
             Self::Pos2 => Pos2Vertex::ATTRS,
+            Self::TilePos => TilePosVertex::ATTRS,
         }
     }
 }

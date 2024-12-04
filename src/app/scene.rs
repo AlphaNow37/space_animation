@@ -4,10 +4,7 @@ use crate::{
         alloc::BufferAllocator,
         registry::PipelinesRegistry,
     },
-    world::{
-        variators::variator::UpdateCtx,
-        world::{World, WorldUpdateCtx},
-    },
+    world::world::{World, WorldUpdateCtx},
 };
 
 use super::camera::ManualCamera;
@@ -48,7 +45,6 @@ impl Scene {
         let mut instance_views = registry.views(queue);
         let mut store_views = registry.store_bindings.views(queue);
         let ctx = WorldUpdateCtx {
-            var_update: UpdateCtx { time },
             instance_bufs: instance_views.each_mut()
                 .map(|r|
                     r.each_mut()
@@ -66,6 +62,7 @@ impl Scene {
                         .unwrap_or(&mut [])
                 ),
             cam: cam.cam,
+            time,
         };
         self.world.update(ctx);
         let wcam = self.world.get_cam(cam.current_cam_idx);

@@ -5,19 +5,17 @@ use crate::render_registry::depth::DepthBuffer;
 use crate::render_registry::materials::MaterialType;
 use crate::render_registry::prefabs::VertexPoss;
 use crate::render_registry::shaders::Shaders;
-use crate::render_registry::vertex::{SecondaryBufferDesc, VertexType};
+use crate::render_registry::vertex::{AuxiliaryBufferDesc, VertexType};
 
-enum SecondaryBuffer {
+enum AuxiliaryBuffer {
     VertexPoss(wgpu::Buffer),
-    None,
 }
 
 pub struct Pipeline {
     render_pipeline: wgpu::RenderPipeline,
     instance_buffer: wgpu::Buffer,
-    secondary_buffer: SecondaryBuffer,
+    aux_buffers: Vec<AuxiliaryBuffer>,
     nb_instance: NonZeroU64,
-    material: MaterialType,
     vertex: VertexType,
 }
 impl Pipeline {
@@ -35,7 +33,6 @@ impl Pipeline {
         let name = format!("{}:{}", vertex.name(), material.name());
         info!("Creating pipeline {name}");
         let instance_label = vertex.instance_buffer_label();
-        let secondary_label = vertex.secondary_buffer();
 
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(&format!("Pipeline layout {name}")),
@@ -48,16 +45,28 @@ impl Pipeline {
             array_stride: instance_label.elt_size() as wgpu::BufferAddress,
             attributes: instance_label.attrs()
         }];
-        match secondary_label {
-            SecondaryBufferDesc::VertexPoss(VertexPoss {label, ..}) => buffers_descriptor.push(
-                wgpu::VertexBufferLayout {
-                    step_mode: wgpu::VertexStepMode::Vertex,
-                    array_stride: label.elt_size() as wgpu::BufferAddress,
-                    attributes: label.attrs(),
+
+        let mut aux_buffers = Vec::new();
+        for aux_buf_label in vertex.aux_buffers() {
+            match aux_buf_label {
+                AuxiliaryBufferDesc::VertexPoss(VertexPoss {label, content, ..}) => {
+                    buffers_descriptor.push(wgpu::VertexBufferLayout {
+                        step_mode: wgpu::VertexStepMode::Vertex,
+                        array_stride: label.elt_size() as wgpu::BufferAddress,
+                        attributes: label.attrs(),
+                    });
+                    aux_buffers.push(AuxiliaryBuffer::VertexPoss(
+                        device.create_buffer_init(
+                            &wgpu::util::BufferInitDescriptor {
+                                label: Some(&format!("AUxiliary buffer {name}")),
+                                usage: wgpu::BufferUsages::VERTEX,
+                                contents: bytemuck::cast_slice(&content),
+                            },
+                        )
+                    ));
                 }
-            ),
-            SecondaryBufferDesc::None => {},
-        };
+            }
+        }
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some(&format!("render pipeline {name}")),
             layout: Some(&render_pipeline_layout),
@@ -96,36 +105,23 @@ impl Pipeline {
             mapped_at_creation: false,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
-        let secondary_buffer = match secondary_label {
-            SecondaryBufferDesc::None => SecondaryBuffer::None,
-            SecondaryBufferDesc::VertexPoss(VertexPoss { content, ..}) => SecondaryBuffer::VertexPoss(
-                device.create_buffer_init(
-                    &wgpu::util::BufferInitDescriptor {
-                        label: Some(&format!("Vertex poss buffer {name}")),
-                        usage: wgpu::BufferUsages::VERTEX,
-                        contents: bytemuck::cast_slice(&content),
-                    },
-                )
-            ),
-        };
         Self {
             render_pipeline,
-            secondary_buffer,
+            aux_buffers,
             instance_buffer,
             nb_instance,
             vertex,
-            material,
         }
     }
     pub fn render(&self, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_vertex_buffer(0, self.instance_buffer.slice(..));
-
-        match &self.secondary_buffer {
-            SecondaryBuffer::VertexPoss(buffer) => {
-                render_pass.set_vertex_buffer(1, buffer.slice(..));
-            },
-            SecondaryBuffer::None => {},
+        for (i, aux_buffer) in self.aux_buffers.iter().enumerate() {
+            match &aux_buffer {
+                AuxiliaryBuffer::VertexPoss(buffer) => {
+                    render_pass.set_vertex_buffer((i+1) as u32, buffer.slice(..));
+                },
+            }
         }
         render_pass.draw(0..self.vertex.nb_vertex(), 0..self.nb_instance.get() as u32);
     }
