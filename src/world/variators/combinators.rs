@@ -3,7 +3,6 @@ use std::ops::Mul;
 // use crate::math::ToAngle;
 
 use crate::utils::VectorSpace;
-use crate::utils::make_trait_alias;
 use super::variator::{new_typed_variator, Variator};
 use crate::world::world::World;
 

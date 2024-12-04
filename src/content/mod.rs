@@ -15,9 +15,9 @@ fn put_cube(world: &mut World, x: usize, y: usize) {
         let cols = world.push((Color::RED, Color::WHITE));
         world.push_visual(Sponge(cols));
     }
-
-mod fightsky;
-mod tests;
+    let t = world.push(Transform::from_transf(0.5, 0.5, 1.5));// * rotate_x(45.0.deg()));
+    world.push_visual((t, Cube(pos)));
+}
 
 pub fn build(world: &mut World) {
     let time = |w: &World| w.settings.base_time;
@@ -89,7 +89,7 @@ pub fn build(world: &mut World) {
     //     },
     // );
     let time_sin = time.sin(4., 1.);
-    let loc = world.push((move |world: &World| scale(time_sin.update(world)+2., time_sin.update(world)+2., time_sin.update(world)+2.)));
+    let loc = world.push(move |world: &World| scale(time_sin.update(world)+2., time_sin.update(world)+2., time_sin.update(world)+2.));
     let glob = world.push(trans(-3., -3., -3.));
     let col = world.push(Color::DEBUG);
 
