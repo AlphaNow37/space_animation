@@ -58,7 +58,7 @@ impl StoreBindings {
     pub fn put(&self, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_bind_group(1, &self.bind_group, &[]);
     }
-    pub fn views(&self, queue: &wgpu::Queue) -> [Option<wgpu::QueueWriteBufferView>; StoreLabel::COUNT] {
+    pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [Option<wgpu::QueueWriteBufferView<'a>>; StoreLabel::COUNT] {
         self.buffers
             .each_ref()
             .map(|buf|
