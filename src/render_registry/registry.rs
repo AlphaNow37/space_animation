@@ -1,11 +1,11 @@
-use std::num::NonZeroU64;
-use tracing::{info_span, info};
 use crate::render_registry::bind_group_base::BaseBindings;
 use crate::render_registry::bind_groups_store::StoreBindings;
 use crate::render_registry::materials::MaterialType;
 use crate::render_registry::pipelines::Pipeline;
 use crate::render_registry::shaders::Shaders;
 use crate::render_registry::vertex::VertexType;
+use std::num::NonZeroU64;
+use tracing::{info, info_span};
 
 use super::alloc::BufferAllocator;
 use super::depth::DepthBuffer;
@@ -20,30 +20,34 @@ pub struct PipelinesRegistry {
     pub pipes: [[Option<Pipeline>; MaterialType::COUNT]; VertexType::COUNT],
 }
 impl PipelinesRegistry {
-    pub fn new(device: &wgpu::Device, surf_config: &wgpu::SurfaceConfiguration, alloc: &BufferAllocator) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        surf_config: &wgpu::SurfaceConfiguration,
+        alloc: &BufferAllocator,
+    ) -> Self {
         let _span = info_span!("registry").entered();
         let base_bindings = BaseBindings::new(device);
         let store_bindings = StoreBindings::new(device, alloc);
         let shaders = Shaders::new(device);
         let depth_buffer = DepthBuffer::new(device, surf_config);
 
-        let pipes = VertexType::ARRAY
-            .map(|vertex| MaterialType::ARRAY
-                .map(|material| {
-                    let nb_instance = alloc.get_instance_count(vertex, material);
-                    NonZeroU64::new(nb_instance as u64)
-                        .map(|size| Pipeline::new(
-                            vertex,
-                            material,
-                            device,
-                            surf_config,
-                            &base_bindings.layout,
-                            &store_bindings.layout,
-                            &shaders,
-                            size
-                        ))
+        let pipes = VertexType::ARRAY.map(|vertex| {
+            MaterialType::ARRAY.map(|material| {
+                let nb_instance = alloc.get_instance_count(vertex, material);
+                NonZeroU64::new(nb_instance as u64).map(|size| {
+                    Pipeline::new(
+                        vertex,
+                        material,
+                        device,
+                        surf_config,
+                        &base_bindings.layout,
+                        &store_bindings.layout,
+                        &shaders,
+                        size,
+                    )
                 })
-            );
+            })
+        });
 
         info!("Succesfully created {} pipelines", PIPELINE_COUNT);
         Self {
@@ -66,7 +70,7 @@ impl PipelinesRegistry {
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: wgpu::StoreOp::Store,
-                }
+                },
             })],
             depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                 view: &self.depth_buffer.view,
@@ -89,19 +93,13 @@ impl PipelinesRegistry {
             }
         }
     }
-    pub fn views<'a>(&'a self, queue: &'a wgpu::Queue) -> [[Option<wgpu::QueueWriteBufferView<'a>>; MaterialType::COUNT]; VertexType::COUNT] {
-        self.pipes
-            .each_ref()
-            .map(|row|
-                row
-                    .each_ref()
-                    .map(|maybe_pipe|
-                        maybe_pipe
-                            .as_ref()
-                            .map(|pipe|
-                                pipe.view_instance(queue)
-                            )
-                    )
-            )
+    pub fn views<'a>(
+        &'a self,
+        queue: &'a wgpu::Queue,
+    ) -> [[Option<wgpu::QueueWriteBufferView<'a>>; MaterialType::COUNT]; VertexType::COUNT] {
+        self.pipes.each_ref().map(|row| {
+            row.each_ref()
+                .map(|maybe_pipe| maybe_pipe.as_ref().map(|pipe| pipe.view_instance(queue)))
+        })
     }
 }

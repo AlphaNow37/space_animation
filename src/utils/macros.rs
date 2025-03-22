@@ -1,4 +1,3 @@
-
 macro_rules! array_key {
     (
         $vis: vis
@@ -36,8 +35,8 @@ macro_rules! impl_vector_space_simd {
     (
         $t: ident ($n: literal)
     ) => {
-        use std::ops::{Add, Sub, Mul, Div, Neg, AddAssign, SubAssign, MulAssign, DivAssign};
         use crate::utils::Zero;
+        use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
         use std::simd::ToBytes;
 
         impl $t {
@@ -135,7 +134,9 @@ macro_rules! make_deref {
     ($s: ty, $t: ty) => {
         impl std::ops::Deref for $s {
             type Target = $t;
-            fn deref(&self) -> Self::Target {self.0}
+            fn deref(&self) -> Self::Target {
+                self.0
+            }
         }
     };
 }

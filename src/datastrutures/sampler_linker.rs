@@ -1,11 +1,13 @@
 use rand::Rng;
 
-use crate::{datastrutures::graph::Graph, utils::{Length, VectorSpace}};
+use crate::{
+    datastrutures::graph::Graph,
+    utils::{Length, VectorSpace},
+};
 
 use super::graph::LinkGraph;
 
-
-/// pairs: 
+/// pairs:
 ///    C
 ///    |
 ///    |
@@ -28,7 +30,7 @@ pub struct SampleLinkPointParam<const NDIM: usize, T> {
 impl<const NDIM: usize, T: VectorSpace + Length> SampleLinkPointParam<NDIM, T> {
     pub fn eval(&self, rng: &mut impl Rng) -> (LinkGraph, Vec<T>) {
         let offsets = [0; NDIM];
-        // for i in 
+        // for i in
         let size: usize = self.dims.iter().map(|d| d.point_amount).product();
         let mut points = vec![T::ZERO; size];
         todo!()

@@ -1,8 +1,8 @@
-use std::fmt::{Debug, Display, Formatter};
-use std::simd::num::SimdFloat;
-use std::simd::Simd;
+use crate::utils::{Length, impl_vector_space_simd};
 use bytemuck::{Pod, Zeroable};
-use crate::utils::{impl_vector_space_simd, Length};
+use std::fmt::{Debug, Display, Formatter};
+use std::simd::Simd;
+use std::simd::num::SimdFloat;
 
 pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> Vec4 {
     Vec4::new(x, y, z, w)
@@ -43,7 +43,7 @@ impl Vec4 {
         self.0.to_array()
     }
 }
-impl_vector_space_simd!(Vec4 (4));
+impl_vector_space_simd!(Vec4(4));
 impl Length for Vec4 {
     fn length_squared(self) -> f32 {
         self.dot(self)
@@ -52,7 +52,14 @@ impl Length for Vec4 {
 
 impl Debug for Vec4 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Vec3({}, {}, {}, {})", self.x(), self.y(), self.z(), self.w())
+        write!(
+            f,
+            "Vec3({}, {}, {}, {})",
+            self.x(),
+            self.y(),
+            self.z(),
+            self.w()
+        )
     }
 }
 impl Display for Vec4 {

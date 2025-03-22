@@ -1,6 +1,6 @@
-use bytemuck::{Pod, Zeroable};
 use crate::render_registry::prefabs::{CIRCLE_POS, FLAT_POS, VertexPoss};
 use crate::utils::array_key;
+use bytemuck::{Pod, Zeroable};
 
 use super::prefabs::TILED_TRI_POS;
 
@@ -71,7 +71,9 @@ new_vertex!(
 );
 impl LocalGlobalMatrixVertex {
     pub fn create(local: usize, global: usize, material: usize) -> Self {
-        Self {local_global_material: [local, global, material].map(|i| i as u32)}
+        Self {
+            local_global_material: [local, global, material].map(|i| i as u32),
+        }
     }
 }
 
@@ -82,7 +84,9 @@ new_vertex!(
 );
 impl Polynomial4x4Vertex {
     pub fn create(facts: usize, global: usize, material: usize) -> Self {
-        Self {global_facts_material: [global, facts, material].map(|i| i as u32)}
+        Self {
+            global_facts_material: [global, facts, material].map(|i| i as u32),
+        }
     }
 }
 
@@ -96,7 +100,7 @@ impl TiledTriVertex {
     pub fn create(pos: [usize; 3], tilematrix: usize, global: usize, material: usize) -> Self {
         Self {
             pos_global: [pos[0], pos[1], pos[2], global].map(|i| i as u32),
-             material_tilematrix: [material as u32, tilematrix as u32]
+            material_tilematrix: [material as u32, tilematrix as u32],
         }
     }
 }
@@ -119,7 +123,6 @@ new_vertex!(
     } -> 2;
 );
 
-
 pub enum AuxiliaryBufferDesc {
     VertexPoss(VertexPoss),
 }
@@ -139,7 +142,7 @@ impl VertexType {
             Self::Sphere => "vs_sphere",
             Self::Poly4x4 => "vs_poly4x4",
             Self::Cube => "vs_cube",
-            Self::TiledTri => "vs_tiled_tri"
+            Self::TiledTri => "vs_tiled_tri",
         }
     }
     pub fn instance_buffer_label(&self) -> VertexBufferLabel {

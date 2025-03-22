@@ -25,12 +25,19 @@ pub trait Variator: 'static + std::any::Any {
     fn update(&self, world: &World) -> Self::Item;
 
     #[allow(unused_variables)]
-    fn hash_var(&self) -> u32 {1}
+    fn hash_var(&self) -> u32 {
+        1
+    }
     fn finished_hash_var(&self) -> u32 {
         (self.hash_var(), self.type_id()).gen_hash()
     }
     #[allow(unused_variables)]
-    fn eq_var(&self, other: &Self) -> bool where Self: Sized {false}
+    fn eq_var(&self, other: &Self) -> bool
+    where
+        Self: Sized,
+    {
+        false
+    }
 
     // time_methods!(
     //     time_mod(t: f32) => TimeMod;
@@ -44,7 +51,7 @@ pub trait Variator: 'static + std::any::Any {
 macro_rules! new_typed_variator {
     (
         $([$world: ident],)?
-        $name: ident ($($gen: ident $(: $ty: ty)?),* $(,)?) $([$($clause: tt)*])? => $out: ty {$($ins: tt)*} 
+        $name: ident ($($gen: ident $(: $ty: ty)?),* $(,)?) $([$($clause: tt)*])? => $out: ty {$($ins: tt)*}
     ) => {
         #[allow(dead_code)]
         #[derive(Clone, Copy, Debug, PartialEq)]
@@ -85,7 +92,7 @@ macro_rules! new_typed_variator {
 
 pub(crate) use new_typed_variator;
 
-impl<U, T: (Fn(&World)->U)+'static> Variator for T {
+impl<U, T: (Fn(&World) -> U) + 'static> Variator for T {
     type Item = U;
     fn update(&self, world: &World) -> Self::Item {
         self(world)

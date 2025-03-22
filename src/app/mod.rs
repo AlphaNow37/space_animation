@@ -1,31 +1,33 @@
-mod exit;
-mod surface_holder;
 mod camera;
-mod resize;
-mod render;
-mod update;
-mod scene;
+mod exit;
 mod keybinds;
+mod render;
+mod resize;
+mod scene;
+mod surface_holder;
+mod update;
 
-use camera::ManualCamera;
-use scene::Scene;
-use tracing::{info, info_span};
-use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
-use winit::window::WindowId;
-use winit::application::ApplicationHandler;
-use winit::event::WindowEvent;
 use crate::app::exit::check_exit;
 use crate::app::keybinds::KeyBinds;
 use crate::app::render::check_render;
 use crate::app::resize::check_resize;
 use crate::app::surface_holder::SurfaceHolder;
-use crate::app::update::{check_update, Clock};
+use crate::app::update::{Clock, check_update};
+use camera::ManualCamera;
+use scene::Scene;
+use tracing::{info, info_span};
+use winit::application::ApplicationHandler;
+use winit::event::WindowEvent;
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::window::WindowId;
 
 fn get_adapter(surf: Option<&wgpu::Surface>, inst: &wgpu::Instance) -> wgpu::Adapter {
-    let options = surf.map(|s| wgpu::RequestAdapterOptions {
-        compatible_surface: Some(&s),
-        ..Default::default()
-    }).unwrap_or_default();
+    let options = surf
+        .map(|s| wgpu::RequestAdapterOptions {
+            compatible_surface: Some(&s),
+            ..Default::default()
+        })
+        .unwrap_or_default();
     pollster::block_on(inst.request_adapter(&options)).unwrap()
 }
 
@@ -33,6 +35,7 @@ fn get_device_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
     let desc = wgpu::DeviceDescriptor {
         label: Some("Device get desc"),
         required_limits: wgpu::Limits {
+            max_vertex_attributes: 32,
             // max_vertex_attributes: 23,
             ..Default::default()
         },
@@ -64,7 +67,12 @@ impl ApplicationHandler for App {
         }
         self.window = Some(holder);
     }
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, _window_id: WindowId, event: WindowEvent) {
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _window_id: WindowId,
+        event: WindowEvent,
+    ) {
         let _span = info_span!("app_update").entered();
         if check_exit(self, &event) {
             event_loop.exit();

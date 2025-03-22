@@ -17,7 +17,12 @@ impl BufferAllocator {
     pub fn get_store_count(&self, store: StoreLabel) -> usize {
         self.store[store as usize]
     }
-    pub fn alloc_instance(&mut self, vertex: VertexType, material: MaterialType, nb_instance: usize) {
+    pub fn alloc_instance(
+        &mut self,
+        vertex: VertexType,
+        material: MaterialType,
+        nb_instance: usize,
+    ) {
         self.instance[vertex as usize][material as usize] += nb_instance;
     }
     pub fn alloc_store(&mut self, store: StoreLabel, nb_stored: usize) {

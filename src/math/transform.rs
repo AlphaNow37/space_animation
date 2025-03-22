@@ -1,9 +1,9 @@
+use crate::math::{Angle, Dir, Mat4, Vec3};
+use crate::utils::impl_vector_space_simd;
 use std::fmt::{Debug, Display, Formatter};
 use std::simd::num::SimdFloat;
-use std::simd::{Simd, simd_swizzle, StdFloat};
 use std::simd::prelude::SimdPartialOrd;
-use crate::utils::impl_vector_space_simd;
-use crate::math::{Angle, Dir, Mat4, Vec3};
+use std::simd::{Simd, StdFloat, simd_swizzle};
 
 pub const fn scale(x: f32, y: f32, z: f32) -> Transform {
     Transform::from_scalef(x, y, z)
@@ -40,34 +40,45 @@ impl Transform {
 
     pub const fn from_array(arr: [f32; 12]) -> Self {
         Self(Simd::from_array([
-            arr[0], arr[1], arr[2], 0.,
-            arr[3], arr[4], arr[5], 0.,
-            arr[6], arr[7], arr[8], 0.,
+            arr[0], arr[1], arr[2], 0., arr[3], arr[4], arr[5], 0., arr[6], arr[7], arr[8], 0.,
             arr[9], arr[10], arr[11], 0.,
         ]))
     }
     pub fn from_cols(x: Vec3, y: Vec3, z: Vec3) -> Self {
         Self::from_array([
-            x.x(), x.y(), x.z(),
-            y.x(), y.y(), y.z(),
-            z.x(), z.y(), z.z(),
-            0., 0., 0.,
+            x.x(),
+            x.y(),
+            x.z(),
+            y.x(),
+            y.y(),
+            y.z(),
+            z.x(),
+            z.y(),
+            z.z(),
+            0.,
+            0.,
+            0.,
         ])
     }
     pub fn from_rows(a: Vec3, b: Vec3, c: Vec3) -> Self {
         Self::from_array([
-            a.x(), b.x(), c.x(),
-            a.y(), b.y(), c.y(),
-            a.z(), b.z(), c.z(),
-            0., 0., 0.,
+            a.x(),
+            b.x(),
+            c.x(),
+            a.y(),
+            b.y(),
+            c.y(),
+            a.z(),
+            b.z(),
+            c.z(),
+            0.,
+            0.,
+            0.,
         ])
     }
     pub const fn from_scalef(x: f32, y: f32, z: f32) -> Self {
         Self(Simd::from_array([
-            x , 0., 0., 0.,
-            0., y , 0., 0.,
-            0., 0., z , 0.,
-            0., 0., 0., 0.,
+            x, 0., 0., 0., 0., y, 0., 0., 0., 0., z, 0., 0., 0., 0., 0.,
         ]))
     }
     pub fn from_scalev(vec: Vec3) -> Self {
@@ -75,10 +86,7 @@ impl Transform {
     }
     pub const fn from_transf(x: f32, y: f32, z: f32) -> Self {
         Self(Simd::from_array([
-            1., 0., 0., 0.,
-            0., 1., 0., 0.,
-            0., 0., 1., 0.,
-            x , y , z , 0.,
+            1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., x, y, z, 0.,
         ]))
     }
     pub fn from_transv(vec: Vec3) -> Self {
@@ -87,26 +95,50 @@ impl Transform {
     /// View from the end of the vector, looking opposite way
     pub fn from_rotate_x(angle: Angle) -> Self {
         Self::from_array([
-            1., 0., 0.,
-            0., angle.cos(), angle.sin(),
-            0., -angle.sin(), angle.cos(),
-            0., 0., 0.,
+            1.,
+            0.,
+            0.,
+            0.,
+            angle.cos(),
+            angle.sin(),
+            0.,
+            -angle.sin(),
+            angle.cos(),
+            0.,
+            0.,
+            0.,
         ])
     }
     pub fn from_rotate_y(angle: Angle) -> Self {
         Self::from_array([
-            angle.cos(), 0., -angle.sin(),
-            0., 1., 0.,
-            angle.sin(), 0., angle.cos(),
-            0., 0., 0.,
+            angle.cos(),
+            0.,
+            -angle.sin(),
+            0.,
+            1.,
+            0.,
+            angle.sin(),
+            0.,
+            angle.cos(),
+            0.,
+            0.,
+            0.,
         ])
     }
     pub fn from_rotate_z(angle: Angle) -> Self {
         Self::from_array([
-            angle.cos(), angle.sin(), 0.,
-            -angle.sin(), angle.cos(), 0.,
-            0., 0., 1.,
-            0., 0., 0.,
+            angle.cos(),
+            angle.sin(),
+            0.,
+            -angle.sin(),
+            angle.cos(),
+            0.,
+            0.,
+            0.,
+            1.,
+            0.,
+            0.,
+            0.,
         ])
     }
     pub fn from_rotate_around(axis: impl TryInto<Dir>, angle: Angle) -> Self {
@@ -126,11 +158,13 @@ impl Transform {
         Vec3(simd_swizzle!(self.0, [8, 9, 10, 11]))
     }
     pub fn scale_squared(self) -> Vec3 {
-        fn square(sim: Simd<f32, 4>) -> Simd<f32, 4> {sim*sim}
+        fn square(sim: Simd<f32, 4>) -> Simd<f32, 4> {
+            sim * sim
+        }
         Vec3(
             square(simd_swizzle!(self.0, [0, 4, 8, 3]))
-            + square(simd_swizzle!(self.0, [1, 5, 9, 3]))
-            + square(simd_swizzle!(self.0, [2, 6, 10, 3]))
+                + square(simd_swizzle!(self.0, [1, 5, 9, 3]))
+                + square(simd_swizzle!(self.0, [2, 6, 10, 3])),
         )
     }
     pub fn scale(self) -> Vec3 {
@@ -138,7 +172,7 @@ impl Transform {
     }
 
     pub fn approx_eq(self, other: Self) -> bool {
-        (self-other).0.abs().simd_lt(Simd::splat(0.0001)).all()
+        (self - other).0.abs().simd_lt(Simd::splat(0.0001)).all()
     }
     pub fn to_array(self) -> [f32; 12] {
         let a = self.0.to_array();
@@ -156,73 +190,40 @@ impl Transform {
         self.tr_vec(pt) + self.trans()
     }
     pub fn tr_vec(self, vec: Vec3) -> Vec3 {
-        self.x() * vec.x()
-            + self.y() * vec.y()
-            + self.z() * vec.z()
+        self.x() * vec.x() + self.y() * vec.y() + self.z() * vec.z()
     }
     pub fn tr_tr(self, tr: Self) -> Self {
         // hopefully this (long!) formula is right ! (and faster than the naive method)
-        Self(simd_swizzle!(self.0, [
-            0, 1, 2, 3,
-            0, 1, 2, 3,
-            0, 1, 2, 3,
-            0, 1, 2, 3,
-        ]) * simd_swizzle!(tr.0, [
-            0, 0, 0, 0,
-            4, 4, 4, 4,
-            8, 8, 8, 8,
-            12, 12, 12, 12,
-        ])
-        + simd_swizzle!(self.0, [
-            4, 5, 6, 3,
-            4, 5, 6, 3,
-            4, 5, 6, 3,
-            4, 5, 6, 3,
-        ]) * simd_swizzle!(tr.0, [
-            1, 1, 1, 1,
-            5, 5, 5, 5,
-            9, 9, 9, 9,
-            13, 13, 13, 13,
-        ])
-        + simd_swizzle!(self.0, [
-            8, 9, 10, 3,
-            8, 9, 10, 3,
-            8, 9, 10, 3,
-            8, 9, 10, 3,
-        ]) * simd_swizzle!(tr.0, [
-            2, 2, 2, 2,
-            6, 6, 6, 6,
-            10, 10, 10, 10,
-            14, 14, 14, 14,
-        ]) + simd_swizzle!(self.0, [
-            3, 3, 3, 3,
-            3, 3, 3, 3,
-            3, 3, 3, 3,
-            12, 13, 14, 3,
-        ]))
+        Self(
+            simd_swizzle!(self.0, [0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,])
+                * simd_swizzle!(tr.0, [0, 0, 0, 0, 4, 4, 4, 4, 8, 8, 8, 8, 12, 12, 12, 12,])
+                + simd_swizzle!(self.0, [4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6, 3,])
+                    * simd_swizzle!(tr.0, [1, 1, 1, 1, 5, 5, 5, 5, 9, 9, 9, 9, 13, 13, 13, 13,])
+                + simd_swizzle!(
+                    self.0,
+                    [8, 9, 10, 3, 8, 9, 10, 3, 8, 9, 10, 3, 8, 9, 10, 3,]
+                ) * simd_swizzle!(tr.0, [
+                    2, 2, 2, 2, 6, 6, 6, 6, 10, 10, 10, 10, 14, 14, 14, 14,
+                ])
+                + simd_swizzle!(self.0, [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 12, 13, 14, 3,]),
+        )
     }
 
     pub fn scaled(self, mut by: Vec3) -> Self {
         by.0[3] = 1.;
-        Self(self.0 * simd_swizzle!(by.0, [
-            0, 0, 0, 3,
-            1, 1, 1, 3,
-            2, 2, 2, 3,
-            3, 3, 3, 3,
-        ]))
+        Self(self.0 * simd_swizzle!(by.0, [0, 0, 0, 3, 1, 1, 1, 3, 2, 2, 2, 3, 3, 3, 3, 3,]))
     }
     pub fn translate(self, by: Vec3) -> Self {
         // should be more performant than self*trans(by)
         let v = self.tr_vec(by);
         self + Self(simd_swizzle!(v.0, [
-            3, 3, 3, 3,
-            3, 3, 3, 3,
-            3, 3, 3, 3,
-            0, 1, 2, 3,
+            3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 1, 2, 3,
         ]))
     }
     pub fn rotate_around(self, axis: impl TryInto<Dir>, angle: Angle) -> Self {
-        let Ok(dir) = axis.try_into() else {return self};
+        let Ok(dir) = axis.try_into() else {
+            return self;
+        };
         Self::from_cols(
             self.x().rotate_around(dir, angle),
             self.y().rotate_around(dir, angle),
@@ -240,20 +241,24 @@ impl Transform {
     }
     pub fn with_rotation(self, other: Self) -> Self {
         Self(simd_swizzle!(self.0, other.0, [
-            16, 17, 18, 19,
-            20, 21, 22, 23,
-            24, 25, 26, 27,
-            12, 13, 14, 15,
+            16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 12, 13, 14, 15,
         ]))
     }
     pub fn with_trans(self, other: Self) -> Self {
         other.with_rotation(self)
     }
 }
-impl_vector_space_simd!(Transform (16));
+impl_vector_space_simd!(Transform(16));
 impl Debug for Transform {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Transform(tr={:?}, x={:?}, y={:?}, z={:?})", self.trans(), self.x(), self.y(), self.z())
+        write!(
+            f,
+            "Transform(tr={:?}, x={:?}, y={:?}, z={:?})",
+            self.trans(),
+            self.x(),
+            self.y(),
+            self.z()
+        )
     }
 }
 impl Display for Transform {
@@ -317,8 +322,12 @@ mod tests {
         assert_eq!(Transform::ID * Transform::ID, Transform::ID);
         assert_eq!(scale(1., 2., 3.) * scale(2., 3., 4.), scale(2., 6., 12.));
         assert_eq!(trans(1., 2., 3.) * trans(2., 3., 4.), trans(3., 5., 7.));
-        assert_eq!(trans(1., 2., 3.) * scale(2., 3., 4.), scale(2., 3., 4.)*trans(0.5, 2./3., 3./4.));
-        let m = trans(0., 1., 5.) * scale(2., 5., -6.) * rotate_around(Vec3::ONE, Angle::from_deg(45.));
+        assert_eq!(
+            trans(1., 2., 3.) * scale(2., 3., 4.),
+            scale(2., 3., 4.) * trans(0.5, 2. / 3., 3. / 4.)
+        );
+        let m =
+            trans(0., 1., 5.) * scale(2., 5., -6.) * rotate_around(Vec3::ONE, Angle::from_deg(45.));
         assert!(m.inverse().inverse().approx_eq(m))
     }
 }

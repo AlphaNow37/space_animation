@@ -2,7 +2,9 @@ use std::ops::Range;
 
 pub struct Count(usize);
 impl Count {
-    pub fn new() -> Self {Self(0)}
+    pub fn new() -> Self {
+        Self(0)
+    }
     pub fn curr(&self) -> usize {
         self.0
     }

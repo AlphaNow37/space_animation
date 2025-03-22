@@ -1,23 +1,23 @@
-use std::marker::PhantomData;
+use std::any::Any;
 use std::cell::Cell;
 use std::collections::HashMap;
-use std::any::Any;
+use std::marker::PhantomData;
 use std::ops::Deref;
 
-use crate::render_registry::storage_structs::AsStrorageStruct;
-use crate::math::{Vec2, Vec3, Vec4, Transform, Dir, Polynomial};
-use crate::render_registry::alloc::BufferAllocator;
-use crate::world::primitives::camera::Camera;
 use crate::math::Angle;
+use crate::math::{Dir, Polynomial, Transform, Vec2, Vec3, Vec4};
+use crate::render_registry::alloc::BufferAllocator;
 use crate::render_registry::materials::MaterialType;
 use crate::render_registry::mesh_builder::VisualExecutor;
+use crate::render_registry::storage_structs::AsStrorageStruct;
 use crate::render_registry::vertex::VertexType;
+use crate::utils::traits::GeneralHash;
+use crate::world::primitives::camera::Camera;
 use crate::world::stores::StoreLabel;
 use crate::world::visuals::VisualDirective;
-use crate::utils::traits::GeneralHash;
 
-use super::variators::variator::Variator;
 use super::primitives::color::Color;
+use super::variators::variator::Variator;
 
 macro_rules! make_system {
     (
@@ -157,13 +157,18 @@ impl World {
     pub fn get_cam(&self, idx: isize) -> Camera {
         Camera::get(self, idx.rem_euclid(self.camera.len() as isize) as usize)
     }
-    pub fn push<V: Variator>(&mut self, var: V) -> Ref<V::Item> where V::Item: WorldPrimitive {
+    pub fn push<V: Variator>(&mut self, var: V) -> Ref<V::Item>
+    where
+        V::Item: WorldPrimitive,
+    {
         let hash = var.finished_hash_var();
         let mut add = false;
         if let Some(&var_idx) = self.variators_cache.get(&hash) {
             let v: &dyn SavedVariator = Box::deref(&self.variators[var_idx]);
             let v: &dyn Any = v;
-            if let Some(SavedVariatorSingle { index, var: var2 }) = v.downcast_ref::<SavedVariatorSingle<V>>() {
+            if let Some(SavedVariatorSingle { index, var: var2 }) =
+                v.downcast_ref::<SavedVariatorSingle<V>>()
+            {
                 if var.eq_var(var2) {
                     return Ref {
                         index: *index,
@@ -178,26 +183,34 @@ impl World {
             self.variators_cache.insert(hash, self.variators.len());
         }
         let idx = V::Item::alloc(self, 1);
-        self.variators.push(Box::new(SavedVariatorSingle {
-            index: idx,
-            var,
-        }));
+        self.variators
+            .push(Box::new(SavedVariatorSingle { index: idx, var }));
         Ref {
             index: idx,
             label: PhantomData,
         }
     }
-    pub fn push_multi<const N: usize, T: WorldPrimitive, V: Variator<Item=[T; N]>>(&mut self, var: V) -> [Ref<T>; N] {
-        if N==0 {return std::array::from_fn(|_| Ref {index: 0, label: PhantomData})}
+    pub fn push_multi<const N: usize, T: WorldPrimitive, V: Variator<Item = [T; N]>>(
+        &mut self,
+        var: V,
+    ) -> [Ref<T>; N] {
+        if N == 0 {
+            return std::array::from_fn(|_| Ref {
+                index: 0,
+                label: PhantomData,
+            });
+        }
         let hash = var.finished_hash_var();
         let mut add = false;
         if let Some(&var_idx) = self.variators_cache.get(&hash) {
             let v: &dyn SavedVariator = Box::deref(&self.variators[var_idx]);
             let v: &dyn Any = v;
-            if let Some(SavedVariatorMultiple { index, var: var2 }) = v.downcast_ref::<SavedVariatorMultiple<V>>() {
+            if let Some(SavedVariatorMultiple { index, var: var2 }) =
+                v.downcast_ref::<SavedVariatorMultiple<V>>()
+            {
                 if var.eq_var(var2) {
                     return std::array::from_fn(|i| Ref {
-                        index: *index+i,
+                        index: *index + i,
                         label: PhantomData,
                     });
                 }
@@ -209,12 +222,10 @@ impl World {
             self.variators_cache.insert(hash, self.variators.len());
         }
         let idx = T::alloc(self, N);
-        self.variators.push(Box::new(SavedVariatorMultiple {
-            index: idx,
-            var,
-        }));
+        self.variators
+            .push(Box::new(SavedVariatorMultiple { index: idx, var }));
         std::array::from_fn(|i| Ref {
-            index: idx+i,
+            index: idx + i,
             label: PhantomData,
         })
     }
@@ -222,14 +233,16 @@ impl World {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ref<T> {
-    label: PhantomData<fn()->T>,
+    label: PhantomData<fn() -> T>,
     index: usize,
 }
 impl<T> Ref<T> {
-    pub fn index(&self) -> usize {self.index}
+    pub fn index(&self) -> usize {
+        self.index
+    }
 }
 impl<T: WorldPrimitive> Variator for Ref<T> {
-    type Item=T;
+    type Item = T;
     fn update(&self, world: &World) -> T {
         T::get(world, self.index)
     }
@@ -268,7 +281,10 @@ struct SavedVariatorSingle<V> {
     var: V,
     index: usize,
 }
-impl<V: Variator> SavedVariator for SavedVariatorSingle<V> where V::Item: WorldPrimitive {
+impl<V: Variator> SavedVariator for SavedVariatorSingle<V>
+where
+    V::Item: WorldPrimitive,
+{
     fn write(&self, world: &World) {
         let res = self.var.update(world);
         V::Item::set(world, self.index, res);
@@ -278,7 +294,10 @@ struct SavedVariatorMultiple<V> {
     var: V,
     index: usize,
 }
-impl<const N: usize, T, V: Variator<Item=[T; N]>> SavedVariator for SavedVariatorMultiple<V> where T: WorldPrimitive {
+impl<const N: usize, T, V: Variator<Item = [T; N]>> SavedVariator for SavedVariatorMultiple<V>
+where
+    T: WorldPrimitive,
+{
     fn write(&self, world: &World) {
         let res = self.var.update(world);
         T::sets(world, self.index, res);

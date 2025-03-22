@@ -8,8 +8,13 @@ pub trait SpatialSet {
     type Coord;
     type Item;
 
-    fn iter_near<'a>(&'a self, position: Self::Coord, max_dist: f32) -> impl Iterator<Item=&'a Self::Item> 
-    where Self::Coord: Length+VectorSpace;
+    fn iter_near<'a>(
+        &'a self,
+        position: Self::Coord,
+        max_dist: f32,
+    ) -> impl Iterator<Item = &'a Self::Item>
+    where
+        Self::Coord: Length + VectorSpace;
 }
 
 /// A tree based on a center sphere
@@ -23,14 +28,12 @@ struct DistTreeNode<C, T> {
     value: T,
     subtree: DistTree<C, T>,
 }
-impl<C: VectorSpace+Length, T> DistTree<C, T> {
+impl<C: VectorSpace + Length, T> DistTree<C, T> {
     pub fn new(rad: f32) -> Self {
-        
         Self {
             subnodes: Vec::new(),
             child_radius: rad,
         }
-
     }
     pub fn push(&mut self, coord: C, value: T) {
         for node in &mut self.subnodes {
@@ -44,12 +47,12 @@ impl<C: VectorSpace+Length, T> DistTree<C, T> {
         self.subnodes.push(DistTreeNode {
             center: coord,
             value,
-            subtree: DistTree::new(self.child_radius/2.),
+            subtree: DistTree::new(self.child_radius / 2.),
         });
     }
 }
 impl<'b, C, T> Tree for &'b DistTree<C, T> {
-    fn iter_childs<'a>(&'a self) -> impl Iterator<Item=Self> {
+    fn iter_childs<'a>(&'a self) -> impl Iterator<Item = Self> {
         self.subnodes.iter().map(|v| &v.subtree)
     }
 }

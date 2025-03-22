@@ -3,7 +3,7 @@ use tracing::{info, info_span};
 use winit::{dpi::PhysicalPosition, event::WindowEvent, window::Window};
 
 use crate::app::keybinds::{KeyBinds, MoveKey};
-use crate::math::{Vec2, Vec3, rotate_x, ToAngle, rotate_y};
+use crate::math::{ToAngle, Vec2, Vec3, rotate_x, rotate_y};
 use crate::utils::Zero;
 use crate::world::primitives::camera::Camera;
 
@@ -49,13 +49,17 @@ impl ManualCamera {
     }
     fn next_current(&mut self, off: isize) {
         self.current_cam_idx += off;
-        info!("Changing current camera to {} ({:+})", self.current_cam_idx, off);
+        info!(
+            "Changing current camera to {} ({:+})",
+            self.current_cam_idx, off
+        );
     }
     fn toggle_lock(&mut self, win: &Window) {
         self.cursor_locked ^= true;
         if self.cursor_locked {
             info!("Locking cursor");
-            win.set_cursor_position(winit::dpi::Position::Physical((self.win_size/2.0).into())).unwrap();
+            win.set_cursor_position(winit::dpi::Position::Physical((self.win_size / 2.0).into()))
+                .unwrap();
             win.set_cursor_visible(false);
         } else {
             info!("Unlocking cursor");
@@ -72,9 +76,13 @@ impl ManualCamera {
         if let WindowEvent::CursorMoved { position, .. } = event {
             if self.cursor_locked {
                 let pos: Vec2 = (*position).into();
-                let angle = (pos - self.win_size/2.) / self.win_size.y() * self.cam.fov.rad();
+                let angle = (pos - self.win_size / 2.) / self.win_size.y() * self.cam.fov.rad();
                 self.cam.pos *= rotate_x(angle.y().rad()) * rotate_y(angle.x().rad());
-                win.set_cursor_position(PhysicalPosition::new(self.win_size.x()/2., self.win_size.y()/2.)).unwrap();
+                win.set_cursor_position(PhysicalPosition::new(
+                    self.win_size.x() / 2.,
+                    self.win_size.y() / 2.,
+                ))
+                .unwrap();
             }
         }
     }

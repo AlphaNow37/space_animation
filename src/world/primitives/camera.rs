@@ -1,8 +1,7 @@
-use crate::math::{Transform, Mat4};
-use crate::world::variators::variator::Variator;
 use crate::math::Angle;
+use crate::math::{Mat4, Transform};
+use crate::world::variators::variator::Variator;
 use crate::world::world::World;
-
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Camera {
@@ -20,7 +19,7 @@ impl Default for Camera {
 impl Camera {
     pub fn matrix(&self, aspect_ratio: f32) -> Mat4 {
         Mat4::new_perspective_infinite_lh(self.fov, aspect_ratio, 0.1)
-        * self.pos.inverse().to_mat4()
+            * self.pos.inverse().to_mat4()
     }
 }
 
@@ -33,7 +32,7 @@ impl Variator for GetManualCamera {
 }
 
 pub struct TrackCamera<P, F>(pub P, pub F);
-impl<P: Variator<Item=Transform>, F: Variator<Item=Angle>> Variator for TrackCamera<P, F> {
+impl<P: Variator<Item = Transform>, F: Variator<Item = Angle>> Variator for TrackCamera<P, F> {
     type Item = Camera;
     fn update(&self, world: &World) -> Self::Item {
         Camera {

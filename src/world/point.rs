@@ -1,6 +1,6 @@
 use crate::math::{Transform, Vec3};
 
-use super::variators::variator::{new_typed_variator, Variator};
+use super::variators::variator::{Variator, new_typed_variator};
 
 new_typed_variator!(
     ProjectPoint(A: Transform, P: Vec3) => Vec3 {

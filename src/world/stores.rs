@@ -62,7 +62,9 @@ impl StoreLabel {
     }
     pub fn stage(self) -> wgpu::ShaderStages {
         match self {
-            Self::Transforms | Self::F32 | Self::Vec2 | Self::Vec3 | Self::Vec4 | Self::Poly4x4 => wgpu::ShaderStages::VERTEX,
+            Self::Transforms | Self::F32 | Self::Vec2 | Self::Vec3 | Self::Vec4 | Self::Poly4x4 => {
+                wgpu::ShaderStages::VERTEX
+            }
             Self::Color | Self::Color2 => wgpu::ShaderStages::FRAGMENT,
         }
     }

@@ -1,11 +1,11 @@
-use std::num::NonZeroU64;
-use tracing::{info, info_span};
-use wgpu::util::DeviceExt;
 use crate::render_registry::depth::DepthBuffer;
 use crate::render_registry::materials::MaterialType;
 use crate::render_registry::prefabs::VertexPoss;
 use crate::render_registry::shaders::Shaders;
 use crate::render_registry::vertex::{AuxiliaryBufferDesc, VertexType};
+use std::num::NonZeroU64;
+use tracing::{info, info_span};
+use wgpu::util::DeviceExt;
 
 enum AuxiliaryBuffer {
     VertexPoss(wgpu::Buffer),
@@ -34,36 +34,35 @@ impl Pipeline {
         info!("Creating pipeline {name}");
         let instance_label = vertex.instance_buffer_label();
 
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some(&format!("Pipeline layout {name}")),
-            bind_group_layouts: &[base_bindings_layout, store_bindings_layout],
-            push_constant_ranges: &[],
-        });
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some(&format!("Pipeline layout {name}")),
+                bind_group_layouts: &[base_bindings_layout, store_bindings_layout],
+                push_constant_ranges: &[],
+            });
 
         let mut buffers_descriptor = vec![wgpu::VertexBufferLayout {
             step_mode: wgpu::VertexStepMode::Instance,
             array_stride: instance_label.elt_size() as wgpu::BufferAddress,
-            attributes: instance_label.attrs()
+            attributes: instance_label.attrs(),
         }];
 
         let mut aux_buffers = Vec::new();
         for aux_buf_label in vertex.aux_buffers() {
             match aux_buf_label {
-                AuxiliaryBufferDesc::VertexPoss(VertexPoss {label, content, ..}) => {
+                AuxiliaryBufferDesc::VertexPoss(VertexPoss { label, content, .. }) => {
                     buffers_descriptor.push(wgpu::VertexBufferLayout {
                         step_mode: wgpu::VertexStepMode::Vertex,
                         array_stride: label.elt_size() as wgpu::BufferAddress,
-                        attributes: label.attrs(),
+                        attributes: dbg!(label.attrs()),
                     });
-                    aux_buffers.push(AuxiliaryBuffer::VertexPoss(
-                        device.create_buffer_init(
-                            &wgpu::util::BufferInitDescriptor {
-                                label: Some(&format!("AUxiliary buffer {name}")),
-                                usage: wgpu::BufferUsages::VERTEX,
-                                contents: bytemuck::cast_slice(&content),
-                            },
-                        )
-                    ));
+                    aux_buffers.push(AuxiliaryBuffer::VertexPoss(device.create_buffer_init(
+                        &wgpu::util::BufferInitDescriptor {
+                            label: Some(&format!("Auxiliary buffer {name}")),
+                            usage: wgpu::BufferUsages::VERTEX,
+                            contents: bytemuck::cast_slice(&content),
+                        },
+                    )));
                 }
             }
         }
@@ -74,7 +73,7 @@ impl Pipeline {
                 buffers: &buffers_descriptor,
                 module: shaders.get(),
                 entry_point: Some(vertex.entry_point()),
-                compilation_options: wgpu::PipelineCompilationOptions::default()
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: shaders.get(),
@@ -119,8 +118,8 @@ impl Pipeline {
         for (i, aux_buffer) in self.aux_buffers.iter().enumerate() {
             match &aux_buffer {
                 AuxiliaryBuffer::VertexPoss(buffer) => {
-                    render_pass.set_vertex_buffer((i+1) as u32, buffer.slice(..));
-                },
+                    render_pass.set_vertex_buffer((i + 1) as u32, buffer.slice(..));
+                }
             }
         }
         render_pass.draw(0..self.vertex.nb_vertex(), 0..self.nb_instance.get() as u32);
@@ -130,6 +129,8 @@ impl Pipeline {
         let nb_inst = self.nb_instance.get();
         let elt_size = self.vertex.instance_buffer_label().elt_size();
         let size = NonZeroU64::new(nb_inst * elt_size).expect("Vertex size should not be zero");
-        queue.write_buffer_with(&self.instance_buffer, 0, size).expect("Failed to write the buffer!")
+        queue
+            .write_buffer_with(&self.instance_buffer, 0, size)
+            .expect("Failed to write the buffer!")
     }
 }

@@ -1,4 +1,3 @@
-
 pub struct DepthBuffer {
     // pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,

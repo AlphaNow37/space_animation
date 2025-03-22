@@ -52,7 +52,10 @@ impl VisualDirective for Tiled<Triangle> {
         alloc.alloc_instance(VertexType::TiledTri, *curr_mty, 1);
     }
     fn exec(&self, executor: &mut VisualExecutor) {
-        executor.push_tiled_tri([self.0.0.index(), self.0.1.index(), self.0.2.index()], self.1.index())
+        executor.push_tiled_tri(
+            [self.0.0.index(), self.0.1.index(), self.0.2.index()],
+            self.1.index(),
+        )
     }
 }
 

@@ -1,5 +1,5 @@
-use crate::math::{Vec2, Vec3, Vec4};
 use super::super::{primitives::color::Color, variators::variator::Variator};
+use crate::math::{Vec2, Vec3, Vec4};
 
 macro_rules! make_pack {
     (

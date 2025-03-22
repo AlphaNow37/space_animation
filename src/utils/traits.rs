@@ -1,5 +1,5 @@
-use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign};
 use crate::utils::make_trait_alias;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 pub trait Zero {
     const ZERO: Self;
@@ -39,7 +39,9 @@ pub trait Length: VectorSpace {
     fn length(self) -> f32 {
         return self.length_squared().sqrt();
     }
-    fn with_length(self, length: f32) -> Self {self * length / self.length()}
+    fn with_length(self, length: f32) -> Self {
+        self * length / self.length()
+    }
     fn with_length_squared(self, length: f32) -> Self {
         self * (length / self.length_squared()).sqrt()
     }
@@ -59,14 +61,12 @@ pub trait Length: VectorSpace {
             self * length / len
         }
     }
-    fn normalize(self) -> Self {self / self.length()}
+    fn normalize(self) -> Self {
+        self / self.length()
+    }
     fn normalize_or_zero(self) -> Self {
         let len = self.length();
-        if len == 0. {
-            Self::ZERO
-        } else {
-            self / len
-        }
+        if len == 0. { Self::ZERO } else { self / len }
     }
     fn is_normalized(self) -> bool {
         let l = self.length_squared();
@@ -115,10 +115,10 @@ fn gen_hash_stdhash(v: &impl std::hash::Hash) -> u32 {
             self.0 = (self.0 << 1) ^ bytes.gen_hash();
         }
         fn write_u32(&mut self, i: u32) {
-            self.0 = (self.0 << 1 ) ^ i
+            self.0 = (self.0 << 1) ^ i
         }
         fn write_u64(&mut self, i: u64) {
-            self.0 = ((self.0 << 1 ) ^ (i as u32) << 1) ^ ((i>>32) as u32)
+            self.0 = ((self.0 << 1) ^ (i as u32) << 1) ^ ((i >> 32) as u32)
         }
     }
     let mut h = Hasher(0);
@@ -126,11 +126,11 @@ fn gen_hash_stdhash(v: &impl std::hash::Hash) -> u32 {
     h.0
 }
 
-use std::any::TypeId;
 use crate::{
-    math::{Angle, Vec2, Vec3, Vec4, Mat4, Transform, Dir, Plane, Polynomial},
+    math::{Angle, Dir, Mat4, Plane, Polynomial, Transform, Vec2, Vec3, Vec4},
     world::primitives::{camera::Camera, color::Color},
 };
+use std::any::TypeId;
 impl_hash!(
     self,
     f32: {self.to_bits().into()};

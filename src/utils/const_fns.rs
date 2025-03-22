@@ -1,12 +1,12 @@
-use std::f32::consts::{TAU, PI};
-use std::iter::from_fn;
 use crate::utils::Zero;
+use std::f32::consts::{PI, TAU};
+use std::iter::from_fn;
 
 const fn eval_taylor<const N: usize>(derivatives: [f32; N], x: f32) -> f32 {
     let mut i = 0;
-    let mut powx = 1.;  // x^i
-    let mut fact = 1;  // i!
-    let mut res = 0.;  // sum
+    let mut powx = 1.; // x^i
+    let mut fact = 1; // i!
+    let mut res = 0.; // sum
     while i < N {
         res += derivatives[i] * powx / fact as f32;
         i += 1;
@@ -47,7 +47,7 @@ const FACTORIALS: [usize; PRECOMPUTED_FACTORIAL] = {
     let mut facts = [1; PRECOMPUTED_FACTORIAL];
     let mut i = 2;
     while i < PRECOMPUTED_FACTORIAL {
-        facts[i] = facts[i-1] * i;
+        facts[i] = facts[i - 1] * i;
         i += 1;
     }
     facts
@@ -64,8 +64,8 @@ const BINOMIALS: [[usize; PRECOMPUTED_BINOMIALS]; PRECOMPUTED_BINOMIALS] = {
     while n < PRECOMPUTED_BINOMIALS {
         bins[n][0] = 1;
         let mut k = 1;
-        while k < n+1 {
-            bins[n][k] = bins[n-1][k-1] + bins[n-1][k];
+        while k < n + 1 {
+            bins[n][k] = bins[n - 1][k - 1] + bins[n - 1][k];
             k += 1;
         }
         n += 1;

@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::hash::Hash;
 
-
 pub trait Container<T> {
     fn empty() -> Self;
     fn has(&self, key: &T) -> bool;
@@ -19,7 +18,7 @@ impl<T: PartialEq> Container<T> for Vec<T> {
         self.push(key);
     }
 }
-impl<T: Hash+Eq> Container<T> for HashSet<T> {
+impl<T: Hash + Eq> Container<T> for HashSet<T> {
     fn empty() -> Self {
         HashSet::new()
     }

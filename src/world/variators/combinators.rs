@@ -2,10 +2,9 @@
 use std::ops::Mul;
 // use crate::math::ToAngle;
 
+use super::variator::{Variator, new_typed_variator};
 use crate::utils::VectorSpace;
-use super::variator::{new_typed_variator, Variator};
 use crate::world::world::World;
-
 
 new_typed_variator!(
     [world],
@@ -103,7 +102,10 @@ var_modifier!(
 );
 
 pub struct MulV<A, B>(pub A, pub B);
-impl<A: Variator, B: Variator> Variator for MulV<A, B> where A::Item: Mul<B::Item> {
+impl<A: Variator, B: Variator> Variator for MulV<A, B>
+where
+    A::Item: Mul<B::Item>,
+{
     type Item = <A::Item as Mul<B::Item>>::Output;
     fn update(&self, world: &World) -> Self::Item {
         self.0.update(world) * self.1.update(world)

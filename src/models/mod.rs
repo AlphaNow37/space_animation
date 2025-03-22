@@ -11,6 +11,4 @@ macro_rules! imports {
     };
 }
 
-imports!(
-    axis,
-);
+imports!(axis,);

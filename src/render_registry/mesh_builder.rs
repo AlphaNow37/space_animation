@@ -1,7 +1,9 @@
-use bytemuck::NoUninit;
 use crate::render_registry::materials::{MaterialRef, MaterialType};
+use bytemuck::NoUninit;
 
-use crate::render_registry::vertex::{LocalGlobalMatrixVertex, Polynomial4x4Vertex, TriVertex, VertexType};
+use crate::render_registry::vertex::{
+    LocalGlobalMatrixVertex, Polynomial4x4Vertex, TriVertex, VertexType,
+};
 
 use super::vertex::TiledTriVertex;
 
@@ -33,18 +35,33 @@ impl<'a> VisualExecutor<'a> {
         self.curr_global = global;
     }
     pub fn push_tri(&mut self, pts: [usize; 3]) {
-        self.push(VertexType::Tri, TriVertex::create(pts, self.curr_global, self.curr_mat.index))
+        self.push(
+            VertexType::Tri,
+            TriVertex::create(pts, self.curr_global, self.curr_mat.index),
+        )
     }
     pub fn push_sphere(&mut self, tr: usize) {
-        self.push(VertexType::Sphere, LocalGlobalMatrixVertex::create(tr, self.curr_global, self.curr_mat.index))
+        self.push(
+            VertexType::Sphere,
+            LocalGlobalMatrixVertex::create(tr, self.curr_global, self.curr_mat.index),
+        )
     }
     pub fn push_cube(&mut self, tr: usize) {
-        self.push(VertexType::Cube, LocalGlobalMatrixVertex::create(tr, self.curr_global, self.curr_mat.index))
+        self.push(
+            VertexType::Cube,
+            LocalGlobalMatrixVertex::create(tr, self.curr_global, self.curr_mat.index),
+        )
     }
     pub fn push_poly4x4(&mut self, facts: usize) {
-        self.push(VertexType::Poly4x4, Polynomial4x4Vertex::create(facts, self.curr_global, self.curr_mat.index))
+        self.push(
+            VertexType::Poly4x4,
+            Polynomial4x4Vertex::create(facts, self.curr_global, self.curr_mat.index),
+        )
     }
     pub fn push_tiled_tri(&mut self, pts: [usize; 3], tilematrix: usize) {
-        self.push(VertexType::TiledTri, TiledTriVertex::create(pts, tilematrix, self.curr_global, self.curr_mat.index))
+        self.push(
+            VertexType::TiledTri,
+            TiledTriVertex::create(pts, tilematrix, self.curr_global, self.curr_mat.index),
+        )
     }
 }

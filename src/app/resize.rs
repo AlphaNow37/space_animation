@@ -1,6 +1,6 @@
+use crate::app::App;
 use tracing::{error, info, info_span};
 use winit::event::WindowEvent;
-use crate::app::App;
 
 pub fn check_resize(app: &mut App, event: &WindowEvent) {
     if let WindowEvent::Resized(new_size) = event {

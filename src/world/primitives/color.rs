@@ -1,5 +1,5 @@
-use std::ops::{Add, Mul};
 use crate::math::{Vec3, vec3};
+use std::ops::{Add, Mul};
 
 macro_rules! consts_lch {
     (
@@ -22,27 +22,47 @@ mod conversion {
     use crate::utils::{cos, sin};
 
     fn gamma_to_linear(c: f32) -> f32 {
-        if c >= 0.04045 {((c + 0.055) / 1.055).powf(2.4)} else {c / 12.92}
+        if c >= 0.04045 {
+            ((c + 0.055) / 1.055).powf(2.4)
+        } else {
+            c / 12.92
+        }
     }
     fn srgb_to_rgb(rgb: Vec3) -> Vec3 {
         rgb.map_comp(gamma_to_linear)
     }
     fn rgb_to_lms(rgb: Vec3) -> Vec3 {
         const RGB_TO_LMS: Transform = Transform::from_array([
-            0.4122214708, 0.2119034982, 0.0883024619,
-            0.5363325363, 0.6806995451, 0.2817188376,
-            0.0514459929, 0.1073969566, 0.6299787005,
-            0., 0., 0.,
+            0.4122214708,
+            0.2119034982,
+            0.0883024619,
+            0.5363325363,
+            0.6806995451,
+            0.2817188376,
+            0.0514459929,
+            0.1073969566,
+            0.6299787005,
+            0.,
+            0.,
+            0.,
         ]);
         RGB_TO_LMS.tr_vec(rgb)
     }
     fn lms_to_oklab(lms: Vec3) -> Vec3 {
         let lms_ = lms.map_comp(f32::cbrt);
         const LMS_TO_OKLAB: Transform = Transform::from_array([
-             0.2104542553,  1.9779984951,  0.0259040371,
-             0.7936177850, -2.4285922050,  0.7827717662,
-            -0.0040720468,  0.4505937099, -0.8086757660,
-            0., 0., 0.
+            0.2104542553,
+            1.9779984951,
+            0.0259040371,
+            0.7936177850,
+            -2.4285922050,
+            0.7827717662,
+            -0.0040720468,
+            0.4505937099,
+            -0.8086757660,
+            0.,
+            0.,
+            0.,
         ]);
         LMS_TO_OKLAB.tr_vec(lms_)
     }

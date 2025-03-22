@@ -6,8 +6,8 @@ use crate::world::world::Ref;
 
 pub mod material;
 pub mod shape;
-pub use shape::*;
 pub use material::*;
+pub use shape::*;
 
 pub trait VisualDirective {
     fn exec(&self, executor: &mut VisualExecutor);
@@ -18,9 +18,7 @@ impl VisualDirective for Ref<Transform> {
     fn exec(&self, executor: &mut VisualExecutor) {
         executor.set_global(self.index());
     }
-    fn alloc(&self, _curr_mty: &mut MaterialType, _alloc: &mut BufferAllocator) {
-
-    }
+    fn alloc(&self, _curr_mty: &mut MaterialType, _alloc: &mut BufferAllocator) {}
 }
 
 macro_rules! impl_visual_dir_tuple {
@@ -46,4 +44,4 @@ macro_rules! impl_visual_dir_tuple {
     };
     () => {}
 }
-impl_visual_dir_tuple!(A,B, C, D, E, F, G, );
+impl_visual_dir_tuple!(A, B, C, D, E, F, G,);

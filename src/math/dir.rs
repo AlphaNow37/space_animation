@@ -1,6 +1,6 @@
-use std::ops::{Deref, Neg};
-use crate::math::{Angle, rotate_x, Vec3, Plane};
+use crate::math::{Angle, Plane, Vec3, rotate_x};
 use crate::utils::{Length, Zero};
+use std::ops::{Deref, Neg};
 
 /// A normalized vector
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -18,7 +18,7 @@ impl Dir {
     pub fn any_ortho(self) -> Self {
         match Plane::from_normal(Dir::Z).project(self.0).dir() {
             None => Dir::X,
-            Some(v) => Self(rotate_x(Angle::from_deg(90.)).tr_vec(v.0))
+            Some(v) => Self(rotate_x(Angle::from_deg(90.)).tr_vec(v.0)),
         }
     }
 }
@@ -31,7 +31,9 @@ impl TryFrom<Option<Dir>> for Dir {
 impl TryFrom<Vec3> for Dir {
     type Error = ();
     fn try_from(value: Vec3) -> Result<Self, Self::Error> {
-        (value != Vec3::ZERO).then(|| Self(value.normalize())).ok_or(())
+        (value != Vec3::ZERO)
+            .then(|| Self(value.normalize()))
+            .ok_or(())
     }
 }
 impl Deref for Dir {

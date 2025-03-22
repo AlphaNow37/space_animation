@@ -1,10 +1,10 @@
+use crate::app::App;
+use crate::render_registry::registry::PipelinesRegistry;
 use std::sync::Arc;
 use tracing::{info_span, warn};
 use winit::dpi::{LogicalSize, Size};
 use winit::event_loop::ActiveEventLoop;
 use winit::window::Window;
-use crate::app::App;
-use crate::render_registry::registry::PipelinesRegistry;
 
 pub struct SurfaceHolder {
     pub window: Arc<Window>,
@@ -22,12 +22,20 @@ impl SurfaceHolder {
     pub fn new(app: &App, event_loop: &ActiveEventLoop) -> Self {
         let _span = info_span!("create_win_surf");
 
-        let window = Arc::new(event_loop.create_window(Window::default_attributes()).unwrap());
+        let window = Arc::new(
+            event_loop
+                .create_window(Window::default_attributes())
+                .unwrap(),
+        );
         cfg_window(&window);
 
         let surface = app.instance.create_surface(window.clone()).unwrap();
         let caps = surface.get_capabilities(&app.adapter);
-        let format = caps.formats.iter().find(|f| f.is_srgb()).cloned()
+        let format = caps
+            .formats
+            .iter()
+            .find(|f| f.is_srgb())
+            .cloned()
             .unwrap_or_else(|| {
                 warn!("Can't find any supported sRGB format");
                 caps.formats[0]

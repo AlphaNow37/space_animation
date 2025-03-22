@@ -1,23 +1,42 @@
+use crate::utils::Zero;
 use std::f32::consts::TAU;
 use std::ops::{Add, Div, Mul, Neg, Sub};
-use crate::utils::Zero;
-
 
 /// A radian angle
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Default)]
 pub struct Angle(f32);
 #[allow(dead_code)]
 impl Angle {
-    pub const fn from_rad(rad: f32) -> Self {Self(rad)}
-    pub fn from_deg(deg: f32) -> Self {Self(deg.to_radians())}
-    pub fn from_turn(turn: f32) -> Self {Self(turn * TAU)}
-    pub const fn rad(self) -> f32 {self.0}
-    pub fn deg(self) -> f32 {self.0.to_degrees()}
-    pub fn turn(self) -> f32 {self.0 / TAU}
-    pub fn cos(self) -> f32 {self.0.cos()}
-    pub fn sin(self) -> f32 {self.0.sin()}
-    pub fn tan(self) -> f32 {self.0.tan()}
-    pub fn cotan(self) -> f32 {1./self.0.tan()}
+    pub const fn from_rad(rad: f32) -> Self {
+        Self(rad)
+    }
+    pub fn from_deg(deg: f32) -> Self {
+        Self(deg.to_radians())
+    }
+    pub fn from_turn(turn: f32) -> Self {
+        Self(turn * TAU)
+    }
+    pub const fn rad(self) -> f32 {
+        self.0
+    }
+    pub fn deg(self) -> f32 {
+        self.0.to_degrees()
+    }
+    pub fn turn(self) -> f32 {
+        self.0 / TAU
+    }
+    pub fn cos(self) -> f32 {
+        self.0.cos()
+    }
+    pub fn sin(self) -> f32 {
+        self.0.sin()
+    }
+    pub fn tan(self) -> f32 {
+        self.0.tan()
+    }
+    pub fn cotan(self) -> f32 {
+        1. / self.0.tan()
+    }
 }
 
 impl Add for Angle {

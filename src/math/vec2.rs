@@ -1,8 +1,8 @@
-use std::fmt::{Debug, Display, Formatter};
-use std::simd::num::SimdFloat;
-use std::simd::Simd;
+use crate::utils::{Length, impl_vector_space_simd};
 use bytemuck::{Pod, Zeroable};
-use crate::utils::{impl_vector_space_simd, Length};
+use std::fmt::{Debug, Display, Formatter};
+use std::simd::Simd;
+use std::simd::num::SimdFloat;
 
 pub fn vec2(x: f32, y: f32) -> Vec2 {
     Vec2::new(x, y)
@@ -35,7 +35,7 @@ impl Vec2 {
         self.0.to_array()
     }
 }
-impl_vector_space_simd!(Vec2 (2));
+impl_vector_space_simd!(Vec2(2));
 impl Length for Vec2 {
     fn length_squared(self) -> f32 {
         self.dot(self)

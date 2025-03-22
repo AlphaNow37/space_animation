@@ -1,7 +1,7 @@
-use bytemuck::Pod;
 use crate::math::{Dir, Polynomial, Transform, Vec2, Vec3, Vec4};
 use crate::utils::Zero;
 use crate::world::primitives::color::Color;
+use bytemuck::Pod;
 
 pub trait AsStrorageStruct {
     type S: Pod;
@@ -51,14 +51,18 @@ impl AsStrorageStruct for Transform {
         self.to_mat4().to_array()
     }
 }
-impl<T: AsStrorageStruct+Copy, const N: usize, const M: usize> AsStrorageStruct for Polynomial<T, N, M> where T::S: Zero {
+impl<T: AsStrorageStruct + Copy, const N: usize, const M: usize> AsStrorageStruct
+    for Polynomial<T, N, M>
+where
+    T::S: Zero,
+{
     type S = [[T::S; N]; M];
     fn as_strorage_struct(&self) -> Self::S {
         self.map_comp(|t| t.as_strorage_struct()).0
     }
 }
 
-impl<A: AsStrorageStruct, B: AsStrorageStruct<S=A::S>> AsStrorageStruct for (A, B) {
+impl<A: AsStrorageStruct, B: AsStrorageStruct<S = A::S>> AsStrorageStruct for (A, B) {
     type S = [A::S; 2];
     fn as_strorage_struct(&self) -> Self::S {
         [self.0.as_strorage_struct(), self.1.as_strorage_struct()]

@@ -1,6 +1,6 @@
+use crate::utils::array_key;
 use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::keyboard::{KeyCode, PhysicalKey};
-use crate::utils::array_key;
 
 macro_rules! make_folder {
     (
@@ -109,7 +109,9 @@ impl KeyState {
         }
     }
     fn process(&mut self, key: KeyCode, state: ElementState) {
-        if key != self.code {return;}
+        if key != self.code {
+            return;
+        }
         self.press_state = state.into();
     }
     fn next_frame(&mut self) {
@@ -175,14 +177,16 @@ impl KeyBinds {
     }
     pub fn process(&mut self, event: &WindowEvent) {
         if let WindowEvent::KeyboardInput {
-            event: KeyEvent {
-                physical_key: PhysicalKey::Code(code),
-                state,
-                repeat: false,
-                ..
-            },
+            event:
+                KeyEvent {
+                    physical_key: PhysicalKey::Code(code),
+                    state,
+                    repeat: false,
+                    ..
+                },
             ..
-        } = event {
+        } = event
+        {
             self.bind_map(&|b| b.process(*code, *state))
         }
         if let WindowEvent::RedrawRequested = event {
@@ -194,14 +198,16 @@ impl KeyBinds {
     }
     pub fn base_binds() -> Self {
         Self {
-            camera_moves: MoveKey::ARRAY.map(|k| KeyBind::new(PressState::Active, vec![match k {
-                MoveKey::Left => KeyCode::KeyA,
-                MoveKey::Right => KeyCode::KeyD,
-                MoveKey::Backward => KeyCode::KeyS,
-                MoveKey::Forward => KeyCode::KeyW,
-                MoveKey::Down => KeyCode::KeyQ,
-                MoveKey::Up => KeyCode::KeyE,
-            }])),
+            camera_moves: MoveKey::ARRAY.map(|k| {
+                KeyBind::new(PressState::Active, vec![match k {
+                    MoveKey::Left => KeyCode::KeyA,
+                    MoveKey::Right => KeyCode::KeyD,
+                    MoveKey::Backward => KeyCode::KeyS,
+                    MoveKey::Forward => KeyCode::KeyW,
+                    MoveKey::Down => KeyCode::KeyQ,
+                    MoveKey::Up => KeyCode::KeyE,
+                }])
+            }),
             camera_change: CameraChanges::new(),
             window_debug: WindowDebug::new(),
         }

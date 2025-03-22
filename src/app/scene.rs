@@ -1,11 +1,8 @@
-use tracing::{info_span, info};
 use crate::{
-    render_registry::{
-        alloc::BufferAllocator,
-        registry::PipelinesRegistry,
-    },
+    render_registry::{alloc::BufferAllocator, registry::PipelinesRegistry},
     world::world::{World, WorldUpdateCtx},
 };
+use tracing::{info, info_span};
 
 use super::camera::ManualCamera;
 
@@ -28,10 +25,7 @@ impl Scene {
         let mut alloc = BufferAllocator::new();
         world.allocs(&mut alloc);
 
-        Scene {
-            alloc,
-            world,
-        }
+        Scene { alloc, world }
     }
     pub fn update(
         &mut self,
@@ -45,28 +39,29 @@ impl Scene {
         let mut instance_views = registry.views(queue);
         let mut store_views = registry.store_bindings.views(queue);
         let ctx = WorldUpdateCtx {
-            instance_bufs: instance_views.each_mut()
-                .map(|r|
-                    r.each_mut()
-                        .map(|view_opt|
-                            view_opt
-                                .as_mut()
-                                .map(|view|
-                                    bytemuck::cast_slice_mut(&mut *view)).unwrap_or(&mut [])
-                        )
-                ),
-            stores: store_views.each_mut()
-                .map(|v|
-                    v.as_deref_mut()
-                        .map(|view| bytemuck::cast_slice_mut(view))
+            instance_bufs: instance_views.each_mut().map(|r| {
+                r.each_mut().map(|view_opt| {
+                    view_opt
+                        .as_mut()
+                        .map(|view| bytemuck::cast_slice_mut(&mut *view))
                         .unwrap_or(&mut [])
-                ),
+                })
+            }),
+            stores: store_views.each_mut().map(|v| {
+                v.as_deref_mut()
+                    .map(|view| bytemuck::cast_slice_mut(view))
+                    .unwrap_or(&mut [])
+            }),
             cam: cam.cam,
             time,
         };
         self.world.update(ctx);
         let wcam = self.world.get_cam(cam.current_cam_idx);
-        registry.base_bindings.set_camera(queue, wcam.matrix(cam.aspect_ratio()));
-        registry.base_bindings.set_camera_transform(queue, wcam.pos.to_mat4());
+        registry
+            .base_bindings
+            .set_camera(queue, wcam.matrix(cam.aspect_ratio()));
+        registry
+            .base_bindings
+            .set_camera_transform(queue, wcam.pos.to_mat4());
     }
 }

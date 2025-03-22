@@ -3,14 +3,14 @@
 use crate::app::App;
 
 mod app;
+mod content;
+mod datastrutures;
 mod logger;
-mod world;
+mod math;
+mod models;
 mod render_registry;
 mod utils;
-mod content;
-mod models;
-mod math;
-mod datastrutures;
+mod world;
 
 fn main() {
     logger::init_logger();
