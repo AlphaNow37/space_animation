@@ -10,6 +10,7 @@ mod utils;
 mod content;
 mod models;
 mod math;
+mod datastrutures;
 
 fn main() {
     logger::init_logger();

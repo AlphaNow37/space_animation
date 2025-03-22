@@ -9,7 +9,7 @@ pub fn check_resize(app: &mut App, event: &WindowEvent) {
             info!("Zero size: don't resize");
             return;
         }
-        if let Some(ref mut win) = &mut app.window {
+        if let Some(win) = &mut app.window {
             info!("Resizing window to {}:{}", new_size.width, new_size.height);
             win.window.request_redraw();
             app.camera.on_resize(*new_size);

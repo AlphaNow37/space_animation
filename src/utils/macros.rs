@@ -130,3 +130,13 @@ pub(crate) use make_trait_alias;
 //     };
 // }
 // pub(crate) use forget;
+
+macro_rules! make_deref {
+    ($s: ty, $t: ty) => {
+        impl std::ops::Deref for $s {
+            type Target = $t;
+            fn deref(&self) -> Self::Target {self.0}
+        }
+    };
+}
+pub(crate) use make_deref;

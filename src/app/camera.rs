@@ -44,7 +44,7 @@ impl ManualCamera {
         info!("Reseted current camera to 0");
     }
     fn rng_current(&mut self) {
-        self.current_cam_idx = rand::thread_rng().gen_range(0..100_000_000_000);
+        self.current_cam_idx = rand::rng().random::<i64>() as isize;
         info!("Randomed current camera to {}", self.current_cam_idx);
     }
     fn next_current(&mut self, off: isize) {
