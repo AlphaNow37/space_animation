@@ -149,12 +149,72 @@ impl LinkGraph {
 
 #[derive(Clone)]
 pub struct GridGraph {
-    offsets: Vec<usize>,
+    // Step of each direction, then the total size
+    steps_size: Vec<usize>,
     wrapping: bool,
 }
 impl Graph<usize> for GridGraph {
     fn iter_neighboors(&self, node: usize) -> impl Iterator<Item = usize> {
-        self.offsets.iter().map(|off| 0)
+        (0..self.steps_size.len() - 1)
+            .map(move |i| {
+                let step = self.steps_size[i];
+                let next_size = self.steps_size[i + 1];
+                [
+                    if node % next_size >= step {
+                        Some(node - step)
+                    } else if self.wrapping {
+                        Some(node + next_size - step)
+                    } else {
+                        None
+                    },
+                    if (node % next_size) + step < next_size {
+                        Some(node + step)
+                    } else if self.wrapping {
+                        Some(node + step - next_size)
+                    } else {
+                        None
+                    },
+                ]
+            })
+            .flatten()
+            .filter_map(|e| e)
+    }
+}
+
+impl GridGraph {
+    pub fn from_dims(dims: Vec<usize>, wrapping: bool) -> Self {
+        let mut steps = vec![0; dims.len() + 1];
+        steps[0] = 1;
+        for i in 0..dims.len() {
+            steps[i + 1] = steps[i] * dims[i]
+        }
+        Self {
+            steps_size: steps,
+            wrapping,
+        }
+    }
+    pub fn to_link_graph(&self) -> LinkGraph {
+        LinkGraph::from_fn(self.node_count(), |i| {
+            self.iter_neighboors(i).collect()
+        })
+    }
+    pub fn node_count(&self) -> usize {
+        *self.steps_size.last().unwrap()
+    }
+    pub fn id_of_coords(&self, coords: &[usize]) -> usize {
+        assert_eq!(coords.len(), self.steps_size.len()-1);
+        let mut id = 0;
+        for i in 0..coords.len() {
+            assert!(coords[i] * self.steps_size[i] < self.steps_size[i+1], "Out of bound coords");
+            id += coords[i] * self.steps_size[i];
+        }
+        id
+    }
+    pub fn coords_of_id_in(&self, id: usize, res: &mut [usize]) {
+        assert_eq!(res.len(), self.steps_size.len()-1);
+        for i in 0..res.len() {
+            res[i] = (id % self.steps_size[i+1]) / self.steps_size[i];
+        }
     }
 }
 
