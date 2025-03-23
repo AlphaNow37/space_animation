@@ -1,5 +1,5 @@
 use crate::math::{Angle, Dir, Mat4, Vec3};
-use crate::utils::impl_vector_space_simd;
+use crate::utils::{Length, impl_vector_space_simd};
 use std::fmt::{Debug, Display, Formatter};
 use std::simd::num::SimdFloat;
 use std::simd::prelude::SimdPartialOrd;
@@ -143,6 +143,21 @@ impl Transform {
     }
     pub fn from_rotate_around(axis: impl TryInto<Dir>, angle: Angle) -> Self {
         Self::ID.rotate_around(axis, angle)
+    }
+    pub fn from_z_looking_at(axis: impl TryInto<Dir>) -> Self {
+        let Result::<Dir, _>::Ok(dir) = axis.try_into() else {
+            return Self::ZERO;
+        };
+        let mut normal = dir.cross(Vec3::X);
+        if normal.is_approx_zero() {
+            normal = dir.cross(Vec3::Y);
+        }
+        let last_normal = normal.cross(*dir);
+        Self::from_cols(
+            last_normal.normalize_or_zero(),
+            normal.normalize_or_zero(),
+            *dir,
+        )
     }
 
     pub fn trans(self) -> Vec3 {

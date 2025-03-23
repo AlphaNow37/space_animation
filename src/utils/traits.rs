@@ -72,6 +72,9 @@ pub trait Length: VectorSpace {
         let l = self.length_squared();
         0.99 < l && l < 1.01
     }
+    fn is_approx_zero(self) -> bool {
+        self.length_squared() < 0.0001
+    }
 }
 
 // pub trait VectorSpace: Sized+Add<Output=Self> + Sub<Output=Self> + Mul<f32, Output=Self> + Div<f32, Output=Self> + Copy + Zero {
