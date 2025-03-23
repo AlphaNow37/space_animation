@@ -110,6 +110,26 @@ fn vs_sphere(
     return out;
 }
 
+@vertex
+fn vs_pipe(
+    in_pos: Pos3Vertex,
+    @location(1) local_global_material: vec3<u32>,
+) -> FragInput {
+    var out: FragInput;
+
+    let local: mat4x4<f32> = matrices[local_global_material.x];
+    let global: mat4x4<f32> = matrices[local_global_material.y];
+
+    let normal = global * local * vec4(in_pos.pos.xy, 0., 0.);
+    let local_pos = local * vec4(in_pos.pos.xyz, 1.);
+    let global_pos = global * local_pos;
+    out.uv = local_pos.xyz;
+    out.clip_position = camera * global_pos;
+    out.delta_pos = global_pos.xyz - camera_transform[3].xyz;
+    out.normal = normal.xyz / length(normal.xyz);
+    out.mat_id = local_global_material.z;
+    return out;
+}
 
 @vertex
 fn vs_cube(

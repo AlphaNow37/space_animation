@@ -1,8 +1,6 @@
-use crate::render_registry::prefabs::{CIRCLE_POS, FLAT_POS, VertexPoss};
+use crate::render_registry::prefabs::{CIRCLE_POS, FLAT_POS, VertexPoss, PIPE_POS, TILED_TRI_POS};
 use crate::utils::array_key;
 use bytemuck::{Pod, Zeroable};
-
-use super::prefabs::TILED_TRI_POS;
 
 // Bindings
 // 0 -> pos_global
@@ -133,6 +131,7 @@ array_key!(
         Poly4x4,
         Cube,
         TiledTri,
+        Pipe
     }
 );
 impl VertexType {
@@ -143,6 +142,7 @@ impl VertexType {
             Self::Poly4x4 => "vs_poly4x4",
             Self::Cube => "vs_cube",
             Self::TiledTri => "vs_tiled_tri",
+            Self::Pipe => "vs_pipe",
         }
     }
     pub fn instance_buffer_label(&self) -> VertexBufferLabel {
@@ -152,6 +152,7 @@ impl VertexType {
             Self::Poly4x4 => VertexBufferLabel::Polynomial4x4,
             Self::Cube => VertexBufferLabel::Cube,
             Self::TiledTri => VertexBufferLabel::TiledTri,
+            Self::Pipe => VertexBufferLabel::Pipe,
         }
     }
     pub fn aux_buffers(&self) -> Vec<AuxiliaryBufferDesc> {
@@ -160,6 +161,7 @@ impl VertexType {
             Self::Poly4x4 => vec![AuxiliaryBufferDesc::VertexPoss(*FLAT_POS)],
             Self::Cube | Self::Tri => Vec::new(),
             Self::TiledTri => vec![AuxiliaryBufferDesc::VertexPoss(*TILED_TRI_POS)],
+            Self::Pipe => vec![AuxiliaryBufferDesc::VertexPoss(*PIPE_POS)],
         }
     }
     pub fn nb_vertex(&self) -> u32 {
@@ -169,6 +171,7 @@ impl VertexType {
             Self::Tri => 3,
             Self::Cube => 36,
             Self::TiledTri => TILED_TRI_POS.len,
+            Self::Pipe => PIPE_POS.len,
         }
     }
 }
@@ -183,12 +186,13 @@ pub enum VertexBufferLabel {
     TilePos,
     Cube,
     TiledTri,
+    Pipe,
 }
 impl VertexBufferLabel {
     pub fn elt_size(&self) -> wgpu::BufferAddress {
         match self {
             Self::Tri => TriVertex::SIZE,
-            Self::Sphere | Self::Cube => LocalGlobalMatrixVertex::SIZE,
+            Self::Sphere | Self::Cube | Self::Pipe => LocalGlobalMatrixVertex::SIZE,
             Self::Polynomial4x4 => Polynomial4x4Vertex::SIZE,
             Self::TiledTri => TiledTriVertex::SIZE,
             Self::Pos3 => Pos3Vertex::SIZE,
@@ -199,7 +203,7 @@ impl VertexBufferLabel {
     pub fn attrs(&self) -> &'static [wgpu::VertexAttribute] {
         match self {
             Self::Tri => TriVertex::ATTRS,
-            Self::Sphere | Self::Cube => LocalGlobalMatrixVertex::ATTRS,
+            Self::Sphere | Self::Cube | Self::Pipe => LocalGlobalMatrixVertex::ATTRS,
             Self::Polynomial4x4 => Polynomial4x4Vertex::ATTRS,
             Self::TiledTri => TiledTriVertex::ATTRS,
             Self::Pos3 => Pos3Vertex::ATTRS,

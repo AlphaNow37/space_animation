@@ -59,6 +59,17 @@ impl VisualDirective for Tiled<Triangle> {
     }
 }
 
+/// Pipe going in the z direction, from -1 to 1
+pub struct Pipe(pub Ref<Transform>);
+impl VisualDirective for Pipe {
+    fn alloc(&self, curr_mty: &mut MaterialType, alloc: &mut BufferAllocator) {
+        alloc.alloc_instance(VertexType::Pipe, *curr_mty, 1);
+    }
+    fn exec(&self, executor: &mut VisualExecutor) {
+        executor.push_pipe(self.0.index())
+    }
+}
+
 // pub struct Pyramid<A, S>(pub A, pub S);
 // impl<A: TriShape+BorderShape, S: Variator<Item=Vec3>> TriShape for Pyramid<A, S> {
 //     // const NB_INDEX: usize = A::NB_INDEX + 3*A::NB_BORDER_SEGMENT;

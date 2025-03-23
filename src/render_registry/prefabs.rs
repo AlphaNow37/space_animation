@@ -1,6 +1,7 @@
 use crate::math::Vec3;
 use crate::render_registry::vertex::{Pos2Vertex, Pos3Vertex, VertexBufferLabel};
 use crate::utils::{Length, VectorSpace};
+use std::f32::consts::TAU;
 use std::sync::LazyLock;
 use tracing::info;
 
@@ -121,6 +122,36 @@ pub static FLAT_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
     VertexPoss {
         len: vs.len() as u32,
         label: VertexBufferLabel::Pos2,
+        content: bytemuck::cast_slice(vs.leak()),
+    }
+});
+
+const PIPE_SUBDIVISIONS: usize = 16;
+pub static PIPE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
+    let vs = (0..PIPE_SUBDIVISIONS)
+        .flat_map(|i| {
+            [
+                (i, -1.),
+                (i, 1.),
+                (i + 1, -1.),
+                (i, 1.),
+                (i + 1, -1.),
+                (i + 1, 1.),
+            ]
+        })
+        .map(|(i, z)| ((i as f32 / PIPE_SUBDIVISIONS as f32) * TAU, z))
+        .map(|(angle, z)| Pos3Vertex {
+            pos: [
+                angle.cos(),
+                angle.sin(),
+                z,
+            ],
+        })
+        .collect::<Vec<_>>();
+
+    VertexPoss {
+        len: vs.len() as u32,
+        label: VertexBufferLabel::Pos3,
         content: bytemuck::cast_slice(vs.leak()),
     }
 });

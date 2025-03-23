@@ -64,4 +64,10 @@ impl<'a> VisualExecutor<'a> {
             TiledTriVertex::create(pts, tilematrix, self.curr_global, self.curr_mat.index),
         )
     }
+    pub fn push_pipe(&mut self, tr: usize) {
+        self.push(
+            VertexType::Pipe,
+            LocalGlobalMatrixVertex::create(tr, self.curr_global, self.curr_mat.index),
+        )
+    }
 }
