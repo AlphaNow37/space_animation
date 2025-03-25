@@ -59,7 +59,7 @@ impl VisualDirective for Tiled<Triangle> {
     }
 }
 
-/// Pipe going in the z direction, from -1 to 1
+/// Pipe going in the z direction, from 0 to 1
 pub struct Pipe(pub Ref<Transform>);
 impl VisualDirective for Pipe {
     fn alloc(&self, curr_mty: &mut MaterialType, alloc: &mut BufferAllocator) {

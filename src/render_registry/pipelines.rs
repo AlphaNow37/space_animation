@@ -54,7 +54,7 @@ impl Pipeline {
                     buffers_descriptor.push(wgpu::VertexBufferLayout {
                         step_mode: wgpu::VertexStepMode::Vertex,
                         array_stride: label.elt_size() as wgpu::BufferAddress,
-                        attributes: dbg!(label.attrs()),
+                        attributes: label.attrs(),
                     });
                     aux_buffers.push(AuxiliaryBuffer::VertexPoss(device.create_buffer_init(
                         &wgpu::util::BufferInitDescriptor {

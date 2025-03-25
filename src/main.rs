@@ -11,6 +11,7 @@ mod models;
 mod render_registry;
 mod utils;
 mod world;
+mod settings;
 
 fn main() {
     logger::init_logger();

@@ -6,6 +6,7 @@ use std::sync::LazyLock;
 use tracing::info;
 
 use super::vertex::{TilePosVertex, VertexType};
+use crate::settings::perf_level;
 
 #[derive(Clone, Copy, Debug)]
 pub struct VertexPoss {
@@ -55,9 +56,15 @@ pub struct VertexPoss {
 //         .collect::<Vec<_>>();
 //     (vs.len() as u32, bytemuck::cast_slice(vs.leak()))
 // });
-
-const CIRCLE_ITERATIONS: usize = 3;
 pub static CIRCLE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
+    let iterations = perf_level!(
+        2
+        => HighPerf
+        3
+        => AveragePerf
+        4
+    );
+
     let mut vertexes = vec![Vec3::X, -Vec3::X, Vec3::Y, -Vec3::Y, Vec3::Z, -Vec3::Z];
     let mut idxs = vec![
         [0, 2, 4],
@@ -70,7 +77,7 @@ pub static CIRCLE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
         [1, 3, 5],
     ];
     let mut new_idxs = vec![];
-    for _ in 0..CIRCLE_ITERATIONS {
+    for _ in 0..iterations {
         for &[a, b, c] in &idxs {
             let (va, vb, vc) = (vertexes[a], vertexes[b], vertexes[c]);
             let (vmida, vmidb, vmidc) = (vb.mid(vc), va.mid(vc), va.mid(vb));
@@ -97,10 +104,18 @@ pub static CIRCLE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
     }
 });
 
-const FLAT_SUBDIVISIONS: usize = 10;
 pub static FLAT_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
-    let vs = (0..FLAT_SUBDIVISIONS)
-        .flat_map(|x| (0..FLAT_SUBDIVISIONS).map(move |y| (x, y)))
+    let subdivisions = perf_level!(
+        6
+        => HighPerf
+        10
+        => AveragePerf
+        12
+        => HighDetails
+        16
+    );
+    let vs = (0..subdivisions)
+        .flat_map(|x| (0..subdivisions).map(move |y| (x, y)))
         .flat_map(|(x, y)| {
             [
                 (x, y),
@@ -113,8 +128,8 @@ pub static FLAT_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
         })
         .map(|(x, y)| Pos2Vertex {
             pos: [
-                x as f32 / FLAT_SUBDIVISIONS as f32,
-                y as f32 / FLAT_SUBDIVISIONS as f32,
+                x as f32 / subdivisions as f32,
+                y as f32 / subdivisions as f32,
             ],
         })
         .collect::<Vec<_>>();
@@ -126,26 +141,31 @@ pub static FLAT_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
     }
 });
 
-const PIPE_SUBDIVISIONS: usize = 16;
 pub static PIPE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
-    let vs = (0..PIPE_SUBDIVISIONS)
+    let subdivisions = perf_level!(
+        6
+        => HighPerf
+        12
+        => AveragePerf
+        20
+        => HighDetails
+        24
+    );
+
+    let vs = (0..subdivisions)
         .flat_map(|i| {
             [
-                (i, -1.),
+                (i, 0.),
                 (i, 1.),
-                (i + 1, -1.),
+                (i + 1, 0.),
                 (i, 1.),
-                (i + 1, -1.),
+                (i + 1, 0.),
                 (i + 1, 1.),
             ]
         })
-        .map(|(i, z)| ((i as f32 / PIPE_SUBDIVISIONS as f32) * TAU, z))
+        .map(|(i, z)| ((i as f32 / subdivisions as f32) * TAU, z))
         .map(|(angle, z)| Pos3Vertex {
-            pos: [
-                angle.cos(),
-                angle.sin(),
-                z,
-            ],
+            pos: [angle.cos(), angle.sin(), z],
         })
         .collect::<Vec<_>>();
 
