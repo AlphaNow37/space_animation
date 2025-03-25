@@ -9,7 +9,7 @@ pub fn check_render(app: &mut App, event: &WindowEvent) {
     let _span = info_span!("render").entered();
     // info!("Rendering");
 
-    let Some(holder) = &app.window else {
+    let Some(holder) = &mut app.window else {
         error!("No window while rendering");
         return;
     };
@@ -23,7 +23,7 @@ pub fn check_render(app: &mut App, event: &WindowEvent) {
         .create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render encoder"),
         });
-    holder.registry.render(&mut encoder, &view);
+    holder.registry.render(&mut encoder, &view, app.key_binds.window_debug.show_wires.is_active());
     app.queue.submit([encoder.finish()]);
     output.present();
 }

@@ -31,6 +31,13 @@ fn get_adapter(surf: Option<&wgpu::Surface>, inst: &wgpu::Instance) -> wgpu::Ada
     pollster::block_on(inst.request_adapter(&options)).unwrap()
 }
 
+fn fetch_usable_features(adapter: &wgpu::Adapter) -> wgpu::Features {
+    let mut features = wgpu::Features::default();
+    let supported = adapter.features();
+    features |= supported & wgpu::Features::POLYGON_MODE_LINE;
+    features
+}
+
 fn get_device_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
     let desc = wgpu::DeviceDescriptor {
         label: Some("Device get desc"),
@@ -39,6 +46,7 @@ fn get_device_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
             // max_vertex_attributes: 23,
             ..Default::default()
         },
+        required_features: fetch_usable_features(adapter),
         ..Default::default()
     };
     pollster::block_on(adapter.request_device(&desc, None)).unwrap()

@@ -21,6 +21,7 @@ fn shader_sources() -> &'static str {
     )
 }
 
+#[derive(Clone, Debug)]
 pub struct Shaders {
     shaders: wgpu::ShaderModule,
 }

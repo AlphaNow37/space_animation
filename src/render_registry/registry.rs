@@ -42,7 +42,7 @@ impl PipelinesRegistry {
                         surf_config,
                         &base_bindings.layout,
                         &store_bindings.layout,
-                        &shaders,
+                        shaders.clone(),
                         size,
                     )
                 })
@@ -61,7 +61,12 @@ impl PipelinesRegistry {
     pub fn on_resize(&mut self, device: &wgpu::Device, surf_config: &wgpu::SurfaceConfiguration) {
         self.depth_buffer = DepthBuffer::new(device, surf_config);
     }
-    pub fn render(&self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView) {
+    pub fn render(
+        &mut self,
+        encoder: &mut wgpu::CommandEncoder,
+        view: &wgpu::TextureView,
+        render_wires: bool,
+    ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -85,10 +90,10 @@ impl PipelinesRegistry {
         self.base_bindings.put(&mut render_pass);
         self.store_bindings.put(&mut render_pass);
 
-        for r in &self.pipes {
+        for r in &mut self.pipes {
             for maybe_pipe in r {
                 if let Some(pipe) = maybe_pipe {
-                    pipe.render(&mut render_pass)
+                    pipe.render(&mut render_pass, render_wires);
                 }
             }
         }

@@ -35,16 +35,17 @@ macro_rules! make_folder {
 }
 
 make_folder!(CameraChanges:
-    next_cam = KeyBind::new(PressState::Pressed, vec![KeyCode::Semicolon]);
-    prev_cam = KeyBind::new(PressState::Pressed, vec![KeyCode::KeyL]);
-    rng_cam = KeyBind::new(PressState::Pressed, vec![KeyCode::KeyP]);
-    reset_cam = KeyBind::new(PressState::Pressed, vec![KeyCode::KeyO]);
-    reset_pos = KeyBind::new(PressState::Pressed, vec![KeyCode::KeyR]);
-    toggle_lock = KeyBind::new(PressState::Pressed, vec![KeyCode::KeyU]);
+    next_cam = KeyBind::new(Trigger::Pressed, vec![KeyCode::Semicolon]);
+    prev_cam = KeyBind::new(Trigger::Pressed, vec![KeyCode::KeyL]);
+    rng_cam = KeyBind::new(Trigger::Pressed, vec![KeyCode::KeyP]);
+    reset_cam = KeyBind::new(Trigger::Pressed, vec![KeyCode::KeyO]);
+    reset_pos = KeyBind::new(Trigger::Pressed, vec![KeyCode::KeyR]);
+    toggle_lock = KeyBind::new(Trigger::Pressed, vec![KeyCode::KeyU]);
 );
 
 make_folder!(WindowDebug:
-    show_fps = KeyBind::new(PressState::Active, vec![KeyCode::F3, KeyCode::KeyX])
+    show_fps = KeyBind::new(Trigger::AllActive, vec![KeyCode::F3, KeyCode::KeyX]);
+    show_wires = KeyBind::new(Trigger::Toggle(false), vec![KeyCode::F3, KeyCode::KeyG]);
 );
 
 array_key!(
@@ -57,6 +58,7 @@ array_key!(
         Backward,
     }
 );
+
 #[derive(Debug, Clone)]
 struct PressResume {
     pub any_pressed: bool,
@@ -124,29 +126,30 @@ impl KeyState {
     }
 }
 
+#[derive(Clone, Debug)]
+enum Trigger {
+    AllActive,
+    AllInactive,
+    Pressed,
+    Released,
+    Toggle(bool),
+}
+
 #[derive(Debug, Clone)]
 pub struct KeyBind {
     keys: Vec<KeyState>,
-    trigger: PressState,
+    trigger: Trigger,
+    is_active: bool,
 }
 impl KeyBind {
-    fn new(trigger: PressState, keys: Vec<KeyCode>) -> Self {
+    fn new(trigger: Trigger, keys: Vec<KeyCode>) -> Self {
         Self {
             keys: keys.into_iter().map(|k| KeyState::new(k)).collect(),
             trigger,
+            is_active: false,
         }
     }
-    fn process(&mut self, key: KeyCode, state: ElementState) {
-        for k in &mut self.keys {
-            k.process(key, state)
-        }
-    }
-    fn next_frame(&mut self) {
-        for k in &mut self.keys {
-            k.next_frame()
-        }
-    }
-    pub fn is_active(&self) -> bool {
+    fn update_is_active(&mut self) {
         let mut resume = PressResume {
             any_pressed: false,
             any_released: false,
@@ -156,12 +159,30 @@ impl KeyBind {
         for k in &self.keys {
             k.add_on_resume(&mut resume);
         }
-        match self.trigger {
-            PressState::Pressed => resume.any_pressed & resume.all_active,
-            PressState::Active => resume.all_active,
-            PressState::Released => resume.any_released & resume.all_active,
-            PressState::Inactive => resume.all_inactive,
+        self.is_active = match &mut self.trigger {
+            Trigger::AllActive => resume.all_active,
+            Trigger::AllInactive => resume.all_inactive,
+            Trigger::Pressed => resume.any_pressed & resume.all_active,
+            Trigger::Released => resume.any_released & resume.all_active,
+            Trigger::Toggle(state) => {
+                *state ^= resume.any_pressed & resume.all_active;
+                *state
+            }
         }
+    }
+    fn process(&mut self, key: KeyCode, state: ElementState) {
+        for k in &mut self.keys {
+            k.process(key, state)
+        }
+    }
+    fn next_frame(&mut self) {
+        self.update_is_active();
+        for k in &mut self.keys {
+            k.next_frame()
+        }
+    }
+    pub fn is_active(&self) -> bool {
+        self.is_active
     }
 }
 
@@ -202,7 +223,7 @@ impl KeyBinds {
     pub fn base_binds() -> Self {
         Self {
             camera_moves: MoveKey::ARRAY.map(|k| {
-                KeyBind::new(PressState::Active, vec![match k {
+                KeyBind::new(Trigger::AllActive, vec![match k {
                     MoveKey::Left => KeyCode::KeyA,
                     MoveKey::Right => KeyCode::KeyD,
                     MoveKey::Backward => KeyCode::KeyS,
