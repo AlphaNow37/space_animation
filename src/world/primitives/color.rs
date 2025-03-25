@@ -1,4 +1,4 @@
-use crate::math::{Vec3, vec3};
+use crate::math::{Transform, Vec3, vec3};
 use std::ops::{Add, Mul};
 
 macro_rules! consts_lch {
@@ -21,15 +21,15 @@ mod conversion {
     use crate::math::{Transform, Vec3, vec3};
     use crate::utils::{cos, sin};
 
-    fn gamma_to_linear(c: f32) -> f32 {
-        if c >= 0.04045 {
-            ((c + 0.055) / 1.055).powf(2.4)
+    fn linear_to_gamma(channel: f32) -> f32 {
+        if channel >= 0.0031308{
+            return 1.055 * channel.powf(1. / 2.4) - 0.055;
         } else {
-            c / 12.92
+            return 12.92 * channel;
         }
     }
-    fn srgb_to_rgb(rgb: Vec3) -> Vec3 {
-        rgb.map_comp(gamma_to_linear)
+    pub fn srgb_to_rgb(srgb: Vec3) -> Vec3 {
+        srgb.map_comp(linear_to_gamma)
     }
     fn rgb_to_lms(rgb: Vec3) -> Vec3 {
         const RGB_TO_LMS: Transform = Transform::from_array([
@@ -98,8 +98,14 @@ impl Color {
     pub const fn from_oklchf(l: f32, c: f32, h: f32) -> Self {
         Self::from_oklchv(vec3(l, c, h))
     }
+    pub const fn from_oklabv(oklab: Vec3) -> Self {
+        Self(oklab)
+    }
+    pub const fn from_oklabf(l: f32, a: f32, b: f32) -> Self {
+        Self::from_oklabv(vec3(l, a, b))
+    }
     pub const fn new(l: f32, a: f32, b: f32) -> Self {
-        Self(vec3(l, a, b))
+        Self::from_oklabf(l, a, b)
     }
 }
 
@@ -127,5 +133,29 @@ impl Mul<f32> for Color {
 
 #[test]
 fn test() {
+    use crate::math::vec3::vec3;
     dbg!(Color::WHITE, Color::RED, Color::BLUE);
+    let OKLAB_TO_LMS = Transform::from_cols(
+        vec3(1.0, 1.0, 1.0),
+        vec3(0.3963377774, -0.1055613458, -0.0894841775),
+        vec3(0.2158037573, -0.0638541728, -1.2914855480),
+    );
+    let LMS3_TO_SRGB = Transform::from_cols(
+        vec3(4.0767245293, -1.2684380046, -0.0041960863),
+        vec3(-3.3077115913, 2.6097574011, -0.7034186147),
+        vec3(0.2309699292, -0.3413193965, 1.7076147010),
+    );
+
+    for (name, oklch) in [
+        ("BLUE", Color::BLUE),
+        ("RED", Color::RED),
+        ("GREEN", Color::GREEN),
+    ] {
+        dbg!(name);
+        let lms = OKLAB_TO_LMS.tr_vec(oklch.0);
+        let lms3 = Vec3(lms.0 * lms.0 * lms.0);
+        let srgb = LMS3_TO_SRGB.tr_vec(lms3);
+        // let rgb = conversion::srgb_to_rgb(srgb) * 255.;
+        dbg!(oklch.0, lms, lms3, srgb);
+    }
 }

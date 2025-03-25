@@ -1,6 +1,6 @@
 
 fn pass_dist(clip_z: f32) -> f32 {
-    return (1.-clip_z)/(1.-clip_z*0.99);
+    return (1.-clip_z)/(1.-clip_z*0.95);
 }
 //fn pass_normal(normal: vec3<f32>) -> f32 {
 //    let dot = abs(dot(camera_transform[2].xyz, normal));
