@@ -5,7 +5,7 @@ import itertools
 
 MACRO_USE_RE = re.compile("[a-zA-Z]!")
 def keyworld_pattern(kw):
-    return f"\W{kw}\W"
+    return fr"\W{kw}\W"
 UNSAFE_RE = re.compile(keyworld_pattern("unsafe"))
 STRUCT_RE = re.compile(keyworld_pattern("struct"))
 ENUM_RE = re.compile(keyworld_pattern("enum"))
