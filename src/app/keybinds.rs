@@ -11,6 +11,7 @@ macro_rules! make_folder {
             $default: expr
         );* $(;)?
     ) => {
+        #[derive(Debug, Clone)]
         pub struct $struct_name {
             $(
                 pub $attr_name: KeyBind,
@@ -43,7 +44,7 @@ make_folder!(CameraChanges:
 );
 
 make_folder!(WindowDebug:
-    show_fps = KeyBind::new(PressState::Active, vec![KeyCode::F3, KeyCode::KeyF])
+    show_fps = KeyBind::new(PressState::Active, vec![KeyCode::F3, KeyCode::KeyX])
 );
 
 array_key!(
@@ -56,7 +57,7 @@ array_key!(
         Backward,
     }
 );
-
+#[derive(Debug, Clone)]
 struct PressResume {
     pub any_pressed: bool,
     pub any_released: bool,
@@ -97,6 +98,7 @@ impl From<ElementState> for PressState {
     }
 }
 
+#[derive(Debug, Clone)]
 struct KeyState {
     code: KeyCode,
     press_state: PressState,
@@ -122,6 +124,7 @@ impl KeyState {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct KeyBind {
     keys: Vec<KeyState>,
     trigger: PressState,
