@@ -58,10 +58,12 @@ pub struct VertexPoss {
 // });
 pub static CIRCLE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
     let iterations = perf_level!(
-        2
+        1
         => HighPerf
-        3
+        2
         => AveragePerf
+        3
+        => VeryHighDetails
         4
     );
 
@@ -96,7 +98,7 @@ pub static CIRCLE_POS: LazyLock<VertexPoss> = LazyLock::new(|| {
         .flat_map(|is| is.map(|i| vertexes[i]))
         .map(|v| Pos3Vertex { pos: v.to_array() })
         .collect::<Vec<_>>();
-    info!("Created circle, size={}", vs.len());
+    info!("Created circle prefab, {} verteces", vs.len());
     VertexPoss {
         len: vs.len() as u32,
         label: VertexBufferLabel::Pos3,

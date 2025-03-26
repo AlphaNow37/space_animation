@@ -168,19 +168,9 @@ impl Pipeline {
             wgpu::PolygonMode::Line,
         ))
     }
-    fn render_one_pipeline(&self, render_pass: &mut wgpu::RenderPass, pipe: &wgpu::RenderPipeline) {
-        render_pass.set_pipeline(pipe);
-        render_pass.set_vertex_buffer(0, self.instance_buffer.slice(..));
-        for (i, aux_buffer) in self.aux_buffers.iter().enumerate() {
-            match &aux_buffer {
-                AuxiliaryBuffer::VertexPoss(buffer) => {
-                    render_pass.set_vertex_buffer((i + 1) as u32, buffer.slice(..));
-                }
-            }
-        }
-        render_pass.draw(0..self.vertex.nb_vertex(), 0..self.nb_instance.get() as u32);
-    }
     pub fn render(&mut self, render_pass: &mut wgpu::RenderPass, render_wires: bool) {
+        render_pass.set_pipeline(&self.render_pipeline);
+
         if render_wires {
             if self.wireframe_render_pipeline.is_none()
                 && self
@@ -191,11 +181,18 @@ impl Pipeline {
                 self.generate_wire_pipeline();
             }
             if let Some(wire_render_pipeline) = &self.wireframe_render_pipeline {
-                self.render_one_pipeline(render_pass, &wire_render_pipeline);
-                return;
+                render_pass.set_pipeline(wire_render_pipeline);
             }
         }
-        self.render_one_pipeline(render_pass, &self.render_pipeline);
+        render_pass.set_vertex_buffer(0, self.instance_buffer.slice(..));
+        for (i, aux_buffer) in self.aux_buffers.iter().enumerate() {
+            match &aux_buffer {
+                AuxiliaryBuffer::VertexPoss(buffer) => {
+                    render_pass.set_vertex_buffer((i + 1) as u32, buffer.slice(..));
+                }
+            }
+        }
+        render_pass.draw(0..self.vertex.nb_vertex(), 0..self.nb_instance.get() as u32);
     }
 
     pub fn view_instance<'a>(&'a self, queue: &'a wgpu::Queue) -> wgpu::QueueWriteBufferView<'a> {
