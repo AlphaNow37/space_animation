@@ -1,5 +1,8 @@
+use rand::Rng;
+
 use crate::math::{Angle, Plane, Vec3, rotate_x};
 use crate::utils::{Length, Zero};
+use std::f32::consts::TAU;
 use std::ops::{Deref, Neg};
 
 /// A normalized vector
@@ -53,6 +56,15 @@ impl Neg for Dir {
 impl Default for Dir {
     fn default() -> Self {
         Self::Z
+    }
+}
+
+impl rand::distr::Distribution<Dir> for rand::distr::StandardUniform {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Dir {
+        let z = rng.random_range(-1.0..=1.0);
+        let theta = rng.random_range(0.0..TAU);
+        let r = (1.0f32 - z * z).sqrt();
+        Dir::from_normalized(Vec3::new(r * theta.sin(), r * theta.cos(), z))
     }
 }
 
