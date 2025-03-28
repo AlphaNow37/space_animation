@@ -3,8 +3,8 @@ use crate::render_registry::materials::{MaterialRef, MaterialType};
 use crate::render_registry::mesh_builder::VisualExecutor;
 
 use crate::world::primitives::color::Color;
+use crate::world::variators::references::Ref;
 use crate::world::visuals::VisualDirective;
-use crate::world::world::Ref;
 
 impl VisualDirective for Ref<Color> {
     fn exec(&self, executor: &mut VisualExecutor) {

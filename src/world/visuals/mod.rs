@@ -2,7 +2,7 @@ use crate::math::Transform;
 use crate::render_registry::alloc::BufferAllocator;
 use crate::render_registry::materials::MaterialType;
 use crate::render_registry::mesh_builder::VisualExecutor;
-use crate::world::world::Ref;
+use crate::world::variators::references::Ref;
 
 pub mod material;
 pub mod shape;

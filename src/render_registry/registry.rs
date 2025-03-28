@@ -14,40 +14,45 @@ pub const PIPELINE_COUNT: usize = VertexType::COUNT * MaterialType::COUNT;
 
 pub struct PipelinesRegistry {
     pub base_bindings: BaseBindings,
-    pub store_bindings: StoreBindings,
+    pub store_bindings: Vec<StoreBindings>,
     depth_buffer: DepthBuffer,
     // shaders: Shaders,
-    pub pipes: [[Option<Pipeline>; MaterialType::COUNT]; VertexType::COUNT],
+    pub pipes: Vec<[[Option<Pipeline>; MaterialType::COUNT]; VertexType::COUNT]>,
 }
 impl PipelinesRegistry {
     pub fn new(
         device: &wgpu::Device,
         surf_config: &wgpu::SurfaceConfiguration,
-        alloc: &BufferAllocator,
+        allocs: &[BufferAllocator],
     ) -> Self {
         let _span = info_span!("registry").entered();
         let base_bindings = BaseBindings::new(device);
-        let store_bindings = StoreBindings::new(device, alloc);
+        let (store_bindings, store_layout) = StoreBindings::new(device, allocs);
         let shaders = Shaders::new(device);
         let depth_buffer = DepthBuffer::new(device, surf_config);
 
-        let pipes = VertexType::ARRAY.map(|vertex| {
-            MaterialType::ARRAY.map(|material| {
-                let nb_instance = alloc.get_instance_count(vertex, material);
-                NonZeroU64::new(nb_instance as u64).map(|size| {
-                    Pipeline::new(
-                        vertex,
-                        material,
-                        device,
-                        surf_config,
-                        &base_bindings.layout,
-                        &store_bindings.layout,
-                        shaders.clone(),
-                        size,
-                    )
+        let pipes = allocs
+            .iter()
+            .map(|alloc| {
+                VertexType::ARRAY.map(|vertex| {
+                    MaterialType::ARRAY.map(|material| {
+                        let nb_instance = alloc.get_instance_count(vertex, material);
+                        NonZeroU64::new(nb_instance as u64).map(|size| {
+                            Pipeline::new(
+                                vertex,
+                                material,
+                                device,
+                                surf_config,
+                                &base_bindings.layout,
+                                &store_layout,
+                                shaders.clone(),
+                                size,
+                            )
+                        })
+                    })
                 })
             })
-        });
+            .collect();
 
         info!("Succesfully created {} pipelines", PIPELINE_COUNT);
         Self {
@@ -87,13 +92,17 @@ impl PipelinesRegistry {
             }),
             ..Default::default()
         });
-        self.base_bindings.put(&mut render_pass);
-        self.store_bindings.put(&mut render_pass);
 
-        for r in &mut self.pipes {
-            for maybe_pipe in r {
-                if let Some(pipe) = maybe_pipe {
-                    pipe.render(&mut render_pass, render_wires);
+        self.base_bindings.put(&mut render_pass);
+
+        for i in 0..self.pipes.len() {
+            self.store_bindings[i].put(&mut render_pass);
+
+            for r in &mut self.pipes[i] {
+                for maybe_pipe in r {
+                    if let Some(pipe) = maybe_pipe {
+                        pipe.render(&mut render_pass, render_wires);
+                    }
                 }
             }
         }
@@ -101,8 +110,9 @@ impl PipelinesRegistry {
     pub fn views<'a>(
         &'a self,
         queue: &'a wgpu::Queue,
+        world_id: usize,
     ) -> [[Option<wgpu::QueueWriteBufferView<'a>>; MaterialType::COUNT]; VertexType::COUNT] {
-        self.pipes.each_ref().map(|row| {
+        self.pipes[world_id].each_ref().map(|row| {
             row.each_ref()
                 .map(|maybe_pipe| maybe_pipe.as_ref().map(|pipe| pipe.view_instance(queue)))
         })

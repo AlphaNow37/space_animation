@@ -52,7 +52,7 @@ impl SurfaceHolder {
             present_mode: caps.present_modes[0],
         };
 
-        let registry = PipelinesRegistry::new(&app.device, &surface_config, &app.scene.alloc);
+        let registry = PipelinesRegistry::new(&app.device, &surface_config, &app.scene.allocs);
 
         Self {
             window: window.clone(),

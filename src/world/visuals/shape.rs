@@ -6,7 +6,7 @@ use crate::render_registry::mesh_builder::VisualExecutor;
 use crate::render_registry::vertex::VertexType;
 use crate::world::visuals::VisualDirective;
 
-use crate::world::world::Ref;
+use crate::world::variators::references::Ref;
 
 pub struct Triangle(pub Ref<Vec3>, pub Ref<Vec3>, pub Ref<Vec3>);
 impl VisualDirective for Triangle {

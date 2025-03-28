@@ -1,9 +1,10 @@
-use crate::math::{Vec3, Transform};
+use crate::math::{Transform, Vec3};
 use crate::utils::Zero;
-use crate::world::{primitives::color::Color, variators::variator::Variator, world::World};
 use crate::world::visuals::shape::Triangle;
+use crate::world::world_builder::WorldBuilder;
+use crate::world::{primitives::color::Color, variators::variator::Variator};
 
-pub fn put_axis(world: &mut World, pos: impl Variator<Item=Transform>+Copy) {
+pub fn put_axis(world: &mut WorldBuilder, pos: impl Variator<Item = Transform> + Copy) {
     let global = world.push(pos);
     world.push_visual(global);
 
@@ -18,9 +19,6 @@ pub fn put_axis(world: &mut World, pos: impl Variator<Item=Transform>+Copy) {
         (z, x, Color::BLUE),
     ] {
         let col = world.push(col);
-        world.push_visual((
-            col,
-            Triangle(o, a, b),
-        ))
+        world.push_visual((col, Triangle(o, a, b)))
     }
 }

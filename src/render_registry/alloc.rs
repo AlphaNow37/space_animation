@@ -1,6 +1,6 @@
 use crate::render_registry::materials::MaterialType;
 use crate::render_registry::vertex::VertexType;
-use crate::world::stores::StoreLabel;
+use crate::world::primitives::StoreLabel;
 
 #[derive(Default)]
 pub struct BufferAllocator {
