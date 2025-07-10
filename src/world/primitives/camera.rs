@@ -1,7 +1,7 @@
 use crate::math::Angle;
 use crate::math::{Mat4, Transform};
 use crate::world::variators::variator::Variator;
-use crate::world::world::World;
+use crate::world::world::Worlds;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Camera {
@@ -26,18 +26,18 @@ impl Camera {
 pub struct GetManualCamera;
 impl Variator for GetManualCamera {
     type Item = Camera;
-    fn update(&self, world: &World) -> Self::Item {
-        world.settings.cam_settings
+    fn update(&self, worlds: &Worlds) -> Self::Item {
+        worlds.settings.cam_settings
     }
 }
 
 pub struct TrackCamera<P, F>(pub P, pub F);
 impl<P: Variator<Item = Transform>, F: Variator<Item = Angle>> Variator for TrackCamera<P, F> {
     type Item = Camera;
-    fn update(&self, world: &World) -> Self::Item {
+    fn update(&self, worlds: &Worlds) -> Self::Item {
         Camera {
-            pos: self.0.update(world),
-            fov: self.1.update(world),
+            pos: self.0.update(worlds),
+            fov: self.1.update(worlds),
         }
     }
 }

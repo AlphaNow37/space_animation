@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
-use crate::world::{primitives::WorldPrimitive, world::World, world_builder::WorldId};
+use crate::world::{primitives::WorldPrimitive, world_builder::WorldId};
+use crate::world::world::Worlds;
 
 use super::variator::Variator;
 
@@ -20,8 +21,8 @@ impl<T> Ref<T> {
 }
 impl<T: WorldPrimitive> Variator for Ref<T> {
     type Item = T;
-    fn update(&self, world: &World) -> T {
-        T::get(&world.stores, self.index)
+    fn update(&self, worlds: &Worlds) -> Self::Item {
+        T::get(&worlds.worlds[self.world_id.get()].stores, self.index)
     }
     fn hash_var(&self) -> u32 {
         self.index as u32

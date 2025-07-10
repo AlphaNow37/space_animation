@@ -2,9 +2,9 @@
 use std::ops::Mul;
 // use crate::math::ToAngle;
 
-use super::variator::{Variator, new_typed_variator};
+use super::variator::{new_typed_variator, Variator};
 use crate::utils::VectorSpace;
-use crate::world::world::World;
+use crate::world::world::Worlds;
 
 new_typed_variator!(
     [world],
@@ -13,7 +13,7 @@ new_typed_variator!(
 
 macro_rules! var_modifier {
     (
-        $world: ident,
+        $worlds: ident,
         impl $trait_name: ident for $var: ident -> $ty: ty
         [
             $(
@@ -34,9 +34,9 @@ macro_rules! var_modifier {
             }
             impl<V: Variator<Item=$ty>> Variator for $struct_name<V> {
                 type Item = $out_ty;
-                fn update(&self, $world: &World) -> Self::Item {
+                fn update(&self, $worlds: &Worlds) -> Self::Item {
                     let Self {$var, $($arg_name),*} = self;
-                    let $var = $var.update($world);
+                    let $var = $var.update($worlds);
                     $expr
                 }
                 fn eq_var(&self, other: &Self) -> bool where Self: Sized {
@@ -91,7 +91,7 @@ macro_rules! var_modifier {
 // time_modifier!(TimeLea(f32, f32): t,a => t.mul_add(a.0, a.1));
 
 var_modifier!(
-    world,
+    worlds,
     impl FloatExt for v -> f32 [
         add(add: f32) -> AddF -> f32 {v + add};
         mul(mul: f32) -> MulF -> f32 {v * mul};
@@ -107,7 +107,7 @@ where
     A::Item: Mul<B::Item>,
 {
     type Item = <A::Item as Mul<B::Item>>::Output;
-    fn update(&self, world: &World) -> Self::Item {
-        self.0.update(world) * self.1.update(world)
+    fn update(&self, worlds: &Worlds) -> Self::Item {
+        self.0.update(worlds) * self.1.update(worlds)
     }
 }

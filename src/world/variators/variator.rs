@@ -1,5 +1,5 @@
 use crate::utils::GeneralHash;
-use crate::world::world::World;
+use crate::world::world::Worlds;
 // use crate::world::variators::combinators::{TimeLea, TimeMod, TimeMul, TimeOffset, TimeSin};
 
 // #[derive(Clone, Copy)]
@@ -22,7 +22,7 @@ use crate::world::world::World;
 #[allow(dead_code)]
 pub trait Variator: 'static + std::any::Any {
     type Item;
-    fn update(&self, world: &World) -> Self::Item;
+    fn update(&self, worlds: &Worlds) -> Self::Item;
 
     #[allow(unused_variables)]
     fn hash_var(&self) -> u32 {
@@ -50,7 +50,7 @@ pub trait Variator: 'static + std::any::Any {
 
 macro_rules! new_typed_variator {
     (
-        $([$world: ident],)?
+        $([$worlds: ident],)?
         $name: ident ($($gen: ident $(: $ty: ty)?),* $(,)?) $([$($clause: tt)*])? => $out: ty {$($ins: tt)*}
     ) => {
         #[allow(dead_code)]
@@ -59,13 +59,13 @@ macro_rules! new_typed_variator {
         #[allow(non_snake_case, dead_code, unused_variables)]
         impl<$($gen: Variator$(<Item=$ty>)?),*> crate::world::variators::variator::Variator for $name<$($gen),*> $(where $($clause)*)? {
             type Item=$out;
-            fn update(&self, world: &crate::world::world::World) -> Self::Item {
+            fn update(&self, worlds: &crate::world::world::Worlds) -> Self::Item {
                 let $name($($gen, )*) = self;
                 $(
-                    let $gen = $gen.update(world);
+                    let $gen = $gen.update(worlds);
                 )*
                 $(
-                    let $world = world;
+                    let $worlds = worlds;
                 )?
                 $($ins)*
             }
@@ -92,9 +92,9 @@ macro_rules! new_typed_variator {
 
 pub(crate) use new_typed_variator;
 
-impl<U, T: (Fn(&World) -> U) + 'static> Variator for T {
+impl<U, T: (Fn(&Worlds) -> U) + 'static> Variator for T {
     type Item = U;
-    fn update(&self, world: &World) -> Self::Item {
-        self(world)
+    fn update(&self, worlds: &Worlds) -> Self::Item {
+        self(worlds)
     }
 }

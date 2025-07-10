@@ -5,7 +5,7 @@ use crate::world::primitives::camera::Camera;
 
 use crate::world::primitives::color::Color;
 use crate::world::variators::variator::Variator;
-use crate::world::world::World;
+use crate::world::world::Worlds;
 
 macro_rules! make_constant_variators {
     (
@@ -20,7 +20,7 @@ macro_rules! make_constant_variators {
                 fn eq_var(&self, other: &Self) -> bool {
                     self == other
                 }
-                fn update(&self, _world: &World) -> $name {
+                fn update(&self, _worlds: &Worlds) -> $name {
                     *self
                 }
             }

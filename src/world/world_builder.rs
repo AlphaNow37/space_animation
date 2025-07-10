@@ -33,7 +33,6 @@ struct WorldBuildState {
     directives: Vec<Box<dyn VisualDirective>>,
     variators: Vec<Box<dyn SavedVariator>>,
     pub allocs_tracker: PrimitivesAllocationTracker,
-    parent_worlds: HashSet<WorldId>,
 }
 impl WorldBuildState {
     pub fn allocs(&self) -> BufferAllocator {
@@ -51,6 +50,7 @@ pub struct WorldBuilder {
     state: WorldBuildState,
     worlds: WorldsBuilder,
     id: WorldId,
+    layer: usize,
 }
 
 impl WorldBuilder {
@@ -123,38 +123,44 @@ impl WorldBuilder {
             .push(Box::new(SavedVariatorMultiple { index: idx, var }));
         std::array::from_fn(|i| self.make_ref(idx + i))
     }
-    pub fn using_ref<T>(&mut self, rf: Ref<T>) {
-        self.state.parent_worlds.insert(rf.world_id());
-    }
 
     pub fn finalize(self) -> WorldsBuilder {
         let mut worlds = self.worlds;
         worlds.worlds[self.id.get()] = Some(self.state);
+        while worlds.id_by_layers.len() <= self.layer {
+            worlds.id_by_layers.push(Vec::new());
+        }
+        worlds.id_by_layers[self.layer].push(self.id);
         worlds
     }
 }
 
 pub struct WorldsBuilder {
     worlds: Vec<Option<WorldBuildState>>,
+    id_by_layers: Vec<Vec<WorldId>>,
 }
 impl Default for WorldsBuilder {
     fn default() -> Self {
-        Self { worlds: Vec::new() }
+        Self {
+            worlds: Vec::new(),
+            id_by_layers: Vec::new(),
+        }
     }
 }
 impl WorldsBuilder {
-    pub fn add_world(mut self) -> WorldBuilder {
+    pub fn add_world(mut self, layer: usize) -> WorldBuilder {
         let id = WorldId(self.worlds.len());
         self.worlds.push(None);
         WorldBuilder {
             state: WorldBuildState::default(),
             worlds: self,
             id,
+            layer,
         }
     }
-    pub fn add_world_with(&mut self, f: impl FnOnce(&mut WorldBuilder)) {
+    pub fn add_world_with(&mut self, layer: usize, f: impl FnOnce(&mut WorldBuilder)) {
         let worlds = std::mem::take(self); // Cheap
-        let mut builder = worlds.add_world();
+        let mut builder = worlds.add_world(layer);
         f(&mut builder);
         *self = builder.finalize();
     }
@@ -175,33 +181,21 @@ impl WorldsBuilder {
             })
             .collect()
     }
-    pub fn to_run_worlds(self) -> Vec<World> {
-        let mut child_worlds = vec![vec![]; self.worlds.len()];
-        for (i, s) in self.worlds.iter().enumerate() {
-            if let Some(w) = s {
-                for id in &w.parent_worlds {
-                    child_worlds[id.get()].push(i);
-                }
-            }
-        }
-        let mut run_worlds: Vec<World> = self
-            .worlds
-            .into_iter()
-            .map(|wopt| match wopt {
-                None => World::new(),
-                Some(state) => World {
-                    directives: state.directives,
-                    stores: state.allocs_tracker.to_store_holder(),
-                    variators: state.variators,
-                    parent_worlds: state.parent_worlds.iter().map(|id| id.get()).collect(),
-                    child_worlds: vec![],
-                    ..World::new()
-                },
-            })
-            .collect();
-        for (i, chs) in child_worlds.into_iter().enumerate() {
-            run_worlds[i].child_worlds = chs;
-        }
-        run_worlds
+    pub fn to_run_worlds(self) -> (Vec<World>, Vec<Vec<WorldId>>) {
+        (
+            self.worlds
+                .into_iter()
+                .map(|wopt| match wopt {
+                    None => World::new(),
+                    Some(state) => World {
+                        directives: state.directives,
+                        stores: state.allocs_tracker.to_store_holder(),
+                        variators: state.variators,
+                        ..World::new()
+                    },
+                })
+                .collect(),
+            self.id_by_layers,
+        )
     }
 }

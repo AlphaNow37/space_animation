@@ -3,4 +3,3 @@ pub mod graph;
 pub mod sampler_linker;
 pub mod spatial_set;
 pub mod tree;
-pub mod graph_runner;

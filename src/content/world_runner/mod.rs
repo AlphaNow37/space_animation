@@ -1,25 +1,26 @@
-use std::f32::consts::{PI, TAU};
+use std::f32::consts::PI;
 
 use rand::{Rng, rng};
 
+use crate::world::world::Worlds;
 use crate::{
     datastrutures::{
         graph::Graph,
         sampler_linker::{DimensionParam, SampleLinkPointParam},
     },
-    math::{vec3, Dir, Transform, Vec3},
-    utils::{Length, VectorSpace, Zero},
+    math::{Dir, Transform, Vec3, vec3},
+    utils::{Length, Zero},
     world::{
         primitives::color::Color,
         variators::{references::Ref, variator::Variator},
         visuals::{Pipe, Sphere},
-        world::World, world_builder::{WorldBuilder, WorldsBuilder},
+        world_builder::WorldsBuilder,
     },
 };
 
 pub fn build() -> WorldsBuilder {
     let worlds = WorldsBuilder::default();
-    let mut world = worlds.add_world();
+    let mut world = worlds.add_world(5);
 
     let mut rng = rng();
 
@@ -59,17 +60,16 @@ pub fn build() -> WorldsBuilder {
         .map(|pos: Vec3| {
             let a = *rng.random::<Dir>() * 0.3;
             let b = *rng.random::<Dir>() * 0.3;
-            world.push(move |world: &World| {
+            world.push(move |worlds: &Worlds| {
                 Transform::from_transv(
-                    pos + a * world.settings.base_time.sin() + b * world.settings.base_time.cos(),
+                    pos + a * worlds.settings.base_time.sin() + b * worlds.settings.base_time.cos(),
                 )
             })
         })
         .collect::<Vec<_>>();
 
     for (i, _) in points.iter().enumerate() {
-        let col: Ref<Color> =
-            world.push(Color::from_oklchf(0.5, 0.3, rng.random_range(-PI..PI)));
+        let col: Ref<Color> = world.push(Color::from_oklchf(0.5, 0.3, rng.random_range(-PI..PI)));
         world.push_visual((transforms[i], col, Sphere(local_sphere)));
     }
     for i in 0..points.len() {
@@ -79,9 +79,9 @@ pub fn build() -> WorldsBuilder {
             }
             let p1 = transforms[i];
             let p2 = transforms[i2];
-            let tr = world.push(move |world: &World| {
-                let p1pos = p1.update(world).trans();
-                let p2pos = p2.update(world).trans();
+            let tr = world.push(move |worlds: &Worlds| {
+                let p1pos = p1.update(worlds).trans();
+                let p2pos = p2.update(worlds).trans();
                 Transform::from_transv(p1pos)
                     * Transform::from_z_looking_at(p2pos - p1pos).scaled(vec3(
                         0.05,

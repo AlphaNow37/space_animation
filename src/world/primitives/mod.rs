@@ -100,7 +100,7 @@ macro_rules! make_primitive_system {
             }
         );
         impl StoreLabel {
-            pub fn write(self, buf: &mut [u32], stores: &mut PrimitiveStoresHolder) {
+            pub fn write(self, buf: &mut [u32], stores: &PrimitiveStoresHolder) {
                 match self {
                     $(
                         $(

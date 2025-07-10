@@ -12,8 +12,6 @@ pub struct World {
     pub variators: Vec<Box<dyn SavedVariator>>,
     pub settings: WorldSettings,
     pub directives: Vec<Box<dyn VisualDirective>>,
-    pub parent_worlds: Vec<usize>,
-    pub child_worlds: Vec<usize>,
 }
 
 impl World {
@@ -23,8 +21,6 @@ impl World {
             directives: Vec::new(),
             settings: WorldSettings::default(),
             variators: Vec::new(),
-            child_worlds: Vec::new(),
-            parent_worlds: Vec::new(),
         }
     }
 
@@ -34,22 +30,15 @@ impl World {
             dir.exec(&mut executor)
         }
     }
-    fn update_settings(&mut self, ctx: &WorldUpdateCtx) {
-        self.settings = WorldSettings {
-            cam_settings: ctx.cam,
-            base_time: ctx.time,
-        }
-    }
-    fn update_registers(&self) {
+    fn update_registers(&self, worlds: &Worlds) {
         for saved_var in &self.variators {
-            saved_var.write(self);
+            saved_var.write(worlds);
         }
     }
-    pub fn update(&mut self, mut ctx: WorldUpdateCtx) {
-        self.update_settings(&ctx);
-        self.update_registers();
+    pub fn update(&self, mut ctx: WorldUpdateCtx) {
+        self.update_registers(ctx.worlds);
         for label in StoreLabel::ARRAY {
-            label.write(ctx.stores[label as usize], &mut self.stores);
+            label.write(ctx.stores[label as usize], &self.stores);
         }
         self.redraw(&mut ctx);
     }
@@ -61,15 +50,20 @@ impl World {
     }
 }
 
-pub struct WorldUpdateCtx<'a> {
-    pub instance_bufs: [[&'a mut [u32]; MaterialType::COUNT]; VertexType::COUNT],
-    pub stores: [&'a mut [u32]; StoreLabel::COUNT],
-    pub cam: Camera,
-    pub time: f32,
-}
-
 #[derive(Default)]
 pub struct WorldSettings {
     pub cam_settings: Camera,
     pub base_time: f32,
+}
+
+pub struct Worlds<'a> {
+    pub world: &'a World,
+    pub worlds: &'a [World],
+    pub settings: WorldSettings,
+}
+
+pub struct WorldUpdateCtx<'a> {
+    pub instance_bufs: [[&'a mut [u32]; MaterialType::COUNT]; VertexType::COUNT],
+    pub stores: [&'a mut [u32]; StoreLabel::COUNT],
+    pub worlds: &'a Worlds<'a>,
 }

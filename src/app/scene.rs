@@ -1,3 +1,4 @@
+use crate::world::world_builder::WorldId;
 use crate::{
     render_registry::{alloc::BufferAllocator, registry::PipelinesRegistry},
     world::{
@@ -6,26 +7,32 @@ use crate::{
     },
 };
 use tracing::{info, info_span};
+use crate::world::world::{Worlds, WorldSettings};
 
 use super::camera::ManualCamera;
 
 pub struct Scene {
     worlds: Vec<World>,
+    id_by_layer: Vec<Vec<WorldId>>,
     pub allocs: Vec<BufferAllocator>,
 }
 impl Scene {
     pub fn new() -> Self {
         let _span = info_span!("new_scene").entered();
         info!("Creating scene");
-        
+
         let mut worlds_builder = crate::content::build();
 
         worlds_builder.finalize();
 
         let allocs = worlds_builder.get_buffer_allocs();
-        let worlds = worlds_builder.to_run_worlds();
+        let (worlds, id_by_layer) = worlds_builder.to_run_worlds();
 
-        Scene { worlds, allocs }
+        Scene {
+            worlds,
+            allocs,
+            id_by_layer,
+        }
     }
     pub fn update(
         &mut self,
@@ -37,29 +44,42 @@ impl Scene {
         // let _span = info_span!("update_scene").entered();
         // info!("Updating scene");
 
-        for (i, w) in self.worlds.iter_mut().enumerate() {
-            let mut instance_views = registry.views(queue, i);
-            let mut store_views = registry.store_bindings[i].views(queue);
+        let empty_w = World::new();
+        let mut worlds = Worlds {
+            world: &empty_w,
+            worlds: &self.worlds,
+            settings: WorldSettings {
+                base_time: time,
+                cam_settings: cam.cam,
+            }
+        };
 
-            let ctx = WorldUpdateCtx {
-                instance_bufs: instance_views.each_mut().map(|r| {
-                    r.each_mut().map(|view_opt| {
-                        view_opt
-                            .as_mut()
-                            .map(|view| bytemuck::cast_slice_mut(&mut *view))
+        for ids in &self.id_by_layer {
+            for id in ids {
+                let i = id.get();
+                let w = &self.worlds[i];
+                worlds.world = w;
+                let mut instance_views = registry.views(queue, i);
+                let mut store_views = registry.store_bindings[i].views(queue);
+                let ctx = WorldUpdateCtx {
+                    instance_bufs: instance_views.each_mut().map(|r| {
+                        r.each_mut().map(|view_opt| {
+                            view_opt
+                                .as_mut()
+                                .map(|view| bytemuck::cast_slice_mut(&mut *view))
+                                .unwrap_or(&mut [])
+                        })
+                    }),
+                    stores: store_views.each_mut().map(|v| {
+                        v.as_deref_mut()
+                            .map(|view| bytemuck::cast_slice_mut(view))
                             .unwrap_or(&mut [])
-                    })
-                }),
-                stores: store_views.each_mut().map(|v| {
-                    v.as_deref_mut()
-                        .map(|view| bytemuck::cast_slice_mut(view))
-                        .unwrap_or(&mut [])
-                }),
-                cam: cam.cam,
-                time,
-            };
+                    }),
+                    worlds: &worlds,
+                };
 
-            w.update(ctx);
+                w.update(ctx);
+            }
         }
         let wcam = self.worlds.last().unwrap().get_cam(cam.current_cam_idx);
         registry
