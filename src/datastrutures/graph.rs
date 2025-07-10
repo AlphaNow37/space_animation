@@ -28,7 +28,7 @@ impl<'a, Id: Clone, G: Graph<Id>, C: Container<Id>> Iterator
 pub trait Graph<Id> {
     fn iter_neighboors(&self, node: Id) -> impl Iterator<Item = Id>;
 
-    fn iter_vertical<C: Container<Id>>(&self, start: Id) -> VerticalGraphIterator<Id, Self, C>
+    fn iter_vertical<C: Container<Id>>(&self, start: Id) -> VerticalGraphIterator<'_, Id, Self, C>
     where
         Self: Sized,
     {
