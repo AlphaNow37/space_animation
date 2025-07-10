@@ -49,7 +49,7 @@ fn get_device_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
         required_features: fetch_usable_features(adapter),
         ..Default::default()
     };
-    pollster::block_on(adapter.request_device(&desc, None)).unwrap()
+    pollster::block_on(adapter.request_device(&desc)).unwrap()
 }
 
 pub struct App {
