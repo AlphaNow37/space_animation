@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::ops::Deref;
 use std::{any::Any, collections::HashMap};
 
+use rand::seq::IndexedRandom;
+
 use crate::render_registry::alloc::BufferAllocator;
 use crate::render_registry::materials::MaterialType;
 
@@ -31,6 +33,7 @@ struct WorldBuildState {
     directives: Vec<Box<dyn VisualDirective>>,
     variators: Vec<Box<dyn SavedVariator>>,
     pub allocs_tracker: PrimitivesAllocationTracker,
+    parent_worlds: HashSet<WorldId>,
 }
 impl WorldBuildState {
     pub fn allocs(&self) -> BufferAllocator {
@@ -48,7 +51,6 @@ pub struct WorldBuilder {
     state: WorldBuildState,
     worlds: WorldsBuilder,
     id: WorldId,
-    referenced_worlds: HashSet<usize>,
 }
 
 impl WorldBuilder {
@@ -122,10 +124,10 @@ impl WorldBuilder {
         std::array::from_fn(|i| self.make_ref(idx + i))
     }
     pub fn using_ref<T>(&mut self, rf: Ref<T>) {
-        todo!()
+        self.state.parent_worlds.insert(rf.world_id());
     }
 
-    fn finalize(self) -> WorldsBuilder {
+    pub fn finalize(self) -> WorldsBuilder {
         let mut worlds = self.worlds;
         worlds.worlds[self.id.get()] = Some(self.state);
         worlds
@@ -148,7 +150,6 @@ impl WorldsBuilder {
             state: WorldBuildState::default(),
             worlds: self,
             id,
-            referenced_worlds: HashSet::new(),
         }
     }
     pub fn add_world_with(&mut self, f: impl FnOnce(&mut WorldBuilder)) {
@@ -175,7 +176,16 @@ impl WorldsBuilder {
             .collect()
     }
     pub fn to_run_worlds(self) -> Vec<World> {
-        self.worlds
+        let mut child_worlds = vec![vec![]; self.worlds.len()];
+        for (i, s) in self.worlds.iter().enumerate() {
+            if let Some(w) = s {
+                for id in &w.parent_worlds {
+                    child_worlds[id.get()].push(i);
+                }
+            }
+        }
+        let mut run_worlds: Vec<World> = self
+            .worlds
             .into_iter()
             .map(|wopt| match wopt {
                 None => World::new(),
@@ -183,9 +193,15 @@ impl WorldsBuilder {
                     directives: state.directives,
                     stores: state.allocs_tracker.to_store_holder(),
                     variators: state.variators,
+                    parent_worlds: state.parent_worlds.iter().map(|id| id.get()).collect(),
+                    child_worlds: vec![],
                     ..World::new()
                 },
             })
-            .collect()
+            .collect();
+        for (i, chs) in child_worlds.into_iter().enumerate() {
+            run_worlds[i].child_worlds = chs;
+        }
+        run_worlds
     }
 }

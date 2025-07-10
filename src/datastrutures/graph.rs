@@ -104,20 +104,33 @@ pub trait Graph<Id> {
     }
 }
 
+pub trait GraphNodeIterable<Id>: Graph<Id> {
+    fn iter_nodes(&self) -> impl Iterator<Item = Id>;
+    fn size_hint(&self) -> usize;
+}
+
 #[derive(Clone)]
 pub struct LinkGraph {
-    targets: Vec<Vec<usize>>,
+    pub targets: Vec<Vec<usize>>,
 }
 impl Graph<usize> for LinkGraph {
     fn iter_neighboors(&self, node: usize) -> impl Iterator<Item = usize> {
         return self.targets[node].iter().copied();
     }
 }
+impl GraphNodeIterable<usize> for LinkGraph {
+    fn iter_nodes(&self) -> impl Iterator<Item = usize> {
+        0..self.targets.len()
+    }
+    fn size_hint(&self) -> usize {
+        self.targets.len()
+    }
+}
 impl LinkGraph {
-    fn out_degree(&self, node: usize) -> usize {
+    pub fn out_degree(&self, node: usize) -> usize {
         self.targets[node].len()
     }
-    fn node_count(&self) -> usize {
+    pub fn size_exact(&self) -> usize {
         self.targets.len()
     }
 }
@@ -180,7 +193,14 @@ impl Graph<usize> for GridGraph {
             .filter_map(|e| e)
     }
 }
-
+impl GraphNodeIterable<usize> for GridGraph {
+    fn iter_nodes(&self) -> impl Iterator<Item = usize> {
+        0..*self.steps_size.last().unwrap()
+    }
+    fn size_hint(&self) -> usize {
+        *self.steps_size.last().unwrap()
+    }
+}
 impl GridGraph {
     pub fn from_dims(dims: Vec<usize>, wrapping: bool) -> Self {
         let mut steps = vec![0; dims.len() + 1];
@@ -194,26 +214,27 @@ impl GridGraph {
         }
     }
     pub fn to_link_graph(&self) -> LinkGraph {
-        LinkGraph::from_fn(self.node_count(), |i| {
-            self.iter_neighboors(i).collect()
-        })
+        LinkGraph::from_fn(self.node_count(), |i| self.iter_neighboors(i).collect())
     }
     pub fn node_count(&self) -> usize {
         *self.steps_size.last().unwrap()
     }
     pub fn id_of_coords(&self, coords: &[usize]) -> usize {
-        assert_eq!(coords.len(), self.steps_size.len()-1);
+        assert_eq!(coords.len(), self.steps_size.len() - 1);
         let mut id = 0;
         for i in 0..coords.len() {
-            assert!(coords[i] * self.steps_size[i] < self.steps_size[i+1], "Out of bound coords");
+            assert!(
+                coords[i] * self.steps_size[i] < self.steps_size[i + 1],
+                "Out of bound coords"
+            );
             id += coords[i] * self.steps_size[i];
         }
         id
     }
     pub fn coords_of_id_in(&self, id: usize, res: &mut [usize]) {
-        assert_eq!(res.len(), self.steps_size.len()-1);
+        assert_eq!(res.len(), self.steps_size.len() - 1);
         for i in 0..res.len() {
-            res[i] = (id % self.steps_size[i+1]) / self.steps_size[i];
+            res[i] = (id % self.steps_size[i + 1]) / self.steps_size[i];
         }
     }
 }

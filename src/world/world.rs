@@ -12,7 +12,8 @@ pub struct World {
     pub variators: Vec<Box<dyn SavedVariator>>,
     pub settings: WorldSettings,
     pub directives: Vec<Box<dyn VisualDirective>>,
-    pub referenced_worlds: Vec<usize>,
+    pub parent_worlds: Vec<usize>,
+    pub child_worlds: Vec<usize>,
 }
 
 impl World {
@@ -22,7 +23,8 @@ impl World {
             directives: Vec::new(),
             settings: WorldSettings::default(),
             variators: Vec::new(),
-            referenced_worlds: Vec::new(),
+            child_worlds: Vec::new(),
+            parent_worlds: Vec::new(),
         }
     }
 

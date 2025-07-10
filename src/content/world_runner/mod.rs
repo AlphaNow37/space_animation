@@ -13,11 +13,14 @@ use crate::{
         primitives::color::Color,
         variators::{references::Ref, variator::Variator},
         visuals::{Pipe, Sphere},
-        world::World, world_builder::WorldBuilder,
+        world::World, world_builder::{WorldBuilder, WorldsBuilder},
     },
 };
 
-pub fn build(world: &mut WorldBuilder) {
+pub fn build() -> WorldsBuilder {
+    let worlds = WorldsBuilder::default();
+    let mut world = worlds.add_world();
+
     let mut rng = rng();
 
     let id = world.push(Transform::ID);
@@ -94,4 +97,6 @@ pub fn build(world: &mut WorldBuilder) {
     let col = world.push(Color::RED);
     let tr = world.push(Transform::ID * 5.);
     world.push_visual((id, col, Sphere(tr)));
+
+    world.finalize()
 }

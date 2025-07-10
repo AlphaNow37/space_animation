@@ -2,7 +2,7 @@ use crate::{
     render_registry::{alloc::BufferAllocator, registry::PipelinesRegistry},
     world::{
         world::{World, WorldUpdateCtx},
-        world_builder::{WorldBuilder, WorldsBuilder},
+        world_builder::WorldsBuilder,
     },
 };
 use tracing::{info, info_span};
@@ -17,11 +17,8 @@ impl Scene {
     pub fn new() -> Self {
         let _span = info_span!("new_scene").entered();
         info!("Creating scene");
-        let mut worlds_builder = WorldsBuilder::default();
-
-        worlds_builder.add_world_with(|w| {
-            crate::content::build(w);
-        });
+        
+        let mut worlds_builder = crate::content::build();
 
         worlds_builder.finalize();
 

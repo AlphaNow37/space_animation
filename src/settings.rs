@@ -6,7 +6,7 @@ pub enum PerfLevel {
     HighDetails,
     VeryHighDetails,
 }
-pub const PERF_LEVEL: PerfLevel = PerfLevel::VeryHighPerf;
+pub const PERF_LEVEL: PerfLevel = PerfLevel::HighPerf;
 
 macro_rules! perf_level {
     (
