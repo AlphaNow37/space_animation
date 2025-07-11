@@ -3,7 +3,6 @@ use tracing::{info, info_span};
 use winit::{dpi::PhysicalPosition, event::WindowEvent, window::Window};
 
 use crate::app::keybinds::{KeyBinds, MoveKey, MoveModifierKey};
-use crate::app::keybinds::MoveKey::{Backward, Down, Forward, Left, Right, Up};
 use crate::math::{ToAngle, Vec2, Vec3, rotate_x, rotate_y};
 use crate::utils::Zero;
 use crate::world::primitives::camera::Camera;

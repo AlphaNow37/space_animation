@@ -1,5 +1,4 @@
 
 fn main() {
-    animator_renderer::run(animator_renderer::content::build)
-    // lib::run(content::build)
+    lib_space_animation::run(lib_space_animation::content::build)
 }
