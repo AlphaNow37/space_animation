@@ -94,9 +94,14 @@ pub fn build() -> WorldsBuilder {
         }
     }
 
-    let col = world.push(Color::RED);
-    let tr = world.push(Transform::ID * 5.);
-    world.push_visual((id, col, Sphere(tr)));
+    let worlds = world.finalize();
 
-    world.finalize()
+    let mut world = worlds.add_world(1);
+    let col = world.push(Color::RED);
+    let tr = world.push(Transform::ID * 2.);
+    world.push_visual((id, col, Sphere(tr)));
+    world.set_bounding_box(tr);
+    let worlds = world.finalize();
+
+    worlds
 }

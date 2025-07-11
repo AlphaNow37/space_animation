@@ -10,3 +10,6 @@ pub mod const_fns;
 pub use const_fns::*;
 pub mod iterators;
 pub use iterators::*;
+
+pub mod algos;
+pub use algos::*;

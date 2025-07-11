@@ -12,12 +12,17 @@ use super::depth::DepthBuffer;
 
 pub const PIPELINE_COUNT: usize = VertexType::COUNT * MaterialType::COUNT;
 
+pub struct WorldPipelines {
+    pipes: [[Option<Pipeline>; MaterialType::COUNT]; VertexType::COUNT],
+    pub activated: bool,
+}
+
 pub struct PipelinesRegistry {
     pub base_bindings: BaseBindings,
     pub store_bindings: Vec<StoreBindings>,
     depth_buffer: DepthBuffer,
     // shaders: Shaders,
-    pub pipes: Vec<[[Option<Pipeline>; MaterialType::COUNT]; VertexType::COUNT]>,
+    pub pipes: Vec<WorldPipelines>,
 }
 impl PipelinesRegistry {
     pub fn new(
@@ -33,8 +38,8 @@ impl PipelinesRegistry {
 
         let pipes = allocs
             .iter()
-            .map(|alloc| {
-                VertexType::ARRAY.map(|vertex| {
+            .map(|alloc| WorldPipelines {
+                pipes: VertexType::ARRAY.map(|vertex| {
                     MaterialType::ARRAY.map(|material| {
                         let nb_instance = alloc.get_instance_count(vertex, material);
                         NonZeroU64::new(nb_instance as u64).map(|size| {
@@ -50,7 +55,8 @@ impl PipelinesRegistry {
                             )
                         })
                     })
-                })
+                }),
+                activated: true,
             })
             .collect();
 
@@ -97,8 +103,11 @@ impl PipelinesRegistry {
 
         for i in 0..self.pipes.len() {
             self.store_bindings[i].put(&mut render_pass);
-
-            for r in &mut self.pipes[i] {
+            let wpipes = &mut self.pipes[i];
+            if !wpipes.activated {
+                continue;
+            }
+            for r in &mut wpipes.pipes {
                 for maybe_pipe in r {
                     if let Some(pipe) = maybe_pipe {
                         pipe.render(&mut render_pass, render_wires);
@@ -112,7 +121,7 @@ impl PipelinesRegistry {
         queue: &'a wgpu::Queue,
         world_id: usize,
     ) -> [[Option<wgpu::QueueWriteBufferView<'a>>; MaterialType::COUNT]; VertexType::COUNT] {
-        self.pipes[world_id].each_ref().map(|row| {
+        self.pipes[world_id].pipes.each_ref().map(|row| {
             row.each_ref()
                 .map(|maybe_pipe| maybe_pipe.as_ref().map(|pipe| pipe.view_instance(queue)))
         })

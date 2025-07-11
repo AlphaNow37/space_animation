@@ -254,6 +254,10 @@ impl Transform {
         let mat_inverse = Self::from_rows(t0, t1, t2) / det;
         mat_inverse.translate(-self.trans())
     }
+    pub fn distance_with(self, pt: Vec3) -> f32 {
+        let poss = self.inverse().tr_point(pt);
+        poss.length()
+    }
     pub fn with_rotation(self, other: Self) -> Self {
         Self(simd_swizzle!(self.0, other.0, [
             16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 12, 13, 14, 15,
@@ -343,6 +347,10 @@ mod tests {
         );
         let m =
             trans(0., 1., 5.) * scale(2., 5., -6.) * rotate_around(Vec3::ONE, Angle::from_deg(45.));
-        assert!(m.inverse().inverse().approx_eq(m))
+        assert!(m.inverse().inverse().approx_eq(m));
+
+        let m = trans(1., 0., 0.) * scale(2., 2., 2.);
+        let m2 = trans(-0.5, 0., 0.) * scale(0.5, 0.5, 0.5);
+        assert!(m.inverse().approx_eq(m2));
     }
 }

@@ -42,7 +42,7 @@ macro_rules! make_primitive_system {
 
         pub struct PrimitivesAllocationTracker {
             $(
-                $snake_name: usize,
+                pub $snake_name: usize,
             )*
         }
         impl Default for PrimitivesAllocationTracker {

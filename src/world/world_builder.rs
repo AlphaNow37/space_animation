@@ -1,7 +1,7 @@
-use std::collections::HashSet;
 use std::ops::Deref;
 use std::{any::Any, collections::HashMap};
 
+use crate::math::Transform;
 use rand::seq::IndexedRandom;
 
 use crate::render_registry::alloc::BufferAllocator;
@@ -33,6 +33,7 @@ struct WorldBuildState {
     directives: Vec<Box<dyn VisualDirective>>,
     variators: Vec<Box<dyn SavedVariator>>,
     pub allocs_tracker: PrimitivesAllocationTracker,
+    view_bounding_box: Option<Box<dyn Variator<Item = Transform>>>,
 }
 impl WorldBuildState {
     pub fn allocs(&self) -> BufferAllocator {
@@ -123,6 +124,9 @@ impl WorldBuilder {
             .push(Box::new(SavedVariatorMultiple { index: idx, var }));
         std::array::from_fn(|i| self.make_ref(idx + i))
     }
+    pub fn set_bounding_box(&mut self, v: impl Variator<Item = Transform>) {
+        self.state.view_bounding_box = Some(Box::new(v));
+    }
 
     pub fn finalize(self) -> WorldsBuilder {
         let mut worlds = self.worlds;
@@ -133,6 +137,13 @@ impl WorldBuilder {
         worlds.id_by_layers[self.layer].push(self.id);
         worlds
     }
+}
+
+pub struct WorldBuilderFinalizationValue {
+    pub worlds: Vec<World>,
+    pub id_by_layer: Vec<Vec<WorldId>>,
+    pub camera_offsets: Vec<usize>,
+    pub buffer_allocations: Vec<BufferAllocator>,
 }
 
 pub struct WorldsBuilder {
@@ -164,38 +175,49 @@ impl WorldsBuilder {
         f(&mut builder);
         *self = builder.finalize();
     }
-    pub fn finalize(&mut self) {
+    pub fn finalize(mut self) -> WorldBuilderFinalizationValue {
         let w = self.worlds.last_mut().unwrap().as_mut().unwrap();
         let idx = Camera::alloc(&mut w.allocs_tracker, 1);
         w.variators.push(Box::new(SavedVariatorSingle {
             index: idx,
             var: GetManualCamera,
         }));
-    }
-    pub fn get_buffer_allocs(&self) -> Vec<BufferAllocator> {
-        self.worlds
+
+        let allocs = self
+            .worlds
             .iter()
             .map(|wopt| match wopt {
                 None => BufferAllocator::new(),
                 Some(state) => state.allocs(),
             })
-            .collect()
-    }
-    pub fn to_run_worlds(self) -> (Vec<World>, Vec<Vec<WorldId>>) {
-        (
-            self.worlds
-                .into_iter()
-                .map(|wopt| match wopt {
-                    None => World::new(),
-                    Some(state) => World {
-                        directives: state.directives,
-                        stores: state.allocs_tracker.to_store_holder(),
-                        variators: state.variators,
-                        ..World::new()
-                    },
-                })
-                .collect(),
-            self.id_by_layers,
-        )
+            .collect();
+
+        let mut camera_offsets = vec![0; self.worlds.len() + 1];
+        for i in 0..self.worlds.len() {
+            camera_offsets[i + 1] =
+                camera_offsets[i] + &self.worlds[i].as_ref().map(|w| w.allocs_tracker.camera).unwrap_or(0)
+        }
+
+        let worlds = self
+            .worlds
+            .into_iter()
+            .map(|wopt| match wopt {
+                None => World::new(),
+                Some(state) => World {
+                    directives: state.directives,
+                    stores: state.allocs_tracker.to_store_holder(),
+                    variators: state.variators,
+                    view_bounding_box: state.view_bounding_box,
+                    ..World::new()
+                },
+            })
+            .collect();
+
+        WorldBuilderFinalizationValue {
+            worlds,
+            camera_offsets,
+            id_by_layer: self.id_by_layers,
+            buffer_allocations: allocs,
+        }
     }
 }
