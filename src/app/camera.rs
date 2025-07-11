@@ -2,7 +2,8 @@ use rand::Rng;
 use tracing::{info, info_span};
 use winit::{dpi::PhysicalPosition, event::WindowEvent, window::Window};
 
-use crate::app::keybinds::{KeyBinds, MoveKey};
+use crate::app::keybinds::{KeyBinds, MoveKey, MoveModifierKey};
+use crate::app::keybinds::MoveKey::{Backward, Down, Forward, Left, Right, Up};
 use crate::math::{ToAngle, Vec2, Vec3, rotate_x, rotate_y};
 use crate::utils::Zero;
 use crate::world::primitives::camera::Camera;
@@ -16,6 +17,14 @@ fn move_key_to_dir(key: MoveKey) -> Vec3 {
         Forward => Vec3::Z,
         Down => -Vec3::Y,
         Up => Vec3::Y,
+    }
+}
+
+fn move_modifier_key_to_factor(key: MoveModifierKey) -> f32 {
+    use MoveModifierKey::*;
+    match key {
+        Fast => 5.,
+        Slow => 0.2,
     }
 }
 
@@ -88,18 +97,23 @@ impl ManualCamera {
     }
     pub fn update(&mut self, dt: f32, win: &Window, binds: &KeyBinds) {
         let _span = info_span!("camera").entered();
+        let mut off = Vec3::ZERO;
         for mk in MoveKey::ARRAY {
-            let mut off = Vec3::ZERO;
             if binds.camera_moves[mk as usize].is_active() {
                 off += move_key_to_dir(mk) * dt
             }
-            self.cam.pos += off;
-            if off != Vec3::ZERO {
-                info!("Moved camera to {} ({:+})", self.cam.pos.trans(), off);
-                // let mat = self.cam.matrix(self.aspect_ratio);
-                // info!("(0., 0., 0.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 0.)), mat.project_point3(Vec3::new(0., 0., 0.)));
-                // info!("(0., 0., 1.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 1.)), mat.project_point3(Vec3::new(0., 0., 1.)));
+        }
+        for mmk in MoveModifierKey::ARRAY {
+            if binds.camera_move_modifiers[mmk as usize].is_active() {
+                off *= move_modifier_key_to_factor(mmk)
             }
+        }
+        self.cam.pos += off;
+        if off != Vec3::ZERO {
+            info!("Moved camera to {} ({:+})", self.cam.pos.trans(), off);
+            // let mat = self.cam.matrix(self.aspect_ratio);
+            // info!("(0., 0., 0.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 0.)), mat.project_point3(Vec3::new(0., 0., 0.)));
+            // info!("(0., 0., 1.) => {}:{}", mat.transform_point3(Vec3::new(0., 0., 1.)), mat.project_point3(Vec3::new(0., 0., 1.)));
         }
         if binds.camera_change.prev_cam.is_active() {
             self.next_current(-1);

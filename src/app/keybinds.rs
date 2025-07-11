@@ -59,6 +59,13 @@ array_key!(
     }
 );
 
+array_key!(
+    pub enum MoveModifierKey {
+        Fast,
+        Slow,
+    }
+);
+
 #[derive(Debug, Clone)]
 struct PressResume {
     pub any_pressed: bool,
@@ -188,12 +195,16 @@ impl KeyBind {
 
 pub struct KeyBinds {
     pub camera_moves: [KeyBind; MoveKey::COUNT],
+    pub camera_move_modifiers: [KeyBind; MoveModifierKey::COUNT],
     pub camera_change: CameraChanges,
     pub window_debug: WindowDebug,
 }
 impl KeyBinds {
     fn bind_map(&mut self, f: &impl Fn(&mut KeyBind)) {
         for b in &mut self.camera_moves {
+            f(b)
+        }
+        for b in &mut self.camera_move_modifiers {
             f(b)
         }
         self.camera_change.bind_map(f);
@@ -230,6 +241,12 @@ impl KeyBinds {
                     MoveKey::Forward => KeyCode::KeyW,
                     MoveKey::Down => KeyCode::KeyQ,
                     MoveKey::Up => KeyCode::KeyE,
+                }])
+            }),
+            camera_move_modifiers: MoveModifierKey::ARRAY.map(|k| {
+                KeyBind::new(Trigger::AllActive, vec![match k {
+                    MoveModifierKey::Slow => KeyCode::ShiftLeft,
+                    MoveModifierKey::Fast => KeyCode::ControlLeft,
                 }])
             }),
             camera_change: CameraChanges::new(),
