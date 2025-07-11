@@ -2,8 +2,8 @@ use std::f32::consts::PI;
 
 use rand::{Rng, rng};
 
-use crate::world::world::Worlds;
-use crate::{
+use lib_space_animation::world::world::Worlds;
+use lib_space_animation::{
     datastrutures::{
         graph::Graph,
         sampler_linker::{DimensionParam, SampleLinkPointParam},

@@ -1,8 +1,8 @@
-use crate::math::{Transform, Vec3};
-use crate::utils::Zero;
-use crate::world::visuals::shape::Triangle;
-use crate::world::world_builder::WorldBuilder;
-use crate::world::{primitives::color::Color, variators::variator::Variator};
+use lib_space_animation::math::{Transform, Vec3};
+use lib_space_animation::utils::Zero;
+use lib_space_animation::world::visuals::shape::Triangle;
+use lib_space_animation::world::world_builder::WorldBuilder;
+use lib_space_animation::world::{primitives::color::Color, variators::variator::Variator};
 
 pub fn put_axis(world: &mut WorldBuilder, pos: impl Variator<Item = Transform> + Copy) {
     let global = world.push(pos);

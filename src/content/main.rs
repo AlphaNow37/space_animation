@@ -1,3 +1,4 @@
+mod models;
 macro_rules! import {
     (
         $name: ident
@@ -10,3 +11,8 @@ macro_rules! import {
 // import!(tests);
 
 import!(world_runner);
+
+
+fn main() {
+    lib_space_animation::run(build)
+}

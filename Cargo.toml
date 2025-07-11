@@ -9,7 +9,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "space_animation"
-path = "src/main.rs"
+path = "src/content/main.rs"
 
 [dependencies]
 wgpu = { version = "25.0.2" }
