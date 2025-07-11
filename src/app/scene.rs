@@ -40,11 +40,11 @@ pub struct Scene {
     camera_offsets: Vec<usize>,
 }
 impl Scene {
-    pub fn new() -> Self {
+    pub fn new(builder_fun: &mut dyn FnMut() -> WorldsBuilder) -> Self {
         let _span = info_span!("new_scene").entered();
         info!("Creating scene");
 
-        let mut worlds_builder = crate::content::build();
+        let mut worlds_builder = builder_fun();
 
         let WorldBuilderFinalizationValue {
             camera_offsets,

@@ -3,6 +3,14 @@ name = "space_animation"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "animator_renderer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "space_animation"
+path = "src/main.rs"
+
 [dependencies]
 wgpu = { version = "25.0.2" }
 #glam={version="0.28.0", features = ["rand", "bytemuck"]}

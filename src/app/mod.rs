@@ -20,6 +20,7 @@ use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::WindowId;
+use crate::world::world_builder::WorldsBuilder;
 
 fn get_adapter(surf: Option<&wgpu::Surface>, inst: &wgpu::Instance) -> wgpu::Adapter {
     let options = surf
@@ -62,6 +63,7 @@ pub struct App {
     pub queue: wgpu::Queue,
     pub scene: Scene,
     pub camera: ManualCamera,
+    pub builder_fun: Box<dyn FnMut()->WorldsBuilder>,
 }
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
@@ -103,7 +105,7 @@ impl ApplicationHandler for App {
     }
 }
 impl App {
-    pub fn new() -> Self {
+    pub fn new(mut builder_fun: impl FnMut()->WorldsBuilder + 'static) -> Self {
         info!("Creating app");
         let instance = wgpu::Instance::default();
         let adapter = get_adapter(None, &instance);
@@ -116,8 +118,9 @@ impl App {
             instance,
             device,
             queue,
-            scene: Scene::new(),
+            scene: Scene::new(&mut builder_fun),
             camera: ManualCamera::new(),
+            builder_fun: Box::new(builder_fun),
         }
     }
     pub fn run(&mut self) {
