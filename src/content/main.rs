@@ -1,4 +1,3 @@
-mod models;
 macro_rules! import {
     (
         $name: ident

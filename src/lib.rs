@@ -10,7 +10,7 @@ pub mod render_registry;
 pub mod settings;
 pub mod utils;
 pub mod world;
-
+pub mod models;
 
 pub fn run(build_fun: impl FnMut() -> world::world_builder::WorldsBuilder + 'static) {
     logger::init_logger();
