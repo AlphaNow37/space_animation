@@ -30,3 +30,16 @@ impl VisualDirective for Sponge {
         *curr_mty = MaterialType::Sponge
     }
 }
+
+pub struct Border(pub Ref<Color>);
+impl VisualDirective for Border {
+    fn exec(&self, executor: &mut VisualExecutor) {
+        executor.set_mat(MaterialRef {
+            index: self.0.index(),
+            mty: MaterialType::Border,
+        });
+    }
+    fn alloc(&self, curr_mty: &mut MaterialType, _alloc: &mut BufferAllocator) {
+        *curr_mty = MaterialType::Border
+    }
+}

@@ -5,6 +5,7 @@ array_key!(
         None,
         Uniform,
         Sponge,
+        Border,
     }
 );
 impl Default for MaterialType {
@@ -18,6 +19,7 @@ impl MaterialType {
             Self::None => "fs_none",
             Self::Uniform => "fs_uniform",
             Self::Sponge => "fs_sponge",
+            Self::Border => "fs_border"
         }
     }
 }

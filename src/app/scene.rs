@@ -100,9 +100,6 @@ impl Scene {
                 self.ticks[i] += tick_add;
                 if self.ticks[i] >= 1. {
                     self.ticks[i] = 0.;
-                    if world_extents.is_some() {
-                        dbg!(tick_add);
-                    }
                     w.update_registers(&worlds);
                     let mut stores_views = registry.store_bindings[i].views(queue);
                     let stores = stores_views.each_mut().map(|v| {

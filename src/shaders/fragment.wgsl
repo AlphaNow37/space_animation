@@ -40,3 +40,18 @@ fn fs_sponge(in: FragInput) -> @location(0) vec4<f32> {
     col.z *= pow(p, 0.5);
     return frag_out(col);
 }
+
+
+@fragment
+fn fs_border(in: FragInput) -> @location(0) vec4<f32> {
+    var col: vec3<f32>= colors[in.mat_id];
+
+    if(!is_on_border(in.uv)) {
+        discard;
+    }
+    let p = pass_all(in.normal, in.clip_position.z, in.delta_pos);
+    col.x *= p;
+    col.y *= pow(p, 0.5);
+    col.z *= pow(p, 0.5);
+    return frag_out(col);
+}

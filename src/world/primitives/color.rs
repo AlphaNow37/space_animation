@@ -117,6 +117,7 @@ consts_lch!(
     RED = 0.5, 0.2, 30.;
     GREEN = 0.5, 0.2, 140.;
     BLUE = 0.5, 0.2, 267.;
+    YELLOW = 0.95, 0.2, 104.;
 );
 impl Add for Color {
     type Output = Self;

@@ -13,3 +13,12 @@ fn is_on_sponge(puv: vec3<f32>) -> bool {
     }
     return false;
 }
+
+const BORDER_SIZE: f32 = 0.01;
+fn is_on_border(puv: vec3<f32>) -> bool {
+    return
+        i32(puv.x > BORDER_SIZE - 1. && puv.x < 1. - BORDER_SIZE)
+        + i32(puv.y > BORDER_SIZE - 1. && puv.y < 1. - BORDER_SIZE)
+        + i32(puv.z > BORDER_SIZE - 1. && puv.z < 1. - BORDER_SIZE)
+         <= 1;
+}
