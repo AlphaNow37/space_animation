@@ -44,8 +44,12 @@ make_folder!(CameraChanges:
 );
 
 make_folder!(WindowDebug:
-    show_fps = KeyBind::new(Trigger::AllActive, vec![KeyCode::F3, KeyCode::KeyX]);
+    show_fps = KeyBind::new(Trigger::Pressed, vec![KeyCode::F3, KeyCode::KeyX]);
     show_wires = KeyBind::new(Trigger::Toggle(false), vec![KeyCode::F3, KeyCode::KeyG]);
+);
+
+make_folder!(WindowUtility:
+    screenshot = KeyBind::new(Trigger::Pressed, vec![KeyCode::F5, KeyCode::F6]);
 );
 
 array_key!(
@@ -198,6 +202,7 @@ pub struct KeyBinds {
     pub camera_move_modifiers: [KeyBind; MoveModifierKey::COUNT],
     pub camera_change: CameraChanges,
     pub window_debug: WindowDebug,
+    pub window_utility: WindowUtility,
 }
 impl KeyBinds {
     fn bind_map(&mut self, f: &impl Fn(&mut KeyBind)) {
@@ -209,6 +214,7 @@ impl KeyBinds {
         }
         self.camera_change.bind_map(f);
         self.window_debug.bind_map(f);
+        self.window_utility.bind_map(f);
     }
     pub fn process(&mut self, event: &WindowEvent) {
         if let WindowEvent::KeyboardInput {
@@ -251,6 +257,7 @@ impl KeyBinds {
             }),
             camera_change: CameraChanges::new(),
             window_debug: WindowDebug::new(),
+            window_utility: WindowUtility::new(),
         }
     }
 }

@@ -6,6 +6,7 @@ mod resize;
 mod scene;
 mod surface_holder;
 mod update;
+mod screenshots;
 
 use crate::app::exit::check_exit;
 use crate::app::keybinds::KeyBinds;
@@ -20,6 +21,7 @@ use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::WindowId;
+use crate::app::screenshots::check_screenshot;
 use crate::world::world_builder::WorldsBuilder;
 
 fn get_adapter(surf: Option<&wgpu::Surface>, inst: &wgpu::Instance) -> wgpu::Adapter {
@@ -91,8 +93,10 @@ impl ApplicationHandler for App {
         check_resize(self, &event);
         check_update(self, &event);
         check_render(self, &event);
+
         if let Some(holder) = &self.window {
             self.camera.on_event(&event, &holder.window);
+            check_screenshot(self);
         }
         self.key_binds.process(&event);
     }
