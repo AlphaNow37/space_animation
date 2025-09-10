@@ -10,6 +10,7 @@ use std::cell::Cell;
 
 pub mod camera;
 pub mod color;
+pub mod reference;
 
 pub trait WorldPrimitive: Sized + 'static {
     fn alloc(world: &mut PrimitivesAllocationTracker, size: usize) -> usize;
